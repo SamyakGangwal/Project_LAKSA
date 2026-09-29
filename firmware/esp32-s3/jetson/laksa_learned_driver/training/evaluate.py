@@ -34,6 +34,10 @@ def log(message: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", type=Path, default=HERE.parent / "models" / "laksa_tinylidarnet_v2.npz")
+    parser.add_argument("--models", nargs="+", default=None, metavar="NAME=PATH",
+                        help="compare several models on identical episodes (replaces --model)")
+    parser.add_argument("--no-expert", action="store_true", help="skip the privileged expert baseline")
+    parser.add_argument("--replica-tracks", type=int, default=4, help="Obstacle Course replica layouts")
     parser.add_argument("--course-dir", type=Path, default=REPO / "scratch" / "speed_course")
     parser.add_argument("--caps", type=float, nargs="+", default=[0.24, 0.5, 1.0, 1.5, 2.0, 3.0])
     parser.add_argument("--random-tracks", type=int, default=10)
@@ -56,22 +60,27 @@ def main() -> None:
     if parser_course:
         suites.append(("course_style_tracks", [("course_style", args.seed + 70_000 + i, "heldout")
                                                for i in range(parser_course)]))
+    if args.replica_tracks:
+        suites.append(("obstacle_course", [("obstacle_course", args.seed + 80_000 + i, "heldout")
+                                           for i in range(args.replica_tracks)]))
     if args.obstacle_tracks:
         suites.append(("obstacle_tracks", [("obstacles", args.seed + 60_000 + i, "heldout")
                                            for i in range(args.obstacle_tracks)]))
 
+    models = dict(m.split("=", 1) for m in args.models) if args.models else {"student": str(args.model)}
+    drivers = ([] if args.no_expert else ["expert"]) + list(models)
     jobs = []
     for suite, specs in suites:
         for cap in args.caps:
-            for driver in ("expert", "student"):
+            for driver in drivers:
                 for trial in range(1 + args.randomized_trials):
                     job_seed = args.seed + 7919 * trial + int(cap * 1000)
                     domain = {} if trial == 0 else domain_dict(Domain.sample(np.random.default_rng(job_seed)))
                     for spec in specs:
                         jobs.append({"suite": suite, "driver": driver, "track": spec, "cap": cap,
                                      "seed": job_seed, "domain": domain, "randomized": trial > 0,
-                                     "student": str(args.model) if driver == "student" else None,
-                                     "beta": 0.0 if driver == "student" else 1.0,
+                                     "student": models.get(driver),
+                                     "beta": 0.0 if driver in models else 1.0,
                                      "randomize_start": False, "record": False, "laps": args.laps})
     started = time.time()
     log(f"{len(jobs)} episodes on {args.workers} workers")
@@ -81,7 +90,7 @@ def main() -> None:
 
     for suite, _ in suites:
         for cap in args.caps:
-            for driver in ("expert", "student"):
+            for driver in drivers:
                 for label, randomized in (("clean", False), ("randomized", True)):
                     subset = [r for r in rows if r["suite"] == suite and r["cap"] == cap
                               and r["driver"] == driver and r["randomized"] == randomized]
@@ -89,12 +98,12 @@ def main() -> None:
                         continue
                     done = [r for r in subset if r["result"] == "COMPLETE"]
                     lap = np.mean([r["lap_s"] for r in done]) if done else float("nan")
-                    log(f"{suite:13s} cap {cap:4.2f} {driver:7s} {label:10s}: {len(done):2d}/{len(subset):2d} complete, "
+                    log(f"{suite:19s} cap {cap:4.2f} {driver:7s} {label:10s}: {len(done):2d}/{len(subset):2d} complete, "
                         f"lap {lap:6.1f} s, progress {np.mean([min(r['progress_laps'], args.laps) for r in subset]) / args.laps:.2f}, "
                         f"collisions {sum(r['result'] == 'COLLISION' for r in subset)}")
     output = args.output or args.model.with_suffix(".evaluation.json")
-    output.write_text(json.dumps({"model": str(args.model), "laps": args.laps, "episodes": rows}, indent=2),
-                      encoding="utf-8")
+    output.write_text(json.dumps({"models": models, "laps": args.laps, "episodes": rows}, indent=2),
+                      encoding="utf-8", newline="\n")
     log(f"wrote {output}")
 
 
