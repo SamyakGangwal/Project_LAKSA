@@ -349,7 +349,7 @@ OBSTACLE_COURSE_DIR = Path(__file__).resolve().parent / "courses" / "obstacle_co
 
 
 def load_obstacle_course(rng: np.random.Generator, out_dir: Path, name: str,
-                         course_dir: Path = OBSTACLE_COURSE_DIR) -> Track:
+                         course_dir: Path = OBSTACLE_COURSE_DIR, hoops: bool = True) -> Track:
     """The 2026 Obstacle Course replica with this episode's buckets and hoops.
 
     Direction is random (the course may be run either way on the day).  The
@@ -388,7 +388,7 @@ def load_obstacle_course(rng: np.random.Generator, out_dir: Path, name: str,
     add_obstacles(track, rng, int(rng.integers(low, high + 1)), min_separation_m=0.45, start_clear_m=0.0,
                   max_local_curvature=1.5, shape="bucket", size_range=(diameter, diameter), eligible=eligible,
                   natural_fraction=0.5)
-    for a, b in features["hoop_lines"]:
+    for a, b in features["hoop_lines"] if hoops else []:
         add_hoop(track, rng, np.array(a), np.array(b), float(features["hoop_inner_width_m"]))
     return track
 

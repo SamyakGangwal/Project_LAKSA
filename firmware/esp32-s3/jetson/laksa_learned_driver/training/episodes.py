@@ -148,15 +148,18 @@ def _drivable_obstacle_course(seed: int, out: Path, prefix: str, attempts: int =
     privileged expert cannot drive at 0.5 m/s are redrawn.
     """
     sim = _STATE["sim"]
-    for attempt in range(attempts):
+    for attempt in range(attempts + 1):
         rng = np.random.default_rng(seed * 101 + attempt)
-        track = load_obstacle_course(rng, out, f"{prefix}_oc_{seed}_{attempt}")
+        # Last resort: the same kind of layout without hoops (hoop 3 on the
+        # right loop is sometimes beyond this car's right-steering limit).
+        hoops = attempt < attempts
+        track = load_obstacle_course(rng, out, f"{prefix}_oc_{seed}_{attempt}", hoops=hoops)
         expert = Expert(track, smooth_raceline(track), ExpertConfig(lookahead_base_m=0.25, lookahead_min_m=0.3))
         sim.load(track, Domain())
         steps = int(1.3 * track.center.shape[0] * track.spacing / (0.3 * 0.5) / V.CONTROL_PERIOD_S)
         _, stats = run_episode(sim, track, expert, 0.5, steps, np.random.default_rng(0), randomize_start=False,
                                record=False)
-        if stats["result"] == "COMPLETE":
+        if stats["result"] == "COMPLETE" or not hoops:
             return track
     return track
 

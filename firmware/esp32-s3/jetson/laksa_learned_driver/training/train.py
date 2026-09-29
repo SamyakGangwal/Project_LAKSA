@@ -109,11 +109,13 @@ def summarize(rows, caps) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--output", type=Path, default=HERE.parent / "models" / "laksa_tinylidarnet_v4.npz")
-    parser.add_argument("--obstacle-fraction", type=float, default=0.6,
+    parser.add_argument("--output", type=Path, default=HERE.parent / "models" / "laksa_tinylidarnet_v5.npz")
+    parser.add_argument("--obstacle-fraction", type=float, default=0.3,
                         help="share of training tracks with box obstacles (0 reproduces v2's data)")
-    parser.add_argument("--course-fraction", type=float, default=0.4,
+    parser.add_argument("--course-fraction", type=float, default=0.35,
                         help="share of training tracks in the 2026 course style (widths, open areas, buckets)")
+    parser.add_argument("--replica-fraction", type=float, default=0.25,
+                        help="share of training episodes on the 2026 Obstacle Course replica")
     parser.add_argument("--rounds", type=int, default=5, help="DART round + DAgger rounds")
     parser.add_argument("--episodes", type=int, default=40, help="episodes per round")
     parser.add_argument("--steps", type=int, default=900, help="control steps per training episode")
@@ -134,7 +136,7 @@ def main() -> None:
     log(f"run directory {run_dir}; {args.workers} workers")
     eval_seeds = [args.seed + 10_000 + i for i in range(args.eval_tracks)]
     eval_caps = (0.5, 1.5, 3.0)
-    eval_kinds = ("random",) + (("obstacles",) if args.obstacle_fraction > 0 else ())         + (("course_style",) if args.course_fraction > 0 else ())
+    eval_kinds = ("random",) + (("obstacles",) if args.obstacle_fraction > 0 else ())         + (("course_style",) if args.course_fraction > 0 else ())         + (("obstacle_course",) if args.replica_fraction > 0 else ())
 
     with make_pool(args.workers, args.seed) as pool:
         started = time.time()
@@ -156,8 +158,10 @@ def main() -> None:
             for _ in range(args.episodes):
                 job_seed = int(rng.integers(2**31))
                 draw = rng.random()
-                kind = ("course_style" if draw < args.course_fraction else
-                        "obstacles" if draw < args.course_fraction + args.obstacle_fraction else "random")
+                kind = ("obstacle_course" if draw < args.replica_fraction else
+                        "course_style" if draw < args.replica_fraction + args.course_fraction else
+                        "obstacles" if draw < args.replica_fraction + args.course_fraction + args.obstacle_fraction
+                        else "random")
                 jobs.append({"track": (kind, job_seed, "train"),
                              "cap": sample_cap(rng, args.cap_min, args.cap_max), "seed": job_seed + 1,
                              "domain": domain_dict(Domain.sample(rng)), "steps": args.steps,
@@ -206,6 +210,7 @@ def main() -> None:
         "competition_course_used_for_training": False,
         "obstacle_fraction": args.obstacle_fraction,
         "course_fraction": args.course_fraction,
+        "replica_fraction": args.replica_fraction,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(best[1].read_bytes())
