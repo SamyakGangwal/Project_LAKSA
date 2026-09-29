@@ -11,6 +11,15 @@
 #   dryrun_bringup.sh trial    everything, actuation ENABLED, cruise ~0.15 m/s
 #   dryrun_bringup.sh console  restart only the console (host follows network)
 #   dryrun_bringup.sh stop | status
+#
+# Optional overrides for start|trial (unset = the behaviour described above):
+#   LAKSA_NAV_ERPM       supervisor navigation_max_erpm (default: drive_supervisor.yaml)
+#   LAKSA_CRUISE_ERPM    supervisor exploration_max_erpm (default: per mode)
+#   LAKSA_DRIVER_CAP     learned driver speed_cap_mps (default: per mode)
+#   LAKSA_BT_XML         NavigateToPose behaviour tree (default: navigate_ackermann.xml)
+#   LAKSA_NAV_EXTRA      extra --params-file for controller_server, after the field overrides
+#   LAKSA_NAV_CMD_TOPIC  cmd_vel remap for controller_server and behavior_server
+#                        (default /laksa/nav_cmd_vel, the supervisor's navigation input)
 set -uo pipefail
 
 RUN_DIR="${HOME}/laksa_run"
@@ -98,9 +107,42 @@ ACTUATION=false
 CRUISE_ERPM=1000.0
 DRIVER_CAP=0.24
 if [[ "${MODE}" == "trial" ]]; then ACTUATION=true; CRUISE_ERPM=620.0; DRIVER_CAP=0.15; fi
+CRUISE_ERPM="${LAKSA_CRUISE_ERPM:-${CRUISE_ERPM}}"
+DRIVER_CAP="${LAKSA_DRIVER_CAP:-${DRIVER_CAP}}"
+NAV_ERPM="${LAKSA_NAV_ERPM:-}"
+BT_XML="${LAKSA_BT_XML:-${BT_XML}}"
+NAV_EXTRA="${LAKSA_NAV_EXTRA:-}"
+NAV_CMD_TOPIC="${LAKSA_NAV_CMD_TOPIC:-/laksa/nav_cmd_vel}"
+
+check_overrides() {
+    # Only overrides that are set are checked, so the defaults behave as before.
+    local name value
+    for name in LAKSA_CRUISE_ERPM LAKSA_DRIVER_CAP LAKSA_NAV_ERPM; do
+        value="${!name:-}"
+        if [[ -n "${value}" && ! "${value}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "refusing to start: ${name}='${value}' is not a non-negative number" >&2; exit 64
+        fi
+    done
+    for name in LAKSA_BT_XML LAKSA_NAV_EXTRA; do
+        value="${!name:-}"
+        if [[ -n "${value}" && ! -f "${value}" ]]; then
+            echo "refusing to start: ${name} file '${value}' does not exist" >&2; exit 64
+        fi
+    done
+    value="${LAKSA_NAV_CMD_TOPIC:-}"
+    if [[ -n "${value}" && ! "${value}" =~ ^/[A-Za-z0-9_/]+$ ]]; then
+        echo "refusing to start: LAKSA_NAV_CMD_TOPIC='${value}' is not an absolute topic name" >&2; exit 64
+    fi
+}
 
 case "${MODE}" in
 start|trial)
+    check_overrides
+    SUPERVISOR_ARGS=(--params-file "${SUPERVISOR_CONFIG}" -p actuation_enabled:=${ACTUATION} -p autonomy_enabled:=true
+        -p exploration_max_erpm:=${CRUISE_ERPM})
+    [[ -n "${NAV_ERPM}" ]] && SUPERVISOR_ARGS+=(-p navigation_max_erpm:=${NAV_ERPM})
+    NAV_EXTRA_ARGS=()
+    [[ -n "${NAV_EXTRA}" ]] && NAV_EXTRA_ARGS=(--params-file "${NAV_EXTRA}")
     mkdir -p "${RUN_DIR}"
     SESSION="${SESSIONS_DIR}/$(date +%Y%m%dT%H%M%S)"
     mkdir -p "${SESSION}"
@@ -125,9 +167,7 @@ start|trial)
         start_one ekf ros2 run robot_localization ekf_node --ros-args --params-file "${EKF_CONFIG}" \
             -r odometry/filtered:=/laksa/odometry/fused
     fi
-    start_one supervisor ros2 run laksa_bringup drive_supervisor_node.py --ros-args \
-        --params-file "${SUPERVISOR_CONFIG}" -p actuation_enabled:=${ACTUATION} -p autonomy_enabled:=true \
-        -p exploration_max_erpm:=${CRUISE_ERPM}
+    start_one supervisor ros2 run laksa_bringup drive_supervisor_node.py --ros-args "${SUPERVISOR_ARGS[@]}"
     start_one learned_driver ros2 run laksa_learned_driver learned_driver_node --ros-args \
         --params-file "${DRIVER_CONFIG}" -p speed_cap_mps:=${DRIVER_CAP} -p decision_log:="${SESSION}/decisions.csv"
     if [[ -f "${HOME}/zed_ws/install/setup.bash" ]]; then
@@ -144,11 +184,12 @@ start|trial)
             # Controller and BackUp output go to the supervisor's navigation
             # input, never to the ESP32: the supervisor gates and caps them.
             start_one nav_controller ros2 run nav2_controller controller_server --ros-args \
-                --params-file "${NAV_CONFIG}" --params-file "${NAV_OVERRIDES}" -r cmd_vel:=/laksa/nav_cmd_vel
+                --params-file "${NAV_CONFIG}" --params-file "${NAV_OVERRIDES}" "${NAV_EXTRA_ARGS[@]}" \
+                -r cmd_vel:="${NAV_CMD_TOPIC}"
             start_one nav_planner ros2 run nav2_planner planner_server --ros-args \
                 --params-file "${NAV_CONFIG}" --params-file "${NAV_OVERRIDES}"
             start_one nav_behavior ros2 run nav2_behaviors behavior_server --ros-args \
-                --params-file "${NAV_CONFIG}" -r cmd_vel:=/laksa/nav_cmd_vel
+                --params-file "${NAV_CONFIG}" -r cmd_vel:="${NAV_CMD_TOPIC}"
             start_one nav_bt ros2 run nav2_bt_navigator bt_navigator --ros-args --params-file "${NAV_CONFIG}" \
                 -p default_nav_to_pose_bt_xml:="${BT_XML}" -p default_nav_through_poses_bt_xml:="${BT_THROUGH_XML}"
             start_one nav_lifecycle ros2 run nav2_lifecycle_manager lifecycle_manager --ros-args \
@@ -157,7 +198,15 @@ start|trial)
     fi
     start_one recorder ros2 bag record -o "${SESSION}/bag" "${BAG_TOPICS[@]}"
     start_console
-    echo "mode=${MODE} actuation=${ACTUATION} cruise_erpm=${CRUISE_ERPM} driver_cap=${DRIVER_CAP} started=$(date -Is)" > "${SESSION}/session.txt"
+    {
+        echo "mode=${MODE} actuation=${ACTUATION} cruise_erpm=${CRUISE_ERPM} driver_cap=${DRIVER_CAP} started=$(date -Is)"
+        echo "nav_erpm=${NAV_ERPM:-yaml}"
+        echo "bt_xml=${BT_XML}"
+        echo "nav_extra=${NAV_EXTRA:-none}"
+        echo "nav_cmd_topic=${NAV_CMD_TOPIC}"
+        # Read back by setup/tonight/restart_supervisor.sh.
+        echo "supervisor_args=$(printf '%q ' "${SUPERVISOR_ARGS[@]}")"
+    } > "${SESSION}/session.txt"
     echo "mode ${MODE}: supervisor actuation_enabled=${ACTUATION}, cruise cap ${CRUISE_ERPM} eRPM, driver cap ${DRIVER_CAP} m/s"
     ;;
 console)

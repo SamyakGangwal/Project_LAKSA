@@ -243,7 +243,9 @@ function updateStatus() {
   cls($('routeinfo'), r.state === 'FAILED' ? 'bad' : (r.state === 'ARRIVED' || r.state === 'PLANNED' ? 'ok' : ''));
   $('health').textContent = s.health; cls($('health'), s.health === 'READY' ? 'ok' : 'warn');
   $('estop').textContent = s.estop === null ? '–' : (s.estop ? 'LATCHED ' + (s.estop_reason || '') : 'clear'); cls($('estop'), s.estop ? 'bad' : 'ok');
-  $('driver').textContent = s.driver + (state.holding ? ' · holding' : '');
+  $('driver').textContent = s.driver + (state.holding ? ' · holding' : '')
+    + (state.rearm_needed ? ' · connection lost: release and press again' : '');
+  cls($('driver'), state.rearm_needed ? 'bad' : '');
   $('speed').textContent = s.speed_mps === null ? '–' : s.speed_mps.toFixed(2) + ' m/s';
   $('battery').textContent = s.battery_v === null ? '–' : s.battery_v.toFixed(1) + ' V' + (s.vesc_fault ? ' · VESC fault ' + s.vesc_fault : '');
   const p = s.person || {};

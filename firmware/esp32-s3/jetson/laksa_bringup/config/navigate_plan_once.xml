@@ -1,0 +1,16 @@
+<!--
+  Plan once, follow once (tonight, 2026-09-29; selected with LAKSA_BT_XML).
+  One ComputePathToPose, then FollowPath on that same path.  No replanning,
+  no recoveries, no BackUp: any failure ends navigation, so the path the car
+  drives is the one setup/tonight/path_gate.py checked.
+  Uses only nodes in nav2_ackermann.yaml's plugin_lib_names (Sequence is a
+  BehaviorTree.CPP built-in).
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="PlanOnceAndFollow">
+      <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+      <FollowPath path="{path}" controller_id="FollowPath"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

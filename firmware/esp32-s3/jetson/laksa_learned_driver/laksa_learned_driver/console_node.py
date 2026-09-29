@@ -47,6 +47,7 @@ from nav2_msgs.action import ComputePathToPose, NavigateToPose
 from std_msgs.msg import Bool, Empty, String
 from tf2_ros import Buffer, TransformException, TransformListener
 
+from .hold_latch import HoldLatch
 from .scan_adapter import LidarMount, scan_to_vehicle_beams
 
 PAGE = Path(__file__).with_name("console_page.html")
@@ -108,6 +109,8 @@ class Console(Node):
         self._goal = None
         self._last_heartbeat = 0.0
         self._hold_started = 0.0
+        self._hold_latch = HoldLatch()    # heartbeat lost mid-hold -> release and press again
+        self._ignored_press_logged = False
         self._pulse = None
         # Route state: planning and navigation run on the ROS thread (_route_tick);
         # the web thread only sets these requests.
@@ -259,6 +262,10 @@ class Console(Node):
             pulse = self._pulse if self._pulse and now < self._pulse[1] else None
             alive = now - self._last_heartbeat <= self._timeout
             engaging = alive and now - self._hold_started < self._engage
+            lost = self._hold_latch.lapse(now, self._last_heartbeat, self._timeout)
+        if lost:
+            self.get_logger().warn("Heartbeat lost while HOLD/GO was held: ignoring HOLD/GO until it is "
+                                   "released and pressed again")
         if pulse:
             self._joy((pulse[0],))
         elif alive:
@@ -408,6 +415,7 @@ class Console(Node):
                 "type": "state",
                 "status": dict(self._status),
                 "holding": time.monotonic() - self._last_heartbeat <= self._timeout,
+                "rearm_needed": self._hold_latch.awaiting_release,
                 "pose": self._pose,
                 "trail": self._trail[-600:],
                 "lidar": self._lidar_xy,
@@ -466,8 +474,13 @@ class Console(Node):
                         continue
                     now = time.monotonic()
                     kind = data.get("cmd")
+                    ignored = False
                     with self._lock:
-                        if kind in ("hold", "go"):
+                        if kind in ("hold", "go") and not self._hold_latch.press(
+                                now, self._last_heartbeat, self._timeout):
+                            ignored = not self._ignored_press_logged
+                            self._ignored_press_logged = True
+                        elif kind in ("hold", "go"):
                             if now - self._last_heartbeat > self._timeout:
                                 self._hold_started = now
                                 self._nav_hold = kind == "go"
@@ -478,13 +491,18 @@ class Console(Node):
                         elif kind == "release":
                             self._last_heartbeat = 0.0
                             self._go_latched = False
+                            self._hold_latch.release()
+                            self._ignored_press_logged = False
                         elif kind == "stop":
                             self._last_heartbeat = 0.0
+                            self._hold_latch.stop()
                             self._pulse = (B_BUTTON, now + 0.6)
                         elif kind == "rearm":
                             self._pulse = (Y_BUTTON, now + 0.6)
                         elif kind == "plan":
                             self._plan_requested = True
+                    if ignored:
+                        self.get_logger().warn(f"Ignoring '{kind}' after heartbeat loss: release and press again")
                     if kind in ("start", "goal"):
                         x, y = float(data["x"]), float(data["y"])
                         if math.isfinite(x) and math.isfinite(y):
