@@ -42,43 +42,104 @@ CLAMP_TOLERANCE = 0.05     # clamp if |mean requested| < 95 % of |expected|
 MAX_MEASURED_ERPM = 50.0   # anything turning means the battery is connected
 ZERO_ERPM = 1.0            # |mean requested| below this on the plateau = command rejected
 POWERED_V = 5.0
+MIN_PLATEAU_SAMPLES = 3    # minimum plateau samples for a verdict (reject single-sample decisions)
+VESC_STATE_TIMEOUT_S = 2.0 # abort if /laksa/vesc/state stops arriving for this long during probe
 
 
 def summarize(speed: float, samples: list) -> dict:
-    """samples: [(t_in_hold, requested, active, dir_pending, fresh)].  Pure; unit-testable."""
+    """samples: [(t_in_hold, requested, active, dir_pending, fresh)].  Pure; unit-testable.
+
+    kind values:
+      "PASS"          requested matches expected (no clamp detected)
+      "CLAMPED"       requested plateaus above zero but below 95 % of expected
+      "REJECTED"      near-zero requested (note: alone does not prove firmware rejection)
+      "WRONG_SIGN"    requested sign does not match expected sign
+      "INSUFFICIENT"  fewer than MIN_PLATEAU_SAMPLES samples on the plateau
+      None            no samples at all
+
+    flags: list of strings noting analysis caveats (active_erpm=0, wrong sign,
+    sparse data, etc.).  The caller should display these alongside the verdict.
+    """
     expected = ERPM_PER_MPS * speed
     plateau = [s for s in samples if s[0] >= HOLD_S - PLATEAU_S]
     row = {"speed": speed, "expected": expected, "n": len(samples), "n_plateau": len(plateau),
            "mean_requested": None, "mean_active": None, "max_abs_requested": None,
-           "dir_pending": any(s[3] for s in plateau), "clamp": None}
+           "dir_pending": any(s[3] for s in plateau), "clamp": None, "kind": None, "flags": []}
     if not plateau:
         return row
+
     row["mean_requested"] = sum(s[1] for s in plateau) / len(plateau)
     row["mean_active"] = sum(s[2] for s in plateau) / len(plateau)
     row["max_abs_requested"] = max(abs(s[1]) for s in samples)
+
+    # Flag: active_erpm ~= 0 means the VESC is unpowered.  The requested_erpm
+    # echo is what the firmware would ask the VESC for, but whether the VESC
+    # would actually apply it is unverified.
+    if abs(row["mean_active"]) < ZERO_ERPM:
+        row["flags"].append("active_erpm ~= 0 (battery unplugged: applied output unverified)")
+
+    # Flag: wrong-sign eRPM.  A negative request with positive measured (or
+    # vice versa) means the firmware is not passing the command correctly.
+    if expected != 0.0 and row["mean_requested"] != 0.0:
+        expected_sign = math.copysign(1.0, expected)
+        actual_sign = math.copysign(1.0, row["mean_requested"])
+        if expected_sign != actual_sign:
+            row["kind"] = "WRONG_SIGN"
+            row["clamp"] = True
+            row["flags"].append(f"requested sign ({actual_sign:+.0f}) does not match "
+                                f"expected ({expected_sign:+.0f})")
+            return row
+
+    # Require minimum plateau samples for a determination.
+    if len(plateau) < MIN_PLATEAU_SAMPLES:
+        row["kind"] = "INSUFFICIENT"
+        row["clamp"] = None
+        row["flags"].append(f"only {len(plateau)} plateau sample(s), need >= {MIN_PLATEAU_SAMPLES}")
+        return row
+
     low = abs(row["mean_requested"]) < (1.0 - CLAMP_TOLERANCE) * abs(expected)
     row["clamp"] = low
-    row["kind"] = ("REJECTED" if abs(row["mean_requested"]) < ZERO_ERPM else "CLAMPED") if low else "no"
+    if low:
+        if abs(row["mean_requested"]) < ZERO_ERPM:
+            row["kind"] = "REJECTED"
+            row["flags"].append("near-zero requested alone does not prove firmware rejection; "
+                                "could be direction-change transient or timing artifact")
+        else:
+            row["kind"] = "CLAMPED"
+    else:
+        row["kind"] = "PASS"
     return row
 
 
 def table(rows: list) -> str:
     fmt = lambda v, f: "-" if v is None else f.format(v)
     lines = [f"{'speed_mps':>9} | {'expected_erpm':>13} | {'mean_requested_erpm':>19} | "
-             f"{'mean_active_erpm':>16} | {'max|req|':>8} | {'n':>3} | clamp_detected"]
+             f"{'mean_active_erpm':>16} | {'max|req|':>8} | {'n':>3} | verdict"]
     for r in rows:
-        clamp = ("no data" if r["clamp"] is None else r["kind"]) + \
-                (" (direction change pending)" if r["dir_pending"] else "")
+        verdict = r.get("kind") or "no data"
+        if r["dir_pending"]:
+            verdict += " (direction change pending)"
         lines.append(f"{r['speed']:>+9.2f} | {r['expected']:>13.0f} | {fmt(r['mean_requested'], '{:.0f}'):>19} | "
                      f"{fmt(r['mean_active'], '{:.0f}'):>16} | {fmt(r['max_abs_requested'], '{:.0f}'):>8} | "
-                     f"{r['n_plateau']:>3} | {clamp}")
+                     f"{r['n_plateau']:>3} | {verdict}")
+        for flag in r.get("flags", []):
+            lines.append(f"{'':>9}   {'':>13}   {'note:':>19}   {flag}")
     return "\n".join(lines)
 
 
 def ceiling(rows: list) -> str:
-    if any(r["clamp"] is None for r in rows):
-        return "INCOMPLETE: some holds had no /laksa/vesc/state samples; C not determined"
-    passed = [abs(r["expected"]) for r in rows if not r["clamp"]]
+    incomplete = [r for r in rows if r["clamp"] is None]
+    wrong_sign = [r for r in rows if r.get("kind") == "WRONG_SIGN"]
+    if wrong_sign:
+        speeds = ", ".join(f"{r['speed']:+.2f}" for r in wrong_sign)
+        return f"WRONG_SIGN at {speeds} m/s: requested eRPM sign does not match command; C not determined"
+    if incomplete:
+        reasons = []
+        for r in incomplete:
+            kind = r.get("kind") or "no data"
+            reasons.append(f"{r['speed']:+.2f} m/s ({kind})")
+        return "INCOMPLETE: " + "; ".join(reasons) + "; C not determined"
+    passed = [abs(r["expected"]) for r in rows if r.get("kind") == "PASS"]
     clamped = [r for r in rows if r.get("kind") == "CLAMPED"]
     rejected = [abs(r["expected"]) for r in rows if r.get("kind") == "REJECTED"]
     if not clamped and not rejected:
@@ -91,8 +152,8 @@ def ceiling(rows: list) -> str:
         c = max(abs(r["mean_requested"]) for r in clamped)
         parts.append(f"CLAMPS at C ~= {c:.0f} eRPM")
     if rejected:
-        parts.append(f"REJECTS |{min(rejected):.0f}| eRPM (command ignored, watchdog zeroes output: "
-                     f"not a clamp)")
+        parts.append(f"REJECTS |{min(rejected):.0f}| eRPM (near-zero requested; "
+                     f"alone does not establish a single eRPM ceiling)")
     bound = ""
     if rejected and passed and not clamped:
         bound = f"; limit C is between {max(passed):.0f} and {min(rejected):.0f} eRPM"
@@ -124,6 +185,12 @@ def analyze(path: str) -> int:
                 (float(r["t_in_hold_s"]), float(r["requested_erpm"]), float(r["active_erpm"]),
                  r["direction_change_pending"] == "True", r["telemetry_fresh"] == "True"))
     rows = [summarize(speed, samples.get(speed, [])) for speed in SPEEDS]
+    print(f"# reanalysis of {os.path.basename(path)}")
+    print(f"# analyzer: firmware_ceiling_probe.py (repaired P2)")
+    print(f"# timestamp: {time.strftime('%Y-%m-%dT%H:%M:%S%z')}")
+    total = sum(len(v) for v in samples.values())
+    print(f"# total samples: {total}; speeds: {sorted(samples.keys())}")
+    print()
     print(table(rows))
     print()
     print("RESULT: " + ceiling(rows))
@@ -203,8 +270,17 @@ def main() -> int:
         m = state["msg"]
         if m is not None and abs(float(m.measured_erpm)) > MAX_MEASURED_ERPM:
             return f"measured {float(m.measured_erpm):.0f} eRPM: something is turning (battery connected?)"
-        if len(node.get_publishers_info_by_topic("/laksa/command")) > 1:
-            return "another /laksa/command publisher appeared"
+        # Check both command and brake publisher counts throughout the probe,
+        # not just at startup.
+        for topic in ("/laksa/command", "/laksa/brake"):
+            count = len(node.get_publishers_info_by_topic(topic))
+            # We are a publisher on both, so expect exactly 1.
+            if count > 1:
+                return f"another {topic} publisher appeared ({count} total)"
+        # Recheck battery voltage if fresh telemetry arrives during the probe.
+        if m is not None and m.telemetry_fresh and float(m.input_voltage_v) > POWERED_V:
+            return (f"VESC telemetry turned fresh at {float(m.input_voltage_v):.1f} V during probe: "
+                    f"battery may be connected")
         return None
 
     def hold(speed, seconds, record=None):
@@ -216,6 +292,11 @@ def main() -> int:
             problem = fault()
             if problem:
                 raise RuntimeError(problem)
+            # Abort if /laksa/vesc/state stops arriving.
+            now = time.monotonic()
+            if state["t"] > 0.0 and (now - state["t"]) > VESC_STATE_TIMEOUT_S:
+                raise RuntimeError(f"/laksa/vesc/state not received for {now - state['t']:.1f} s "
+                                   f"(limit {VESC_STATE_TIMEOUT_S:.0f} s)")
             if record is not None and state["t"] != last_seen and state["msg"] is not None:
                 last_seen = state["t"]
                 m = state["msg"]
@@ -240,16 +321,31 @@ def main() -> int:
             all_samples += [(speed, *s) for s in samples]
             rows.append(summarize(speed, samples))
             previous = speed
-    except (RuntimeError, KeyboardInterrupt) as error:
-        say(f"ABORT: {error}")
+    except KeyboardInterrupt:
+        say("ABORT: operator Ctrl-C")
+        exit_code = 1
+    except Exception as error:
+        # Catch RuntimeError (our own faults), ROS exceptions, and anything
+        # else so we always reach the brake-cleanup below.
+        say(f"ABORT: {type(error).__name__}: {error}")
         exit_code = 1
     finally:
-        for _ in range(int(RATE_HZ)):
-            send(0.0, brake=True)
-            spin(1.0 / RATE_HZ)
-        say("brake=True sent for 1 s; publishing stopped")
-        node.destroy_node()
-        rclpy.shutdown()
+        # Always brake and clean up, regardless of how we got here.
+        try:
+            for _ in range(int(RATE_HZ)):
+                send(0.0, brake=True)
+                spin(1.0 / RATE_HZ)
+            say("brake=True sent for 1 s; publishing stopped")
+        except Exception as cleanup_err:
+            say(f"WARNING: brake cleanup failed: {cleanup_err}")
+        try:
+            node.destroy_node()
+        except Exception:
+            pass
+        try:
+            rclpy.shutdown()
+        except Exception:
+            pass
 
     with open(csv_path, "w", newline="") as f:
         w = csv.writer(f)

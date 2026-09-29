@@ -3,7 +3,9 @@
 # tabulate each start.  WHEELS OFF THE GROUND, drive_supervisor stopped, a
 # person watching the car.
 #
-#   start_reliability.sh N [speed_mps=0.22] [gap_s=3]
+#   start_reliability.sh [speed_mps=0.22] [N=10] [gap_s=3]
+#
+# Argument order matches the overnight plan (speed first, then count).
 #
 # Each run is the bench's --steps ladder: brake 1 s, <speed> 3 s, brake 2 s.
 # A bench abort or refusal counts as a failed start and the loop continues.
@@ -11,11 +13,11 @@
 # /laksa/command or /laksa/brake.
 set -uo pipefail
 
-N="${1:-}"
-SPEED="${2:-0.22}"
+SPEED="${1:-0.22}"
+N="${2:-10}"
 GAP="${3:-3}"
-if [[ ! "${N}" =~ ^[1-9][0-9]*$ || ! "${SPEED}" =~ ^-?[0-9]*\.?[0-9]+$ || ! "${GAP}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-    echo "usage: $0 N [speed_mps=0.22] [gap_s=3]" >&2; exit 64
+if [[ ! "${SPEED}" =~ ^-?[0-9]*\.?[0-9]+$ || ! "${N}" =~ ^[1-9][0-9]*$ || ! "${GAP}" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    echo "usage: $0 [speed_mps=0.22] [N=10] [gap_s=3]" >&2; exit 64
 fi
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BENCH="${HERE}/../traction_bench.py"
@@ -35,7 +37,17 @@ mkdir -p "${OUT}"
 echo "start reliability: ${N} runs at ${SPEED} m/s, ${GAP} s apart -> ${OUT}"
 
 for i in $(seq 1 "${N}"); do
-    pubs="$(python3 "${HERE}/topic_publishers.py" /laksa/command /laksa/brake)"
+    pubs="$(python3 "${HERE}/topic_publishers.py" /laksa/command /laksa/brake)" ; pub_rc=$?
+    if [[ ${pub_rc} -ne 0 ]]; then
+        echo "STOPPING LOOP before run ${i}: topic_publishers.py failed (exit ${pub_rc})" >&2
+        echo "${i} discovery-error" > "${OUT}/stopped"
+        break
+    fi
+    if [[ -z "${pubs}" ]]; then
+        echo "STOPPING LOOP before run ${i}: topic_publishers.py returned empty output" >&2
+        echo "${i} discovery-empty" > "${OUT}/stopped"
+        break
+    fi
     if echo "${pubs}" | awk '$2 != 0 {bad=1} END {exit !bad}'; then
         echo "STOPPING LOOP before run ${i}: another command publisher is present:" >&2
         echo "${pubs}" | sed 's/^/  /' >&2

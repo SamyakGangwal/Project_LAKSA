@@ -53,12 +53,23 @@ if [[ -n "${DRY_RUN}" ]]; then
     exit 0
 fi
 
-publishers() {   # prints "<topic> <count> <nodes>" per topic
-    python3 "${HERE}/topic_publishers.py" /laksa/command /laksa/brake
+publishers() {   # prints "<topic> <count> <nodes>" per topic; exits script on failure
+    local out rc
+    out="$(python3 "${HERE}/topic_publishers.py" /laksa/command /laksa/brake)" ; rc=$?
+    if [[ ${rc} -ne 0 ]]; then
+        die "topic_publishers.py failed (exit ${rc})"
+    fi
+    if [[ -z "${out}" ]]; then
+        die "topic_publishers.py returned empty output"
+    fi
+    echo "${out}"
 }
 
-echo "before:"; before="$(publishers)"; echo "${before}" | sed 's/^/  /'
+echo "before:"; before="$(publishers)" || exit $?; echo "${before}" | sed 's/^/  /'
 while read -r topic count nodes; do
+    if [[ -z "${topic}" || -z "${count}" ]]; then
+        die "unexpected publisher line format: '${topic} ${count} ${nodes}'"
+    fi
     if [[ "${count}" -gt 1 || ( "${count}" -eq 1 && "${nodes}" != "drive_supervisor" ) ]]; then
         die "refusing: ${topic} has publisher(s) other than drive_supervisor: ${nodes}"
     fi
@@ -79,7 +90,7 @@ else
 fi
 rm -f "${PID_FILE}"
 
-echo "after stop:"; after="$(publishers)"; echo "${after}" | sed 's/^/  /'
+echo "after stop:"; after="$(publishers)" || exit $?; echo "${after}" | sed 's/^/  /'
 while read -r topic count nodes; do
     [[ "${count}" -eq 0 ]] || die "refusing to start: ${topic} still has publisher(s): ${nodes}"
 done <<< "${after}"
