@@ -71,6 +71,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Person rule](05_runtime_safety.md#person-rule)
 - [Driver status values](05_runtime_safety.md#driver-status-values)
 - [Supervisor gates](05_runtime_safety.md#supervisor-gates)
+- [Race mode gates](05_runtime_safety.md#race-mode-gates)
 - [Ways the car stops](05_runtime_safety.md#ways-the-car-stops)
 - [Decision log](05_runtime_safety.md#decision-log)
 
@@ -88,6 +89,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Terminal operator](07_console_and_operation.md#terminal-operator)
 - [Networking at the field](07_console_and_operation.md#networking-at-the-field)
 - [Field checklist](07_console_and_operation.md#field-checklist)
+- [Race mode](07_console_and_operation.md#race-mode)
 
 ### 8. [Setup and deployment](08_setup_and_deployment.md)
 - [Target machine](08_setup_and_deployment.md#target-machine)
@@ -125,6 +127,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Security](11_known_issues_and_next_steps.md#security)
 - [Pre-existing repository issues](11_known_issues_and_next_steps.md#pre-existing-repository-issues)
 - [Performance headroom](11_known_issues_and_next_steps.md#performance-headroom)
+- [Race mode](11_known_issues_and_next_steps.md#race-mode)
 
 ### 12. [Change log](12_change_log.md)
 - [New package: laksa_learned_driver](12_change_log.md#new-package-laksa_learned_driver)

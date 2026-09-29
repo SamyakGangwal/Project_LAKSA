@@ -46,6 +46,31 @@ Route status on the page: `PLANNING`, `PLANNED` (with length), `NAVIGATING`, `AR
 
 Anyone who has the link and has joined the hotspot can drive the car, so treat the link like a key.
 
+## Race mode
+
+For competition runs the car drives **without an operator holding anything**: it waits at the start line, starts when the camera sees a **green** signal and stops at a **red** stop signal (a red light or a stop sign).
+
+**Car mode panel.** **TRIAL** (the default) keeps today's behaviour: an operator holds HOLD TO RUN or EXPLORE. **RACE** switches to operator-free runs. Tap a mode, then tap again within 4 s to confirm; the car's software restarts (about 1–2 minutes) and the choice is kept across reboots (`~/.config/laksa/car_mode`). The network watcher performs the restart, so the web page needs no admin rights.
+
+**Race panel** (race mode):
+
+| Control | Behaviour |
+|---|---|
+| Mode | **Speed run** (default 2.5 m/s) or **Obstacle course** (default 2.0 m/s) |
+| Speed | 0.2–3.0 m/s; 3.0 is the model's trained maximum |
+| ARM | set the mode and speed and wait for the green signal |
+| DISARM | back to idle; stops the car if it is running |
+| START NOW | manual start without the green signal, for testing |
+| Status line | IDLE → ARMED → RUNNING (with time) → FINISHED or ABORTED, plus the share of the image the camera currently sees as green and red |
+
+**Signal detection** (`signals.py`): bright, saturated green or red blobs in the upper 80% of the image, at least 0.06% of the image, held for 4 consecutive frames (about 0.4 s). The red band stops short of orange, so orange buckets don't count as a stop signal. Stop signals are ignored for the first 3 s of a run.
+
+**What still stops the car in race mode:** STOP on the page, B on a paired gamepad, the hardware e-stop input `/laksa/estop_hw` (a Bool `true` latches the emergency stop; the physical switch still has to be wired to it), the clearance governor and obstacle avoidance, any stale sensor or VESC fault, and a blocked path.
+
+**Race-mode settings** (`dryrun_bringup.sh race`): supervisor cap 12,500 eRPM (about 3.0 m/s), `require_operator:=false`, odometry sanity limit 4 m/s, clearance look-ahead 8 m.
+
+**Bluetooth controller:** the gamepad driver runs in every mode. Pair once on the Jetson (`bluetoothctl`, then `scan on`, `pair <MAC>`, `trust <MAC>`, `connect <MAC>`). B = emergency stop, Y = rearm, either stick = take over manually.
+
 ## Terminal operator
 
 `laksa_operator` (`operator_cli.py`) works from any SSH terminal, including a phone app such as Termius:

@@ -117,6 +117,10 @@ Published on `/laksa/exploration_status` and shown in the console:
 - The command is within the speed cap `exploration_max_erpm`: **620 eRPM (about 0.15 m/s) in trial mode**, 1000 eRPM (about 0.24 m/s) in dry-run. The driver applies its own cap too (`speed_cap_mps`: 0.15 in trial, 0.24 in dry-run).
 - In dry-run mode (`actuation_enabled:=false`), every command is replaced by brake, but the would-be command is still published for inspection.
 
+## Race mode gates
+
+In race mode (`require_operator:=false`) the supervisor no longer requires a fresh `/joy`: autonomy starts when the race manager requests it after the green signal. Every other gate in the list above stays, and two inputs are added: the hardware e-stop topic `/laksa/estop_hw` and a paired gamepad's B button. Manual mode still brakes when no controller is present. The operator requirement is **on by default**; only the `race` launcher mode turns it off.
+
 ## Ways the car stops
 
 | Trigger | Result |

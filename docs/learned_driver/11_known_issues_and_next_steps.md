@@ -36,6 +36,13 @@ Remaining checks for route driving:
 - **Earlier planner forensics.** In this repo, SmacPlannerHybrid returned invalid paths in 3 of 5 test cases.
 - **Speed cap vs. what the motor can do.** MPPI's `vx_max` and the supervisor's navigation cap (620 eRPM) are about 0.15 m/s. But the bench shows the motor runs reliably only from about 0.20 m/s (850 eRPM), which matches MPPI's 0.217 m/s deadband. Route following needs the navigation cap raised to about 0.22 m/s, together with a reliable start, before it can move the car smoothly.
 
+## Race mode
+
+- **Not deployed yet.** Deploying operator-free driving to the car was held for the owner's explicit approval (the permission system blocked it as weakening a safety control).
+- **No physical e-stop yet.** Wire one to `/laksa/estop_hw`, or pair a gamepad, before unattended runs.
+- **Braking at 2–3 m/s is unmeasured.** The clearance governor assumes 1.0 m/s² and 0.25 s latency; measure the real stopping distance before relying on it.
+- **Signal colours are assumptions** (green = go, red = stop). Check them against the real start and stop signals, lighting included, using the live readings on the Race panel.
+
 ## Model limits
 
 | Limit | Next step |

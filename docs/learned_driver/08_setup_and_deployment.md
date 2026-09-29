@@ -30,6 +30,8 @@ Differences from the original car:
 |---|---|
 | `dryrun_bringup.sh start` | everything, supervisor actuation **disabled** (brake only); cap 1000 eRPM / 0.24 m/s |
 | `dryrun_bringup.sh trial` | everything, actuation **enabled**; cap **620 eRPM / 0.15 m/s** |
+| `dryrun_bringup.sh race` | actuation enabled, **no operator needed**; ARM in the console, the car starts on a green signal and stops on red; up to 3.0 m/s |
+| `dryrun_bringup.sh auto` | trial or race, whichever was chosen on the console (default trial); used by `laksa-car.service` |
 | `dryrun_bringup.sh console` | restart only the console, bound to the current network |
 | `dryrun_bringup.sh stop` | stop every process it started |
 | `dryrun_bringup.sh status` | show what's running |

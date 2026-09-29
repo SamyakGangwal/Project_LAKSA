@@ -19,6 +19,7 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `laksa_learned_driver/perception.py` | Camera obstacle logic: cloud filtering, detection footprints, person rule, RANSAC ground plane |
 | `laksa_learned_driver/driver_node.py` | The `learned_driver` ROS node that combines all of the above; decision log |
 | `laksa_learned_driver/zed_perception_node.py` | The `zed_perception` ROS node |
+| `laksa_learned_driver/race.py`, `race_node.py`, `signals.py` | Race mode: arm, green start, red stop, Speed run / Obstacle modes |
 | `laksa_learned_driver/operator_cli.py` | `laksa_operator` terminal deadman (run, stop, rearm, status) |
 | `laksa_learned_driver/console_node.py`, `console_page.html` | LAKSA Console web app, including PLAN ROUTE and HOLD TO GO through Nav2 |
 | `laksa_learned_driver/policy_probe.py` | Read-only probe: prints what the policy would command on live scans; publishes nothing |
