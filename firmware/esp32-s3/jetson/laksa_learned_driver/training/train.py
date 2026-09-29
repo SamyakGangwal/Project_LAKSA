@@ -72,10 +72,11 @@ def train_model(model: TinyLidarNet, data, epochs: int, rng: np.random.Generator
 
 
 def eval_jobs(track_seeds, caps, seed: int, student: str | None, randomized_trials: int,
-              kinds=("random",)) -> list[dict]:
+              kinds=("random",), limits: dict | None = None) -> list[dict]:
     jobs = []
     for kind in kinds:
-        for t_index, track_seed in enumerate(track_seeds):
+        seeds = track_seeds[:limits[kind]] if limits and kind in limits else track_seeds
+        for t_index, track_seed in enumerate(seeds):
             for cap in caps:
                 for trial in range(1 + randomized_trials):
                     job_seed = seed + 97 * t_index + int(cap * 100) + 7919 * trial
@@ -116,6 +117,8 @@ def main() -> None:
                         help="share of training tracks in the 2026 course style (widths, open areas, buckets)")
     parser.add_argument("--replica-fraction", type=float, default=0.25,
                         help="share of training episodes on the 2026 Obstacle Course replica")
+    parser.add_argument("--eval-replica-tracks", type=int, default=4,
+                        help="replica layouts per evaluation (its 76 m laps dominate evaluation time)")
     parser.add_argument("--rounds", type=int, default=5, help="DART round + DAgger rounds")
     parser.add_argument("--episodes", type=int, default=40, help="episodes per round")
     parser.add_argument("--steps", type=int, default=900, help="control steps per training episode")
@@ -141,7 +144,8 @@ def main() -> None:
     with make_pool(args.workers, args.seed) as pool:
         started = time.time()
         expert_rows = [stats for _, stats in run_parallel(
-            pool, eval_jobs(eval_seeds, eval_caps, args.seed, None, args.eval_randomized_trials, eval_kinds),
+            pool, eval_jobs(eval_seeds, eval_caps, args.seed, None, args.eval_randomized_trials, eval_kinds,
+                            {"obstacle_course": args.eval_replica_tracks}),
             "expert evaluation", log)]
         expert_eval = summarize(expert_rows, eval_caps)
         log(f"expert ({time.time() - started:.0f}s): {json.dumps(expert_eval)}")
@@ -185,7 +189,8 @@ def main() -> None:
             started = time.time()
             student = str(candidate)
             rows = [stats for _, stats in run_parallel(
-                pool, eval_jobs(eval_seeds, eval_caps, args.seed, student, args.eval_randomized_trials, eval_kinds),
+                pool, eval_jobs(eval_seeds, eval_caps, args.seed, student, args.eval_randomized_trials, eval_kinds,
+                                {"obstacle_course": args.eval_replica_tracks}),
                 f"round {round_index} evaluation", log)]
             evaluation = summarize(rows, eval_caps)
             log(f"round {round_index} student ({time.time() - started:.0f}s): {json.dumps(evaluation)}")
