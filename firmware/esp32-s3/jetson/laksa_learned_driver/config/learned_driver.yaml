@@ -18,7 +18,11 @@ learned_driver:
     lateral_margin_m: 0.10
     brake_decel_mps2: 1.0
     latency_sec: 0.25
-    # Reverse-away recovery when the forward path is blocked (rear corridor is
+    # Steer around obstacles: when the policy's arc has less than this much free
+    # space ahead of the bumper, take the closest steering arc that does.
+    avoid_enabled: true
+    avoid_clearance_m: 0.60
+    # Reverse-away recovery when every forward arc is blocked (rear corridor is
     # checked with the LiDAR before and during every reverse).
     reverse_enabled: true
     reverse_speed_mps: 0.12

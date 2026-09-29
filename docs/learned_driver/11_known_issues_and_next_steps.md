@@ -41,7 +41,6 @@ Things to check first:
 | Fails at 3.0 m/s with randomised conditions on the competition course (0/3) | more DAgger rounds at high caps, or a stronger expert at speed |
 | Trained only on obstacle-free corridors 0.9–2.2 m wide; rooms and outdoors are out of distribution | add open areas, obstacles and clutter to the procedural worlds, then retrain |
 | Never learned to stop or reverse; that's the rule layers' job | fine, by design |
-| The governor checks only the network's chosen arc | when blocked, try other steering arcs and take the free one closest to the network's choice |
 | Sim-only data | use the session bags plus the expert labels offline to fine-tune on real scans |
 
 ## Awaiting real-world confirmation

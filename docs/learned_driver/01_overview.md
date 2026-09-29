@@ -23,6 +23,7 @@ The goal was a model that is **fast at run time** and **needs little training**.
 | Learned driver, simulation | Done. Matches the expert driver on unseen tracks and the competition course from 0.24 to 2.0 m/s |
 | Learned driver, real car | **Driven autonomously**: indoors, stopped before a box; outdoors, drives of 38 s and 86 s |
 | Clearance governor (always able to stop) | Done, tested on the car |
+| Steering around obstacles | Deployed; checked on live scans, not yet driven |
 | Camera obstacles, person rules, slope handling | Deployed. Slope handling still needs a test on real sloped ground |
 | Steering smoothing | Deployed after the field test showed stutter |
 | Reverse-away recovery | Logic works, but **the car does not actually reverse** (open issue) |

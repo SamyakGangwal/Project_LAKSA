@@ -31,7 +31,7 @@ from std_msgs.msg import Bool, String
 from .policy import LearnedDriverPolicy
 from .recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_free_distance
 from .perception import lidar_ground_mask
-from .safety import GovernorConfig, govern, path_free_distance, scan_points_base
+from .safety import AvoidConfig, GovernorConfig, choose_steering, govern, path_free_distance, scan_points_base
 from .smoothing import SteeringSmoother
 from .scan_adapter import LidarMount, scan_to_vehicle_beams
 
@@ -60,7 +60,11 @@ class LearnedDriver(Node):
         self.declare_parameter("lateral_margin_m", 0.10)
         self.declare_parameter("brake_decel_mps2", 1.0)
         self.declare_parameter("latency_sec", 0.25)
-        # Reverse-away recovery when the forward path is blocked.
+        # Steer around obstacles: when the policy's arc has less than
+        # avoid_clearance_m free, take the closest steering arc that does.
+        self.declare_parameter("avoid_enabled", True)
+        self.declare_parameter("avoid_clearance_m", 0.60)
+        # Reverse-away recovery when every forward arc is blocked.
         self.declare_parameter("reverse_enabled", True)
         self.declare_parameter("reverse_speed_mps", 0.12)
         self.declare_parameter("reverse_time_sec", 2.5)
@@ -111,6 +115,12 @@ class LearnedDriver(Node):
         self._last_command = (0.0, 0.0)
         self._free_distance = float("nan")
         self._reverse_enabled = bool(self.get_parameter("reverse_enabled").value)
+        self._avoid = AvoidConfig(
+            steer_left_max_rad=self._policy.output.steering_left_max_rad,
+            steer_right_max_rad=self._policy.output.steering_right_max_rad,
+            clearance_m=float(self.get_parameter("avoid_clearance_m").value),
+        ) if bool(self.get_parameter("avoid_enabled").value) else None
+        self._avoid_target = None
         self._use_camera = bool(self.get_parameter("use_camera").value)
         self._camera_stale = float(self.get_parameter("camera_stale_sec").value)
         self._camera_xy = np.empty((0, 2))
@@ -135,7 +145,8 @@ class LearnedDriver(Node):
             self._log_writer = csv.writer(self._log_file)
             self._log_writer.writerow(["t", "status", "policy_steer", "steer_cmd", "speed_cmd", "free_m",
                                        "block_source", "lidar_free_m", "camera_free_m", "slope_deg",
-                                       "person_factor", "lidar_pts", "camera_pts", "ground_filtered"])
+                                       "person_factor", "lidar_pts", "camera_pts", "ground_filtered",
+                                       "target_steer"])
         self._recovery = ReverseRecovery(RecoveryConfig(
             reverse_speed_mps=min(float(self.get_parameter("reverse_speed_mps").value), self._cap),
             reverse_time_s=float(self.get_parameter("reverse_time_sec").value),
@@ -217,6 +228,7 @@ class LearnedDriver(Node):
         self._enabled = enabled
         self._recovery.reset()
         self._smoother.reset()
+        self._avoid_target = None
         if enabled:
             self._publish_status("WAITING_FOR_SCAN")
         else:
@@ -239,9 +251,6 @@ class LearnedDriver(Node):
         if not (math.isfinite(policy_steering) and math.isfinite(speed)):
             self._stop("CONTROL_ERROR")
             return
-        now = time.monotonic()
-        steering = self._smoother.update(policy_steering, now - self._last_step_time)
-        self._last_step_time = now
         camera_points, person_factor, person_stop = self._camera_layer()
         lidar_points = scan_points_base(ranges, angles, self._mount.x_m)
         plane = self._fresh_plane()
@@ -249,6 +258,15 @@ class LearnedDriver(Node):
         if np.any(ground):
             lidar_points = lidar_points[~ground]   # rising ground ahead, not a wall
         points = np.vstack([lidar_points, camera_points]) if camera_points.size else lidar_points
+        # Steer around an obstacle on the policy's arc instead of stopping for it.
+        target, avoiding, all_blocked = policy_steering, False, False
+        if self._avoid is not None:
+            avoid = choose_steering(points, policy_steering, self._governor, self._avoid, self._avoid_target)
+            target, avoiding, all_blocked = avoid.steering_rad, avoid.avoiding, avoid.all_blocked
+            self._avoid_target = target if avoiding else None
+        now = time.monotonic()
+        steering = self._smoother.update(target, now - self._last_step_time)
+        self._last_step_time = now
         if person_stop:
             # A person close ahead: stop and wait (no reversing near people).
             self._last_command = (steering, 0.0)
@@ -257,7 +275,11 @@ class LearnedDriver(Node):
             self.get_logger().warning("Person close ahead; holding", throttle_duration_sec=2.0)
             return
         speed *= person_factor
+        # The governor always checks the steering actually commanded (smoothed), so
+        # while the wheels swing toward a detour the car waits instead of driving
+        # into the obstacle.  Recovery starts only when no arc is free at all.
         governed = govern(points, steering, speed, self._governor)
+        forward_blocked = all_blocked if self._avoid is not None else governed.blocked
         self._free_distance = governed.free_distance_m
         lidar_free = path_free_distance(lidar_points, steering, self._governor)
         camera_free = path_free_distance(camera_points, steering, self._governor) if camera_points.size \
@@ -265,24 +287,27 @@ class LearnedDriver(Node):
         source = "none" if not governed.blocked else ("camera" if camera_free < lidar_free else "lidar")
         if self._reverse_enabled:
             speed, steering, status = self._recovery.step(
-                time.monotonic(), governed.blocked,
+                time.monotonic(), forward_blocked,
                 rear_free_distance(points, self._governor, self._recovery.cfg),
                 obstacle_side(points, self._governor),
                 (governed.speed_mps, steering),
             )
-        elif governed.blocked:
+        elif forward_blocked:
             speed, status = 0.0, "BLOCKED"
         else:
             speed, status = governed.speed_mps, "LEARNED_DRIVING"
+        if avoiding and status == "LEARNED_DRIVING":
+            status = "AVOIDING"
         self._inference_ms = 1000.0 * (time.perf_counter() - started)
         if self._log_writer is not None:
             slope = None if plane is None else round(math.degrees(math.atan(math.hypot(plane[0], plane[1]))), 2)
             self._log_writer.writerow([f"{time.time():.3f}", status, f"{policy_steering:.4f}", f"{steering:.4f}",
                                        f"{speed:.3f}", f"{governed.free_distance_m:.3f}", source,
                                        f"{lidar_free:.3f}", f"{camera_free:.3f}", slope, f"{person_factor:.2f}",
-                                       lidar_points.shape[0], camera_points.shape[0], int(np.sum(ground))])
+                                       lidar_points.shape[0], camera_points.shape[0], int(np.sum(ground)),
+                                       f"{target:.4f}"])
             self._log_file.flush()
-        if governed.blocked and status in ("RECOVERY_PAUSE", "BLOCKED"):
+        if forward_blocked and status in ("RECOVERY_PAUSE", "BLOCKED"):
             self.get_logger().warning(
                 f"Forward path blocked by {source}: {governed.free_distance_m:.2f} m ahead of the bumper "
                 f"(lidar {lidar_free:.2f} m, camera {camera_free:.2f} m, slope "

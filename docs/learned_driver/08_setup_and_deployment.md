@@ -93,7 +93,7 @@ After deploying, run each changed package's tests on the Jetson:
 cd ~/src/Project_LAKSA/firmware/esp32-s3/jetson/<package> && python3 -m pytest -q test
 ```
 
-Last run: learned driver 31, LiDAR 14, bringup 35, mapping 38, all passing.
+Last run: learned driver 38, LiDAR 14, bringup 35, mapping 38, all passing.
 
 ## Bench tools
 

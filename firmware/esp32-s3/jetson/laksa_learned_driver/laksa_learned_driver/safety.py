@@ -61,6 +61,13 @@ def path_free_distance(points_xy: np.ndarray, steering_rad: float, cfg: Governor
         swept = np.mod(swept, 2.0 * math.pi)
         along = swept * abs(radius)
     in_path = (lateral <= corridor) & (along > 0.0) & (along <= cfg.horizon_m + cfg.front_overhang_m)
+    # Points already beside the body (behind the bumper) but outside the footprint
+    # only matter when turning toward them: going straight or turning away never
+    # brings the body closer, while a turn toward them can clip them with the
+    # front corner.  Points inside the footprint itself always block.
+    beside = in_path & (along < cfg.front_overhang_m) & (lateral > cfg.half_width_m)
+    toward = (abs(curvature) >= 1e-4) & (np.sign(y) == math.copysign(1.0, curvature))
+    in_path &= ~beside | toward
     if not np.any(in_path):
         return cfg.horizon_m
     return float(max(0.0, np.min(along[in_path]) - cfg.front_overhang_m))
@@ -76,6 +83,56 @@ def govern(points_xy: np.ndarray, steering_rad: float, requested_speed_mps: floa
     a, t = cfg.decel_mps2, cfg.latency_s
     v_max = -a * t + math.sqrt((a * t) ** 2 + 2.0 * a * usable)
     return GovernorResult(min(max(requested_speed_mps, 0.0), v_max), free, False)
+
+
+@dataclass(frozen=True)
+class AvoidConfig:
+    steer_left_max_rad: float = 0.523
+    steer_right_max_rad: float = 0.288
+    candidates: int = 17                 # steering arcs tried across the full range
+    clearance_m: float = 0.60            # free distance ahead of the bumper that needs no detour
+
+
+@dataclass(frozen=True)
+class AvoidResult:
+    steering_rad: float
+    free_distance_m: float
+    all_blocked: bool                    # no candidate arc can move at all
+    avoiding: bool                       # deviated from the preferred steering
+
+
+def choose_steering(points_xy: np.ndarray, preferred_rad: float, gov: GovernorConfig,
+                    cfg: AvoidConfig, previous_rad: float | None = None) -> AvoidResult:
+    """Keep the preferred arc if it has ``clearance_m`` free; otherwise steer around.
+
+    An ongoing detour (``previous_rad``) is kept while it still has room, so the
+    car does not flip between left and right detours from scan to scan.  Else,
+    among arcs with at least ``clearance_m`` free, take the one closest to the
+    preferred steering.  If none has that much room, take the arc with the most
+    free distance (closest to the preferred on ties).  ``all_blocked`` means no
+    arc leaves room beyond the stop margin, so only stopping or reversing helps.
+    """
+    preferred_free = path_free_distance(points_xy, preferred_rad, gov)
+    if preferred_free >= cfg.clearance_m:
+        return AvoidResult(preferred_rad, preferred_free, False, False)
+    if previous_rad is not None:
+        previous_free = path_free_distance(points_xy, previous_rad, gov)
+        if previous_free >= cfg.clearance_m:
+            return AvoidResult(previous_rad, previous_free, False, True)
+    arcs = np.unique(np.append(
+        np.linspace(-cfg.steer_right_max_rad, cfg.steer_left_max_rad, cfg.candidates), preferred_rad))
+    free = np.array([path_free_distance(points_xy, float(a), gov) for a in arcs])
+    deviation = np.abs(arcs - preferred_rad)
+    roomy = free >= cfg.clearance_m
+    if np.any(roomy):
+        index = int(np.flatnonzero(roomy)[np.argmin(deviation[roomy])])
+    else:
+        best = free.max()
+        near_best = np.flatnonzero(free >= best - 1e-6)
+        index = int(near_best[np.argmin(deviation[near_best])])
+    steering = float(arcs[index])
+    return AvoidResult(steering, float(free[index]), bool(free[index] <= gov.stop_margin_m),
+                       abs(steering - preferred_rad) > 1e-6)
 
 
 def scan_points_base(ranges: np.ndarray, angles: np.ndarray, lidar_x_m: float) -> np.ndarray:

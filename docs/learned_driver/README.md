@@ -64,6 +64,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 ### 5. [Runtime driving and safety](05_runtime_safety.md)
 - [Per-scan pipeline](05_runtime_safety.md#per-scan-pipeline)
 - [Clearance governor](05_runtime_safety.md#clearance-governor)
+- [Steering around obstacles](05_runtime_safety.md#steering-around-obstacles)
 - [Reverse recovery](05_runtime_safety.md#reverse-recovery)
 - [Steering smoothing](05_runtime_safety.md#steering-smoothing)
 - [Person rule](05_runtime_safety.md#person-rule)

@@ -13,7 +13,7 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `laksa_learned_driver/scan_features.py` | LiDAR input contract shared by the simulator and the car (120 min-range bins) |
 | `laksa_learned_driver/scan_adapter.py` | Raw scan → vehicle-frame beams; mount yaw; own-body removal |
 | `laksa_learned_driver/policy.py` | NumPy inference for the exported network; model-format checks |
-| `laksa_learned_driver/safety.py` | Clearance governor (swept-arc free distance, stopping-distance speed cap) |
+| `laksa_learned_driver/safety.py` | Clearance governor (swept-arc free distance, stopping-distance speed cap) and the arc search that steers around obstacles |
 | `laksa_learned_driver/recovery.py` | Reverse-away recovery state machine |
 | `laksa_learned_driver/smoothing.py` | Steering low-pass filter and rate limit |
 | `laksa_learned_driver/perception.py` | Camera obstacle logic: cloud filtering, detection footprints, person rule, RANSAC ground plane |
@@ -29,7 +29,7 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `launch/learned_cruise.launch.py` | Launch the driver alone, next to the production manual-control stack |
 | `models/laksa_tinylidarnet_v2.npz`, `.report.json` | The shipped model and its training report |
 | `training/*.py` | Simulator wrapper, tracks, expert, DART/DAgger training, evaluation, smoke test |
-| `test/test_learned_driver.py` | 31 tests: features, adapter, governor, recovery, perception, smoothing, model contracts, topic authority |
+| `test/test_learned_driver.py` | 38 tests: features, adapter, governor, obstacle avoidance, recovery, perception, smoothing, model contracts, topic authority |
 | `README.md`, `package.xml`, `setup.py`, `setup.cfg`, `resource/` | Package metadata |
 
 ## Changes to existing packages

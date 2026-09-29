@@ -12,7 +12,6 @@ Implemented in `laksa_learned_driver/driver_node.py`, and run once per LiDAR sca
 flowchart TB
     A[scan_validated] --> B[scan_adapter<br/>mount yaw, remove own body]
     B --> C[Network<br/>steering + speed ≤ cap]
-    C --> D[SteeringSmoother<br/>low-pass + rate limit]
     B --> E[LiDAR points in base frame]
     E --> F{Ground plane fresh?}
     F -->|yes| G[drop LiDAR hits on rising ground]
@@ -21,7 +20,9 @@ flowchart TB
     I --> J{Person within 1 m ahead?}
     J -->|yes| K[PERSON_STOP: speed 0, no reversing]
     J -->|no| L[speed × person factor]
-    L --> M[Clearance governor]
+    L --> AV[Arc search<br/>steer around if under 0.6 m free]
+    C --> AV
+    AV --> SM[Steering smoother<br/>low-pass + rate limit] --> M[Clearance governor<br/>on the smoothed steering]
     M --> N[Reverse recovery state machine]
     N --> O[candidate Twist → drive_supervisor]
 ```
@@ -35,7 +36,21 @@ flowchart TB
 - It caps speed so the car can stop before it. The cap is the largest `v` with `v·latency + v²/(2·decel) ≤ free − margin`, using latency 0.25 s, deceleration 1.0 m/s² and margin 0.25 m.
 - If `free − margin ≤ 0`, the path is **blocked**.
 
-Only the network's *chosen* steering arc is checked. The governor doesn't search other arcs; when blocked, the reverse recovery takes over.
+Points that are already **beside** the body, behind the bumper but outside the footprint, count only when the car turns toward them. Going straight or turning away never brings the body closer, but a turn toward them can clip them with the front corner. Points inside the footprint always block. Before this rule, an object 8 cm off the car's side made every arc read "0.00 m free".
+
+## Steering around obstacles
+
+`safety.choose_steering`, run on every scan before the governor:
+
+- If the network's arc has at least **0.60 m** free ahead of the bumper (`avoid_clearance_m`), it is kept unchanged.
+- Otherwise the driver tries **17 arcs** across the full steering range and takes the one **closest to the network's choice** that has 0.60 m free. The status becomes `AVOIDING`.
+- If no arc has 0.60 m free, it takes the arc with the most room.
+- An ongoing detour is kept while it still has room, so the car doesn't flip between a left and a right detour.
+- The detour target goes through the steering smoother, and the governor checks the steering **actually commanded**. While the wheels swing toward the detour, the car waits instead of driving into the obstacle.
+- The reverse recovery starts only when **no** arc is free (`all_blocked`).
+- `avoid_enabled: false` turns this off.
+
+The `target_steer` column in `decisions.csv` records the detour target.
 
 ## Reverse recovery
 
@@ -44,7 +59,7 @@ Only the network's *chosen* steering arc is checked. The governor doesn't search
 ```mermaid
 stateDiagram-v2
     [*] --> FORWARD
-    FORWARD --> PAUSE_IN: forward path blocked
+    FORWARD --> PAUSE_IN: every forward arc blocked
     PAUSE_IN --> REVERSE: 0.5 s pause, rear clear ≥ 0.30 m
     PAUSE_IN --> GIVE_UP: rear blocked too
     REVERSE --> PAUSE_OUT: 2.5 s elapsed or rear blocked
@@ -83,6 +98,7 @@ Published on `/laksa/exploration_status` and shown in the console:
 | `IDLE` | not enabled by the supervisor |
 | `WAITING_FOR_SCAN` | just enabled |
 | `LEARNED_DRIVING` | the network is driving |
+| `AVOIDING` | steering around an obstacle on the network's arc |
 | `RECOVERY_PAUSE`, `RECOVERY_REVERSE` | the recovery is running |
 | `PERSON_STOP` | holding for a person |
 | `BLOCKED` | gave up; the supervisor aborts autonomy (`EXPLORATION_BLOCKED`) |
@@ -105,7 +121,7 @@ Published on `/laksa/exploration_status` and shown in the console:
 
 | Trigger | Result |
 |---|---|
-| Obstacle in the path | governor → stop, recovery, or hand back to manual |
+| Obstacle in the path | steer around it; if no arc is free: stop, recovery, or hand back to manual |
 | Person within 1 m | driver holds at zero |
 | Operator releases HOLD, closes the page, loses Wi-Fi, or presses Ctrl-C in `laksa_operator` | `/joy` stops → supervisor brakes within 0.5 s |
 | STOP (console) or `laksa_operator stop` | emergency stop **latched** until REARM |
@@ -129,5 +145,6 @@ Each session writes `decisions.csv` in its session folder (see [Setup and deploy
 | `person_factor` | speed factor from the person rule |
 | `lidar_pts`, `camera_pts` | number of obstacle points by source |
 | `ground_filtered` | LiDAR hits discarded as rising ground |
+| `target_steer` | steering target after the arc search |
 
 This is how "why did it stop?" gets answered after a run.

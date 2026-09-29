@@ -11,7 +11,7 @@ from laksa_learned_driver.perception import (Detection, PerceptionConfig, box_fo
                                              person_speed_rule)
 from laksa_learned_driver.smoothing import SteeringSmoother
 from laksa_learned_driver.recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_free_distance
-from laksa_learned_driver.safety import GovernorConfig, govern, path_free_distance
+from laksa_learned_driver.safety import AvoidConfig, GovernorConfig, choose_steering, govern, path_free_distance
 from laksa_learned_driver.scan_adapter import LidarMount, scan_to_vehicle_beams
 from laksa_learned_driver.scan_features import ScanContract, bin_scan
 
@@ -103,6 +103,56 @@ class GovernorTest(unittest.TestCase):
 
     def test_points_behind_are_ignored(self):
         self.assertEqual(path_free_distance(np.array([[-0.5, 0.0]]), 0.0, self.cfg), self.cfg.horizon_m)
+
+    def test_object_beside_the_body_blocks_only_turns_toward_it(self):
+        # A wall 8 cm off the left side, alongside the body (live case on the bench).
+        wall = np.array([[x, 0.232] for x in np.linspace(0.0, 0.40, 9)])
+        self.assertEqual(path_free_distance(wall, 0.0, self.cfg), self.cfg.horizon_m)
+        self.assertEqual(path_free_distance(wall, -0.2, self.cfg), self.cfg.horizon_m)   # turning away
+        self.assertEqual(path_free_distance(wall, 0.3, self.cfg), 0.0)                   # turning toward
+
+    def test_point_inside_the_footprint_always_blocks(self):
+        inside = np.array([[0.30, 0.10]])
+        for steering in (-0.2, 0.0, 0.3):
+            self.assertEqual(path_free_distance(inside, steering, self.cfg), 0.0)
+
+
+class AvoidTest(unittest.TestCase):
+    def setUp(self):
+        self.gov = GovernorConfig()
+        self.cfg = AvoidConfig()
+        # A box 0.40 m ahead of the bumper, centred slightly right of the car's axis.
+        self.box = np.array([[0.419 + 0.40, y] for y in np.linspace(-0.25, 0.10, 8)])
+
+    def test_clear_preferred_arc_is_kept(self):
+        result = choose_steering(np.array([[3.0, 1.5]]), 0.05, self.gov, self.cfg)
+        self.assertEqual(result.steering_rad, 0.05)
+        self.assertFalse(result.avoiding)
+
+    def test_steers_around_box_toward_the_open_side(self):
+        result = choose_steering(self.box, 0.0, self.gov, self.cfg)
+        self.assertTrue(result.avoiding)
+        self.assertFalse(result.all_blocked)
+        self.assertGreater(result.steering_rad, 0.0)          # open side is left
+        self.assertGreaterEqual(result.free_distance_m, self.cfg.clearance_m)
+        self.assertGreaterEqual(path_free_distance(self.box, result.steering_rad, self.gov), self.cfg.clearance_m)
+
+    def test_takes_the_smallest_detour(self):
+        result = choose_steering(self.box, 0.0, self.gov, self.cfg)
+        left_arcs = np.linspace(-self.cfg.steer_right_max_rad, self.cfg.steer_left_max_rad, self.cfg.candidates)
+        roomy = [a for a in left_arcs if path_free_distance(self.box, a, self.gov) >= self.cfg.clearance_m]
+        self.assertAlmostEqual(result.steering_rad, min(roomy, key=abs), places=9)
+
+    def test_ongoing_detour_is_kept_while_it_has_room(self):
+        first = choose_steering(self.box, 0.0, self.gov, self.cfg)
+        # The policy now leans slightly right; the left detour still has room and is kept.
+        again = choose_steering(self.box, -0.05, self.gov, self.cfg, previous_rad=first.steering_rad)
+        self.assertEqual(again.steering_rad, first.steering_rad)
+
+    def test_wall_across_every_arc_is_all_blocked(self):
+        wall = np.array([[0.419 + 0.15, y] for y in np.linspace(-1.5, 1.5, 121)])
+        wall = np.vstack([wall, [[x, s * 0.45] for x in np.linspace(0.0, 0.6, 20) for s in (-1, 1)]])
+        self.assertTrue(choose_steering(wall, 0.0, self.gov, self.cfg).all_blocked)
 
 
 class ReverseRecoveryTest(unittest.TestCase):
