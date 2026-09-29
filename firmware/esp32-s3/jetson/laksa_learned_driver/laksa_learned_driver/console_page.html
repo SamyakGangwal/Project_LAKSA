@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LAKSA Console</title>
+<style>
+  :root { --bg:#0f1115; --panel:#181b22; --line:#2a2f3a; --text:#e6e8ec; --muted:#8a92a3;
+          --green:#2fbf4f; --red:#d33a3a; --amber:#e0a030; --blue:#3a8dde; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, sans-serif; }
+  header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0; }
+  #conn { font-size:12px; color:var(--muted); }
+  main { display:grid; grid-template-columns: minmax(0,1fr) 340px; gap:12px; padding:12px 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  #mapwrap { position:relative; height: calc(100vh - 90px); min-height:360px; padding:0; overflow:hidden; }
+  canvas { width:100%; height:100%; display:block; cursor:crosshair; }
+  #maptools { position:absolute; top:10px; left:10px; display:flex; gap:6px; flex-wrap:wrap; }
+  #maptools button { background:#222733cc; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 10px; }
+  #maptools button.active { border-color:var(--blue); color:#fff; background:#1d3553; }
+  #mapnote { position:absolute; bottom:10px; left:10px; color:var(--muted); font-size:12px; background:#0f1115cc; padding:4px 8px; border-radius:6px; }
+  aside { display:flex; flex-direction:column; gap:12px; }
+  #hold { width:100%; height:110px; font-size:22px; font-weight:600; border:0; border-radius:12px;
+          background:#1f5f2f; color:#fff; touch-action:none; user-select:none; }
+  #hold.on { background:var(--green); }
+  #explore { width:100%; height:64px; margin-top:8px; font-size:18px; font-weight:600; border:0; border-radius:12px;
+             background:#1d3553; color:#fff; }
+  #explore.on { background:var(--blue); }
+  .row { display:flex; gap:8px; margin-top:8px; }
+  .row button { flex:1; height:52px; border:0; border-radius:10px; font-size:16px; font-weight:600; color:#fff; }
+  #stop { background:var(--red); } #rearm { background:#4a5160; }
+  #plan { width:100%; height:48px; font-size:15px; font-weight:600; border:0; border-radius:10px;
+          background:#4a5160; color:#fff; }
+  #go { width:100%; height:80px; margin-top:8px; font-size:19px; font-weight:600; border:0; border-radius:12px;
+        background:#1d3553; color:#fff; touch-action:none; user-select:none; }
+  #go.on { background:var(--blue); }
+  #routeinfo { font-size:12px; color:var(--muted); margin-top:6px; }
+  dl { display:grid; grid-template-columns: auto 1fr; gap:4px 10px; margin:0; }
+  dt { color:var(--muted); } dd { margin:0; font-variant-numeric: tabular-nums; }
+  .ok { color:var(--green); } .warn { color:var(--amber); } .bad { color:var(--red); }
+  #camera { width:100%; border-radius:8px; background:#000; min-height:120px; }
+  #dets { font-size:12px; color:var(--muted); margin-top:6px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; }
+</style>
+</head>
+<body>
+<header><h1>LAKSA Console</h1><span id="conn">connecting…</span></header>
+<main>
+  <section class="panel" id="mapwrap">
+    <canvas id="map"></canvas>
+    <div id="maptools">
+      <button id="modeView" class="active">View</button>
+      <button id="modeStart">Set start</button>
+      <button id="modeGoal">Set end</button>
+      <button id="follow">Follow car: on</button>
+      <button id="clearTrail">Clear track</button>
+    </div>
+    <div id="mapnote">waiting for data</div>
+  </section>
+  <aside>
+    <div class="panel">
+      <h2>Drive (learned driver)</h2>
+      <button id="hold">HOLD TO RUN</button>
+      <button id="explore">EXPLORE (2 min, slow)</button>
+      <div class="row"><button id="stop">STOP</button><button id="rearm">REARM</button></div>
+    </div>
+    <div class="panel">
+      <h2>Route to END (Nav2)</h2>
+      <button id="plan">PLAN ROUTE</button>
+      <button id="go">HOLD TO GO</button>
+      <div id="routeinfo">Set END on the map, then PLAN ROUTE.</div>
+    </div>
+    <div class="panel">
+      <h2>Status</h2>
+      <dl>
+        <dt>Mode</dt><dd id="mission">–</dd>
+        <dt>Autonomy</dt><dd id="health">–</dd>
+        <dt>E-stop</dt><dd id="estop">–</dd>
+        <dt>Driver</dt><dd id="driver">–</dd>
+        <dt>Speed</dt><dd id="speed">–</dd>
+        <dt>Battery</dt><dd id="battery">–</dd>
+        <dt>Person</dt><dd id="person">–</dd>
+        <dt>Start</dt><dd id="startpt">not set</dd>
+        <dt>End</dt><dd id="goalpt">not set</dd>
+      </dl>
+    </div>
+    <div class="panel">
+      <h2>Camera (ZED)</h2>
+      <img id="camera" alt="camera">
+      <div id="dets">no detections</div>
+    </div>
+  </aside>
+</main>
+<script>
+const token = new URLSearchParams(location.search).get('token') || '';
+const canvas = document.getElementById('map'), ctx = canvas.getContext('2d');
+let ws, state = null, mapImg = null, mapInfo = null, mode = 'view', follow = true;
+let view = { cx: 0, cy: 0, scale: 60 };   // pixels per metre
+const $ = id => document.getElementById(id);
+
+function connect() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?token=' + token);
+  ws.onopen = () => { $('conn').textContent = 'connected'; $('conn').className = 'ok'; };
+  ws.onclose = () => { $('conn').textContent = 'DISCONNECTED — car brakes if it was running';
+                       $('conn').className = 'bad'; endHold(); setTimeout(connect, 1000); };
+  ws.onmessage = e => {
+    const s = JSON.parse(e.data);
+    if (s.map) { const img = new Image(); img.onload = () => { mapImg = img; }; img.src = 'data:image/png;base64,' + s.map.png; mapInfo = s.map; }
+    state = s; render(); updateStatus();
+  };
+}
+connect();
+const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
+
+// ---------- controls
+let holdTimer = null;
+function startHold(e) { e.preventDefault(); $('hold').classList.add('on'); send({cmd:'hold'});
+  clearInterval(holdTimer); holdTimer = setInterval(() => send({cmd:'hold'}), 50); }
+function endHold(e) { if (e) e.preventDefault(); $('hold').classList.remove('on'); stopExplore(); endGo();
+  if (holdTimer) { clearInterval(holdTimer); holdTimer = null; send({cmd:'release'}); } }
+let goTimer = null;
+function startGo(e) { e.preventDefault(); $('go').classList.add('on'); send({cmd:'go'});
+  clearInterval(goTimer); goTimer = setInterval(() => send({cmd:'go'}), 50); }
+function endGo(e) { if (e) e.preventDefault(); $('go').classList.remove('on');
+  if (goTimer) { clearInterval(goTimer); goTimer = null; send({cmd:'release'}); } }
+// EXPLORE: the page itself is the deadman.  It sends the same heartbeat as
+// HOLD TO RUN while this page is open and visible, for at most 2 minutes.
+const EXPLORE_S = 120; let exploreTimer = null, exploreEnd = 0;
+function stopExplore() { if (!exploreTimer) return; clearInterval(exploreTimer); exploreTimer = null;
+  send({cmd:'release'}); $('explore').classList.remove('on'); $('explore').textContent = 'EXPLORE (2 min, slow)'; }
+$('explore').onclick = () => {
+  if (exploreTimer) { stopExplore(); return; }
+  exploreEnd = Date.now() + EXPLORE_S * 1000; $('explore').classList.add('on'); send({cmd:'hold'});
+  exploreTimer = setInterval(() => {
+    const left = Math.ceil((exploreEnd - Date.now()) / 1000);
+    if (left <= 0 || !ws || ws.readyState !== 1) { stopExplore(); return; }
+    send({cmd:'hold'}); $('explore').textContent = 'EXPLORING — tap to stop (' + left + ' s)';
+  }, 50);
+};
+$('hold').addEventListener('pointerdown', startHold);
+$('go').addEventListener('pointerdown', startGo);
+['pointerup','pointercancel','pointerleave'].forEach(t => $('go').addEventListener(t, endGo));
+$('plan').onclick = () => send({cmd:'plan'});
+['pointerup','pointercancel','pointerleave'].forEach(t => $('hold').addEventListener(t, endHold));
+document.addEventListener('visibilitychange', () => { if (document.hidden) endHold(); });
+window.addEventListener('blur', () => endHold());
+$('stop').onclick = () => { endHold(); send({cmd:'stop'}); };
+$('rearm').onclick = () => send({cmd:'rearm'});
+function setMode(m) { mode = m; ['View','Start','Goal'].forEach(k => $('mode'+k).classList.toggle('active', m === k.toLowerCase())); }
+$('modeView').onclick = () => setMode('view'); $('modeStart').onclick = () => setMode('start'); $('modeGoal').onclick = () => setMode('goal');
+$('follow').onclick = () => { follow = !follow; $('follow').textContent = 'Follow car: ' + (follow ? 'on' : 'off'); };
+$('clearTrail').onclick = () => send({cmd:'clear_trail'});
+
+// ---------- map view
+function resize() { const r = canvas.getBoundingClientRect(); canvas.width = r.width * devicePixelRatio; canvas.height = r.height * devicePixelRatio; render(); }
+window.addEventListener('resize', resize); setTimeout(resize, 0);
+const toScreen = (x, y) => [canvas.width / 2 + (x - view.cx) * view.scale, canvas.height / 2 - (y - view.cy) * view.scale];
+const toWorld = (px, py) => [view.cx + (px - canvas.width / 2) / view.scale, view.cy - (py - canvas.height / 2) / view.scale];
+canvas.addEventListener('wheel', e => { e.preventDefault(); view.scale *= e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  view.scale = Math.max(5, Math.min(400, view.scale)); render(); }, { passive: false });
+let drag = null;
+canvas.addEventListener('pointerdown', e => {
+  const px = e.offsetX * devicePixelRatio, py = e.offsetY * devicePixelRatio;
+  if (mode === 'start' || mode === 'goal') { const [x, y] = toWorld(px, py); send({cmd: mode, x, y}); setMode('view'); return; }
+  drag = { px, py, cx: view.cx, cy: view.cy }; follow = false; $('follow').textContent = 'Follow car: off';
+});
+canvas.addEventListener('pointermove', e => { if (!drag) return;
+  view.cx = drag.cx - (e.offsetX * devicePixelRatio - drag.px) / view.scale;
+  view.cy = drag.cy + (e.offsetY * devicePixelRatio - drag.py) / view.scale; render(); });
+['pointerup','pointerleave'].forEach(t => canvas.addEventListener(t, () => drag = null));
+
+function vehicleToWorld(pose, x, y) { const [px, py, th] = pose, c = Math.cos(th), s = Math.sin(th); return [px + c * x - s * y, py + s * x + c * y]; }
+
+function render() {
+  ctx.fillStyle = '#0b0d11'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!state) return;
+  const pose = state.pose;
+  if (follow && pose) { view.cx = pose[0]; view.cy = pose[1]; }
+  // grid (1 m)
+  ctx.strokeStyle = '#1a1e27'; ctx.lineWidth = 1;
+  const [wx0, wy1] = toWorld(0, 0), [wx1, wy0] = toWorld(canvas.width, canvas.height);
+  for (let x = Math.floor(wx0); x <= wx1; x++) { const [sx] = toScreen(x, 0); ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, canvas.height); ctx.stroke(); }
+  for (let y = Math.floor(wy0); y <= wy1; y++) { const [, sy] = toScreen(0, y); ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(canvas.width, sy); ctx.stroke(); }
+  // occupancy map
+  if (mapImg && mapInfo) {
+    const [sx, sy] = toScreen(mapInfo.origin_x, mapInfo.origin_y + mapInfo.height * mapInfo.resolution);
+    ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 0.9;
+    ctx.drawImage(mapImg, sx, sy, mapInfo.width * mapInfo.resolution * view.scale, mapInfo.height * mapInfo.resolution * view.scale);
+    ctx.globalAlpha = 1;
+  }
+  // track
+  if (state.trail && state.trail.length > 1) {
+    ctx.strokeStyle = '#3a8dde'; ctx.lineWidth = 2 * devicePixelRatio; ctx.beginPath();
+    state.trail.forEach(([x, y], i) => { const [sx, sy] = toScreen(x, y); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
+    ctx.stroke();
+  }
+  if (pose) {
+    // LiDAR
+    ctx.fillStyle = '#e8453c';
+    (state.lidar || []).forEach(([x, y]) => { const [wx, wy] = vehicleToWorld(pose, x, y); const [sx, sy] = toScreen(wx, wy); ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3); });
+    // detections
+    ctx.font = (12 * devicePixelRatio) + 'px system-ui'; ctx.lineWidth = 2 * devicePixelRatio;
+    (state.detections || []).forEach(d => {
+      const [wx, wy] = vehicleToWorld(pose, d.x, d.y); const [sx, sy] = toScreen(wx, wy);
+      const person = d.label.toLowerCase() === 'person';
+      ctx.strokeStyle = person ? '#e0a030' : '#b07ae0'; ctx.fillStyle = ctx.strokeStyle;
+      ctx.beginPath(); ctx.arc(sx, sy, 10 * devicePixelRatio, 0, 2 * Math.PI); ctx.stroke();
+      ctx.fillText(d.label + ' ' + Math.round(d.confidence) + '%', sx + 12 * devicePixelRatio, sy - 6 * devicePixelRatio);
+    });
+    // car footprint (rear axle origin: front 0.419, rear 0.149, half width 0.148)
+    const corners = [[0.419, 0.148], [0.419, -0.148], [-0.149, -0.148], [-0.149, 0.148]].map(([x, y]) => toScreen(...vehicleToWorld(pose, x, y)));
+    ctx.fillStyle = '#2fbf4f55'; ctx.strokeStyle = '#2fbf4f'; ctx.beginPath();
+    corners.forEach(([sx, sy], i) => i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy)); ctx.closePath(); ctx.fill(); ctx.stroke();
+    const [nx, ny] = toScreen(...vehicleToWorld(pose, 0.6, 0)), [cx, cy] = toScreen(...vehicleToWorld(pose, 0.2, 0));
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(nx, ny); ctx.stroke();
+  }
+  const marker = (p, color, label) => { if (!p) return; const [sx, sy] = toScreen(p[0], p[1]);
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(sx, sy, 7 * devicePixelRatio, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillText(label, sx + 10 * devicePixelRatio, sy + 4 * devicePixelRatio); };
+  const route = (state.route || {}).path;
+  if (route && route.length > 1) {
+    ctx.strokeStyle = '#3a8dde'; ctx.lineWidth = 3 * devicePixelRatio; ctx.beginPath();
+    route.forEach(([x, y], i) => { const [sx, sy] = toScreen(x, y); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
+    ctx.stroke();
+  }
+  marker(state.start, '#2fbf4f', 'START'); marker(state.goal, '#d33a3a', 'END');
+  $('mapnote').textContent = (mapInfo ? `map ${mapInfo.width}×${mapInfo.height} @ ${mapInfo.resolution} m` : 'no map yet (mapping not running)')
+    + ` · pose frame: ${state.status.pose_frame || '–'} · scroll to zoom, drag to pan`;
+}
+
+function cls(el, c) { el.className = c; }
+function updateStatus() {
+  const s = state.status;
+  $('mission').textContent = s.mission; cls($('mission'), ['LIDAR_CRUISE', 'NAVIGATING'].includes(s.mission) ? 'ok' : (s.mission === 'EMERGENCY_STOP' ? 'bad' : ''));
+  const r = state.route || {};
+  const routeText = {IDLE: 'Set END on the map, then PLAN ROUTE.', PLANNING: 'planning…',
+    PLANNED: `route ${r.length_m} m — hold GO to drive it`, NAVIGATING: 'driving the route — release GO to stop',
+    ARRIVED: 'arrived at END', STOPPED: 'stopped' + (r.detail ? ': ' + r.detail : ''),
+    FAILED: 'no route' + (r.detail ? ': ' + r.detail : '')};
+  $('routeinfo').textContent = routeText[r.state] || r.state || '';
+  cls($('routeinfo'), r.state === 'FAILED' ? 'bad' : (r.state === 'ARRIVED' || r.state === 'PLANNED' ? 'ok' : ''));
+  $('health').textContent = s.health; cls($('health'), s.health === 'READY' ? 'ok' : 'warn');
+  $('estop').textContent = s.estop === null ? '–' : (s.estop ? 'LATCHED ' + (s.estop_reason || '') : 'clear'); cls($('estop'), s.estop ? 'bad' : 'ok');
+  $('driver').textContent = s.driver + (state.holding ? ' · holding' : '');
+  $('speed').textContent = s.speed_mps === null ? '–' : s.speed_mps.toFixed(2) + ' m/s';
+  $('battery').textContent = s.battery_v === null ? '–' : s.battery_v.toFixed(1) + ' V' + (s.vesc_fault ? ' · VESC fault ' + s.vesc_fault : '');
+  const p = s.person || {};
+  $('person').textContent = p.nearest_m == null ? 'none ahead' : (p.stop ? 'STOP ' : (p.factor < 1 ? 'slow ' : '')) + p.nearest_m.toFixed(2) + ' m';
+  $('startpt').textContent = state.start ? state.start.map(v => v.toFixed(2)).join(', ') : 'not set';
+  $('goalpt').textContent = state.goal ? state.goal.map(v => v.toFixed(2)).join(', ') : 'not set';
+  const d = state.detections || [];
+  $('dets').textContent = d.length ? d.map(x => `${x.label} ${Math.round(x.confidence)}% @ ${Math.hypot(x.x, x.y).toFixed(1)} m`).join(' · ') : 'no detections';
+}
+setInterval(() => { $('camera').src = 'camera.jpg?token=' + encodeURIComponent(token) + '&t=' + Date.now(); }, 700);
+</script>
+</body>
+</html>
