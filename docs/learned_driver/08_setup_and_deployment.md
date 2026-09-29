@@ -36,7 +36,7 @@ Differences from the original car:
 
 In either mode the car stays braked until an operator starts driving.
 
-The launcher also starts Nav2: `controller_server`, `planner_server`, `behavior_server`, `bt_navigator` and the lifecycle manager. They use `laksa_bringup/config/nav2_ackermann.yaml` plus `laksa_learned_driver/config/nav2_field_overrides.yaml`. The override makes planning forward-only (Dubins) until reverse is reliable on the floor. Controller and BackUp output go to `/laksa/nav_cmd_vel`, the supervisor's navigation input. `LAKSA_NAV=0` skips Nav2. Stopping the whole stack takes 60–90 s.
+The launcher also starts Nav2: `controller_server`, `planner_server`, `behavior_server`, `bt_navigator` and the lifecycle manager. They use `laksa_bringup/config/nav2_ackermann.yaml` plus `laksa_learned_driver/config/nav2_field_overrides.yaml`. The override switches route following to **Regulated Pure Pursuit** with reversing, on **Reeds-Shepp** plans (three-point turns). In an isolated simulation of an 8 x 6 m room it reached 4/4 goals with no collisions, where the production MPPI follower dithered (0/4) and forward-only planning could not turn the car around. Controller and BackUp output go to `/laksa/nav_cmd_vel`, the supervisor's navigation input. `LAKSA_NAV=0` skips Nav2. Stopping the whole stack takes 60–90 s.
 
 ## Boot services
 

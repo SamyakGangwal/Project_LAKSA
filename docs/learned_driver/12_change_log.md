@@ -26,7 +26,7 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `config/zed_perception.yaml` | ZED profile: 15 fps, NEURAL_LIGHT, object detection |
 | `config/ekf_field.yaml` | Field EKF: ZED base pose + VESC speed, with VIO-jump rejection |
 | `config/rtabmap_field_overrides.yaml` | Lighter RTAB-Map for the Orin Nano |
-| `config/nav2_field_overrides.yaml` | Nav2 on top of the production config: forward-only (Dubins) planning |
+| `config/nav2_field_overrides.yaml` | Nav2 on top of the production config: Regulated Pure Pursuit with reversing on Reeds-Shepp plans |
 | `launch/learned_cruise.launch.py` | Launch the driver alone, next to the production manual-control stack |
 | `models/laksa_tinylidarnet_v2.npz`, `.report.json` | The shipped model and its training report |
 | `models/laksa_tinylidarnet_v3.npz`, `v4.npz` + reports | Obstacle- and course-trained candidates (not deployed) |
