@@ -128,7 +128,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Changes to existing packages](12_change_log.md#changes-to-existing-packages)
 - [Setup, services and patches](12_change_log.md#setup-services-and-patches)
 - [Documentation](12_change_log.md#documentation)
-- [Not committed](12_change_log.md#not-committed)
+- [Scratch artifacts](12_change_log.md#scratch-artifacts)
 
 ## Where the code is
 

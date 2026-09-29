@@ -110,5 +110,5 @@ python evaluate.py
 
 Notes:
 - The first import takes about 80 s while numba compiles the simulator physics; later runs reuse the cache.
-- Generated maps go to `scratch/learned_driver_maps/`. It is local and not committed.
+- Generated maps go to `scratch/learned_driver_maps/`. The maps from the shipped training run are committed there for reference.
 - Before shipping a new model, run `python -m pytest test` in the package. The tests load the model and check its contracts.

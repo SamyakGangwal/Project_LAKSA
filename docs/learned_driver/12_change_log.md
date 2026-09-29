@@ -62,6 +62,16 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 
 `docs/learned_driver/`: this documentation set.
 
-## Not committed
+## Scratch artifacts
 
-The `scratch/` folder stays local. It holds the F1TENTH Gym clones, generated maps, training and evaluation logs, the field-test logs, the archived PPO attempt (`scratch/archive_ppo/`) and the v1 model (`scratch/archive_v1_model/`).
+`scratch/` holds working artifacts, kept for reference:
+
+| Path | Content |
+|---|---|
+| `scratch/archive_ppo/` | the original PPO attempt and its TensorBoard runs |
+| `scratch/archive_v1_model/`, `scratch/candidate_v2/` | the v1 model and the v2 training output |
+| `scratch/learned_driver_maps/`, `scratch/learned_driver_runs/` | generated tracks and per-worker run data |
+| `scratch/speed_course/`, `scratch/*_log.txt` | evaluation inputs and training and evaluation logs |
+| `scratch/field_20260928/` | logs from the outdoor field test |
+
+The two local F1TENTH Gym clones (`scratch/f1tenth_gym*`) are **not** committed and are listed in `.gitignore`. Clone `v1.0.0` from upstream instead ([Training pipeline](04_training_pipeline.md#how-to-retrain)).
