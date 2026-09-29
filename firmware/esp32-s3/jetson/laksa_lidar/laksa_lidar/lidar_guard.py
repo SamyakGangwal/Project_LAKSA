@@ -11,7 +11,7 @@ from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPo
 from rclpy.time import Time
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
-from tf2_ros import Buffer, TransformListener
+from tf2_ros import Buffer
 
 from .scan_quality import BAD, DEGRADED, GOOD, RateWindow, Thresholds, analyze_scan, health_state
 
@@ -23,6 +23,26 @@ def _sensor_qos(depth: int) -> QoSProfile:
         history=HistoryPolicy.KEEP_LAST,
         depth=depth,
     )
+
+
+def _static_tf_feed(node, buffer) -> None:
+    """Feed only /tf_static into ``buffer``.
+
+    This node only needs fixed sensor transforms; a full TransformListener
+    would also deserialize every high-rate /tf message in Python.
+    """
+    from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+    from tf2_msgs.msg import TFMessage
+
+    qos = QoSProfile(depth=100)
+    qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+    qos.reliability = ReliabilityPolicy.RELIABLE
+
+    def _on_static(message) -> None:
+        for transform in message.transforms:
+            buffer.set_transform_static(transform, "laksa_static_feed")
+
+    node._laksa_static_tf_sub = node.create_subscription(TFMessage, "/tf_static", _on_static, qos)
 
 
 class LidarGuard(Node):
@@ -69,7 +89,7 @@ class LidarGuard(Node):
         self._rate = RateWindow(int(self.get_parameter("rate_window_scans").value))
         self._tf_timeout = Duration(seconds=float(self.get_parameter("tf_timeout_sec").value))
         self._tf_buffer = Buffer()
-        self._tf_listener = TransformListener(self._tf_buffer, self)
+        _static_tf_feed(self, self._tf_buffer)
         self._last_arrival_monotonic = None
         self._latest_metrics = None
         self._latest_tf_valid = False

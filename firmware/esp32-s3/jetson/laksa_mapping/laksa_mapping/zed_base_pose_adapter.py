@@ -12,7 +12,7 @@ from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
-from tf2_ros import Buffer, TransformException, TransformListener
+from tf2_ros import Buffer, TransformException
 
 
 def _multiply(left: Quaternion, right: Quaternion) -> Quaternion:
@@ -44,6 +44,26 @@ def _rotate(rotation: Quaternion, vector: Vector3) -> Vector3:
     return Vector3(x=rotated.x, y=rotated.y, z=rotated.z)
 
 
+def _static_tf_feed(node, buffer) -> None:
+    """Feed only /tf_static into ``buffer``.
+
+    This node only needs fixed sensor transforms; a full TransformListener
+    would also deserialize every high-rate /tf message in Python.
+    """
+    from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+    from tf2_msgs.msg import TFMessage
+
+    qos = QoSProfile(depth=100)
+    qos.durability = DurabilityPolicy.TRANSIENT_LOCAL
+    qos.reliability = ReliabilityPolicy.RELIABLE
+
+    def _on_static(message) -> None:
+        for transform in message.transforms:
+            buffer.set_transform_static(transform, "laksa_static_feed")
+
+    node._laksa_static_tf_sub = node.create_subscription(TFMessage, "/tf_static", _on_static, qos)
+
+
 class ZedBasePoseAdapter(Node):
     """Apply camera<-base static TF to each odom<-camera ZED pose."""
 
@@ -54,7 +74,8 @@ class ZedBasePoseAdapter(Node):
         self.declare_parameter("base_frame", "base_footprint")
         self._base_frame = str(self.get_parameter("base_frame").value)
         self._buffer = Buffer()
-        self._listener = TransformListener(self._buffer, self)
+        self._camera_from_base = {}
+        _static_tf_feed(self, self._buffer)
         self._publisher = self.create_publisher(
             PoseWithCovarianceStamped,
             str(self.get_parameter("output_topic").value),
@@ -73,13 +94,18 @@ class ZedBasePoseAdapter(Node):
             self.get_logger().error("ZED odometry has an empty frame id", throttle_duration_sec=5.0)
             return
         try:
-            # lookup_transform(target, source) returns camera<-base here.
-            camera_from_base = self._buffer.lookup_transform(
-                camera_frame,
-                self._base_frame,
-                Time(),
-                timeout=Duration(seconds=0.05),
-            ).transform
+            # camera<-base is static: look it up once per camera frame
+            # instead of querying the buffer on every odometry message.
+            camera_from_base = self._camera_from_base.get(camera_frame)
+            if camera_from_base is None:
+                # lookup_transform(target, source) returns camera<-base here.
+                camera_from_base = self._buffer.lookup_transform(
+                    camera_frame,
+                    self._base_frame,
+                    Time(),
+                    timeout=Duration(seconds=0.05),
+                ).transform
+                self._camera_from_base[camera_frame] = camera_from_base
             camera_pose = message.pose.pose
             offset = _rotate(camera_pose.orientation, camera_from_base.translation)
             base_orientation = _multiply(

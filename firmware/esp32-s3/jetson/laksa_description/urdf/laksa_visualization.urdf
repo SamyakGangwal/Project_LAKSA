@@ -9,12 +9,14 @@
   <material name="sensor_black"><color rgba="0.04 0.05 0.07 1.0"/></material>
 
   <!--
-    ZED publishes odom -> zed_camera_link in the validated mapping stack.
-    This description therefore roots at zed_camera_link and uses the exact
-    inverse of the measured base_footprint -> zed_camera_link mount. This
-    preserves one parent per TF child without changing the proven ZED/RTAB
-    odometry convention.
+    The fused mapping/localization stack publishes odom -> base_footprint
+    (robot_localization EKF, ZED publish_tf=false), so this description roots
+    at base_footprint.  The ZED joint is the exact inverse of the earlier
+    zed_camera_link -> base_footprint joint (xyz -0.098040 0 -0.147199,
+    pitch -0.0698), i.e. the measured mount in SIM_ASSUMPTIONS.json.  Rooting
+    at zed_camera_link would give base_footprint a second TF parent.
   -->
+  <link name="base_footprint"/>
   <link name="zed_camera_link">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -22,10 +24,9 @@
       <material name="sensor_black"/>
     </visual>
   </link>
-  <link name="base_footprint"/>
-  <joint name="zed_to_base_footprint" type="fixed">
-    <parent link="zed_camera_link"/><child link="base_footprint"/>
-    <origin xyz="-0.098040 0 -0.147199" rpy="0 -0.06981317007977318 0"/>
+  <joint name="base_footprint_to_zed" type="fixed">
+    <parent link="base_footprint"/><child link="zed_camera_link"/>
+    <origin xyz="0.108069 0 0.140002" rpy="0 0.06981317007977318 0"/>
   </joint>
   <link name="base_link">
     <visual>

@@ -3,7 +3,7 @@
 from collections import deque
 from dataclasses import dataclass
 import math
-import statistics
+import numpy as np
 from typing import Iterable, Optional
 
 
@@ -93,30 +93,30 @@ def analyze_scan(scan, thresholds: Thresholds) -> ScanMetrics:
         if abs(len(values) - expected_count) > tolerance:
             errors.append("sample_count_mismatch")
 
-    finite_values: list[float] = []
-    usable_values: list[float] = []
-    nan_count = inf_count = zero_count = below_count = above_count = 0
+    # Vectorized (same classification as the original per-beam loop): the guard
+    # runs this on every ~1800-beam scan at ~13 Hz on the Jetson.
     limits_valid = math.isfinite(range_min) and math.isfinite(range_max) and range_max > range_min
-    for raw_value in values:
-        value = float(raw_value)
-        if math.isnan(value):
-            nan_count += 1
-        elif math.isinf(value):
-            inf_count += 1
-        else:
-            finite_values.append(value)
-            if value == 0.0:
-                zero_count += 1
-            if limits_valid and value < range_min:
-                below_count += 1
-            elif limits_valid and value > range_max:
-                above_count += 1
-            elif limits_valid:
-                usable_values.append(value)
+    arr = np.asarray(values, dtype=np.float64)
+    nan_mask = np.isnan(arr)
+    inf_mask = np.isinf(arr)
+    finite_mask = ~nan_mask & ~inf_mask
+    finite_arr = arr[finite_mask]
+    nan_count = int(nan_mask.sum())
+    inf_count = int(inf_mask.sum())
+    zero_count = int(np.count_nonzero(finite_arr == 0.0))
+    if limits_valid:
+        below = finite_arr < range_min
+        above = ~below & (finite_arr > range_max)
+        below_count = int(below.sum())
+        above_count = int(above.sum())
+        usable_count = int(finite_arr.size - below_count - above_count)
+    else:
+        below_count = above_count = usable_count = 0
+    finite_count = int(finite_arr.size)
 
     count = len(values)
-    finite_ratio = len(finite_values) / count if count else 0.0
-    valid_ratio = len(usable_values) / count if count else 0.0
+    finite_ratio = finite_count / count if count else 0.0
+    valid_ratio = usable_count / count if count else 0.0
     return ScanMetrics(
         structural_valid=not errors,
         errors=tuple(errors),
@@ -124,18 +124,18 @@ def analyze_scan(scan, thresholds: Thresholds) -> ScanMetrics:
         sample_count=count,
         expected_sample_count=expected_count,
         angular_coverage_rad=max(0.0, coverage),
-        finite_count=len(finite_values),
+        finite_count=finite_count,
         finite_ratio=finite_ratio,
-        valid_return_count=len(usable_values),
+        valid_return_count=usable_count,
         valid_return_ratio=valid_ratio,
         nan_count=nan_count,
         inf_count=inf_count,
         zero_count=zero_count,
         below_range_count=below_count,
         above_range_count=above_count,
-        finite_min=min(finite_values) if finite_values else None,
-        finite_median=statistics.median(finite_values) if finite_values else None,
-        finite_max=max(finite_values) if finite_values else None,
+        finite_min=float(finite_arr.min()) if finite_count else None,
+        finite_median=float(np.median(finite_arr)) if finite_count else None,
+        finite_max=float(finite_arr.max()) if finite_count else None,
     )
 
 

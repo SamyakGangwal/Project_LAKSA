@@ -1,7 +1,10 @@
 builtin_interfaces/Time stamp
 bool command_fresh
 bool direction_change_pending
+bool brake_active
 bool telemetry_fresh
+uint32 telemetry_sequence
+uint32 telemetry_age_ms
 int32 requested_erpm
 int32 active_erpm
 float32 measured_erpm

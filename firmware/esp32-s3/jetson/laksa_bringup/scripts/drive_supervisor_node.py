@@ -239,18 +239,23 @@ class DriveSupervisor(Node):
             Empty, "/laksa/cancel_navigation", 10
         )
         self.create_subscription(Joy, "/joy", self._joy_callback, 10)
+        # Freshness only: raw=True skips deserializing every scan in Python.
         self.create_subscription(
             LaserScan,
             "/laksa/lidar/scan_validated",
             self._scan_callback,
             qos_profile_sensor_data,
+            raw=True,
         )
         self.create_subscription(Odometry, self._odom_topic, self._odom_callback, 10)
+        # Freshness only: take the serialized bytes (raw=True) instead of
+        # deserializing a multi-hundred-kB cloud in Python on every message.
         self.create_subscription(
             PointCloud2,
             "/zed/zed_node/point_cloud/cloud_registered",
             self._zed_cloud_callback,
             qos_profile_sensor_data,
+            raw=True,
         )
         self.create_subscription(OccupancyGrid, "/map", self._map_callback, mode_qos)
         self.create_subscription(
@@ -681,11 +686,12 @@ class DriveSupervisor(Node):
             return False
         return True
 
-    def _scan_callback(self, _message: LaserScan) -> None:
+    def _scan_callback(self, _message: bytes) -> None:
         self._last_scan_ns = self._now_ns()
 
-    def _zed_cloud_callback(self, message: PointCloud2) -> None:
-        if message.width > 0 and message.height > 0 and len(message.data) > 0:
+    def _zed_cloud_callback(self, message: bytes) -> None:
+        # An empty cloud serializes to well under 1 kB (header + field list).
+        if len(message) > 1024:
             self._last_zed_cloud_ns = self._now_ns()
 
     def _odom_callback(self, message: Odometry) -> None:
