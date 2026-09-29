@@ -36,6 +36,8 @@ Differences from the original car:
 
 In either mode the car stays braked until an operator starts driving.
 
+The launcher also starts Nav2: `controller_server`, `planner_server`, `behavior_server`, `bt_navigator` and the lifecycle manager. They use `laksa_bringup/config/nav2_ackermann.yaml` plus `laksa_learned_driver/config/nav2_field_overrides.yaml`. The override makes planning forward-only (Dubins) until reverse is reliable on the floor. Controller and BackUp output go to `/laksa/nav_cmd_vel`, the supervisor's navigation input. `LAKSA_NAV=0` skips Nav2. Stopping the whole stack takes 60–90 s.
+
 ## Boot services
 
 Unit files are in `firmware/esp32-s3/jetson/systemd/`, installed to `/etc/systemd/system/`:

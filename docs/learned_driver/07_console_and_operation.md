@@ -13,7 +13,7 @@ There is no Xbox controller on the bench car. Two operator tools replace it. Bot
 | Map | RTAB-Map occupancy grid, the car's pose, live LiDAR points, START and END markers |
 | Camera | ZED image with detected objects |
 | Status | mode, autonomy health, emergency stop and reason, driver status, battery voltage, nearest person |
-| Controls | **HOLD TO RUN**, **EXPLORE (2 min, slow)**, **STOP**, **REARM**, set START, set END |
+| Controls | **HOLD TO RUN**, **EXPLORE (2 min, slow)**, **STOP**, **REARM**, set START, set END, **PLAN ROUTE**, **HOLD TO GO** |
 
 Endpoints: `/` (page), `/camera.jpg`, `/ws` (a WebSocket for state and commands). **Every request needs the token.** A wrong token gets 403.
 
@@ -25,9 +25,13 @@ Endpoints: `/` (page), `/camera.jpg`, `/ws` (a WebSocket for state and commands)
 | EXPLORE | Same as holding, for up to 120 s. The page must stay open and on screen. Tapping again stops it. |
 | STOP | Presses B: latches the emergency stop |
 | REARM | Presses Y: clears the emergency stop |
-| Set START / Set END | Publishes `/laksa/console/start` and `/laksa/console/goal`. **Only markers for now; no route is planned.** |
+| Set START / Set END | Publishes `/laksa/console/start` and `/laksa/console/goal` |
+| PLAN ROUTE | Asks Nav2's planner for a route from the car to END and draws it on the map. **Planning only; nothing moves.** |
+| HOLD TO GO | A second deadman hold that **doesn't** press A. After 0.5 s of heartbeat it asks the supervisor for `NAVIGATING` mode and sends END to Nav2's navigator. Releasing it cancels the goal, and the supervisor brakes. You must release it before starting another route. |
 
 The heavy view subscriptions (odometry, scan, camera) exist only while a browser is connected, so an idle console costs almost no CPU.
+
+Route status on the page: `PLANNING`, `PLANNED` (with length), `NAVIGATING`, `ARRIVED`, `STOPPED` (with reason) or `FAILED` (with reason). The END pose faces away from the car's current position. Planning needs the car's pose on the map, so RTAB-Map must be running.
 
 ### Network binding and token
 

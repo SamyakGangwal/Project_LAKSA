@@ -1,0 +1,12 @@
+# Field overrides on top of laksa_bringup/config/nav2_ackermann.yaml for the
+# bench/field car, loaded after it by setup/dryrun_bringup.sh.
+#
+# The base MPPI deadband (0.217 m/s, ~900 eRPM) is kept: the 2026-09-28 bench
+# showed the drive stalling repeatedly at 414 and 828 eRPM.
+planner_server:
+  ros__parameters:
+    GridBased:
+      # Forward-only plans: the controller is forward-only (vx_min 0) and
+      # reverse does not move this car yet, so Reeds-Shepp cusps could not be
+      # executed.  Switch back to REEDS_SHEPP once reverse works.
+      motion_model_for_search: DUBIN

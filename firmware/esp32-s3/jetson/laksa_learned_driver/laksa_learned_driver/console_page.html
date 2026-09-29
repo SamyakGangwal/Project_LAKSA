@@ -31,6 +31,12 @@
   .row { display:flex; gap:8px; margin-top:8px; }
   .row button { flex:1; height:52px; border:0; border-radius:10px; font-size:16px; font-weight:600; color:#fff; }
   #stop { background:var(--red); } #rearm { background:#4a5160; }
+  #plan { width:100%; height:48px; font-size:15px; font-weight:600; border:0; border-radius:10px;
+          background:#4a5160; color:#fff; }
+  #go { width:100%; height:80px; margin-top:8px; font-size:19px; font-weight:600; border:0; border-radius:12px;
+        background:#1d3553; color:#fff; touch-action:none; user-select:none; }
+  #go.on { background:var(--blue); }
+  #routeinfo { font-size:12px; color:var(--muted); margin-top:6px; }
   dl { display:grid; grid-template-columns: auto 1fr; gap:4px 10px; margin:0; }
   dt { color:var(--muted); } dd { margin:0; font-variant-numeric: tabular-nums; }
   .ok { color:var(--green); } .warn { color:var(--amber); } .bad { color:var(--red); }
@@ -59,6 +65,12 @@
       <button id="hold">HOLD TO RUN</button>
       <button id="explore">EXPLORE (2 min, slow)</button>
       <div class="row"><button id="stop">STOP</button><button id="rearm">REARM</button></div>
+    </div>
+    <div class="panel">
+      <h2>Route to END (Nav2)</h2>
+      <button id="plan">PLAN ROUTE</button>
+      <button id="go">HOLD TO GO</button>
+      <div id="routeinfo">Set END on the map, then PLAN ROUTE.</div>
     </div>
     <div class="panel">
       <h2>Status</h2>
@@ -106,8 +118,13 @@ const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 let holdTimer = null;
 function startHold(e) { e.preventDefault(); $('hold').classList.add('on'); send({cmd:'hold'});
   clearInterval(holdTimer); holdTimer = setInterval(() => send({cmd:'hold'}), 50); }
-function endHold(e) { if (e) e.preventDefault(); $('hold').classList.remove('on'); stopExplore();
+function endHold(e) { if (e) e.preventDefault(); $('hold').classList.remove('on'); stopExplore(); endGo();
   if (holdTimer) { clearInterval(holdTimer); holdTimer = null; send({cmd:'release'}); } }
+let goTimer = null;
+function startGo(e) { e.preventDefault(); $('go').classList.add('on'); send({cmd:'go'});
+  clearInterval(goTimer); goTimer = setInterval(() => send({cmd:'go'}), 50); }
+function endGo(e) { if (e) e.preventDefault(); $('go').classList.remove('on');
+  if (goTimer) { clearInterval(goTimer); goTimer = null; send({cmd:'release'}); } }
 // EXPLORE: the page itself is the deadman.  It sends the same heartbeat as
 // HOLD TO RUN while this page is open and visible, for at most 2 minutes.
 const EXPLORE_S = 120; let exploreTimer = null, exploreEnd = 0;
@@ -123,6 +140,9 @@ $('explore').onclick = () => {
   }, 50);
 };
 $('hold').addEventListener('pointerdown', startHold);
+$('go').addEventListener('pointerdown', startGo);
+['pointerup','pointercancel','pointerleave'].forEach(t => $('go').addEventListener(t, endGo));
+$('plan').onclick = () => send({cmd:'plan'});
 ['pointerup','pointercancel','pointerleave'].forEach(t => $('hold').addEventListener(t, endHold));
 document.addEventListener('visibilitychange', () => { if (document.hidden) endHold(); });
 window.addEventListener('blur', () => endHold());
@@ -199,6 +219,12 @@ function render() {
   const marker = (p, color, label) => { if (!p) return; const [sx, sy] = toScreen(p[0], p[1]);
     ctx.fillStyle = color; ctx.beginPath(); ctx.arc(sx, sy, 7 * devicePixelRatio, 0, 2 * Math.PI); ctx.fill();
     ctx.fillText(label, sx + 10 * devicePixelRatio, sy + 4 * devicePixelRatio); };
+  const route = (state.route || {}).path;
+  if (route && route.length > 1) {
+    ctx.strokeStyle = '#3a8dde'; ctx.lineWidth = 3 * devicePixelRatio; ctx.beginPath();
+    route.forEach(([x, y], i) => { const [sx, sy] = toScreen(x, y); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
+    ctx.stroke();
+  }
   marker(state.start, '#2fbf4f', 'START'); marker(state.goal, '#d33a3a', 'END');
   $('mapnote').textContent = (mapInfo ? `map ${mapInfo.width}×${mapInfo.height} @ ${mapInfo.resolution} m` : 'no map yet (mapping not running)')
     + ` · pose frame: ${state.status.pose_frame || '–'} · scroll to zoom, drag to pan`;
@@ -207,7 +233,14 @@ function render() {
 function cls(el, c) { el.className = c; }
 function updateStatus() {
   const s = state.status;
-  $('mission').textContent = s.mission; cls($('mission'), s.mission === 'LIDAR_CRUISE' ? 'ok' : (s.mission === 'EMERGENCY_STOP' ? 'bad' : ''));
+  $('mission').textContent = s.mission; cls($('mission'), ['LIDAR_CRUISE', 'NAVIGATING'].includes(s.mission) ? 'ok' : (s.mission === 'EMERGENCY_STOP' ? 'bad' : ''));
+  const r = state.route || {};
+  const routeText = {IDLE: 'Set END on the map, then PLAN ROUTE.', PLANNING: 'planning…',
+    PLANNED: `route ${r.length_m} m — hold GO to drive it`, NAVIGATING: 'driving the route — release GO to stop',
+    ARRIVED: 'arrived at END', STOPPED: 'stopped' + (r.detail ? ': ' + r.detail : ''),
+    FAILED: 'no route' + (r.detail ? ': ' + r.detail : '')};
+  $('routeinfo').textContent = routeText[r.state] || r.state || '';
+  cls($('routeinfo'), r.state === 'FAILED' ? 'bad' : (r.state === 'ARRIVED' || r.state === 'PLANNED' ? 'ok' : ''));
   $('health').textContent = s.health; cls($('health'), s.health === 'READY' ? 'ok' : 'warn');
   $('estop').textContent = s.estop === null ? '–' : (s.estop ? 'LATCHED ' + (s.estop_reason || '') : 'clear'); cls($('estop'), s.estop ? 'bad' : 'ok');
   $('driver').textContent = s.driver + (state.holding ? ' · holding' : '');

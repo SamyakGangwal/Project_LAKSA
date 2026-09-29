@@ -38,6 +38,23 @@ Drive wheels off the ground:
 
 **Finding:** the drivetrain needs **6–10 A to start** but only about 3 A to keep turning. The cause is either high static friction or the VESC's sensorless start struggling at low speed. Speed tracking is fine once the wheels are moving.
 
+## Stage-1 bench
+
+Wheels up, on battery, 28 Sep evening, with the updated `traction_bench.py`: battery guard at 14.4 V, a 12 A start-up allowance for 2.5 s then 8 A, and a CSV of every sample.
+
+| Command | Result |
+|---|---|
+| 0.10 m/s (414 eRPM) | Stalls and restarts repeatedly while current winds up to 10 A. Unusable. |
+| 0.20 m/s (828 eRPM) | Wheels spun: 849 eRPM, reported 0.205 m/s, on 1.8 A. Started after 0.87 s. Spin-down after braking 0.32 s. In an earlier run it first stuck at 10.6 A for 1.1 s. |
+| 0.25 m/s (1,036 eRPM) | Once: 972 eRPM (0.235 m/s) on 2.1 A, started after 0.53 s. Next run: stuck at start and aborted at 12.5 A. |
+| −0.25 m/s | **Reverse works**: −1,052 eRPM (−0.254 m/s) on 1.9 A, started after 0.32 s, spin-down 0.44 s. |
+
+Findings:
+- The ESP32 converts 0.10 m/s → 414 eRPM (4,140 eRPM per m/s).
+- VESC telemetry updates about every 200 ms, which adds to the reaction delay.
+- **Starting from standstill is unreliable:** sometimes 0.3–0.9 s, sometimes stuck at 10–13 A. Once turning, the drive needs only about 2 A. This points to the VESC's sensorless start, not the drivetrain, and it's the likely reason reverse "did nothing" on the floor.
+- A whistle during stuck starts is the VESC's switching noise with the rotor not turning.
+
 ## First autonomous run
 
 Indoors, on carpet, trial mode (0.15 m/s cap), started with `laksa_operator run`:
@@ -59,7 +76,7 @@ This was checked when reverse didn't move the car. The LiDAR sits above the came
 | Rear-left / rear-right | 134 / 150 | 1.30 / 1.09 m |
 | Reverse path behind the bumper | 120 points | 0.79 m, clear |
 
-The driver saw the obstacle, found the rear clear, and **commanded reverse twice for 2.5 s**. The supervisor passed those commands through, yet the car didn't move. The problem therefore lies between the ESP32 and the wheels. See [Known issues](11_known_issues_and_next_steps.md#reverse-does-not-move-the-car).
+The driver saw the obstacle, found the rear clear, and **commanded reverse twice for 2.5 s**. The supervisor passed those commands through, yet the car didn't move. The problem therefore lies between the ESP32 and the wheels. See [Known issues](11_known_issues_and_next_steps.md#unreliable-start-from-standstill-and-reverse-on-the-floor).
 
 ## Outdoor field test
 

@@ -12,6 +12,11 @@ Drive control publishes sensor_msgs/Joy exactly like the terminal operator
 (neutral sticks; A for the first seconds of a hold, B = STOP, Y = REARM), so
 drive_supervisor keeps every gate.  Releasing HOLD, closing the page or losing
 the tunnel stops /joy and the supervisor brakes within 0.5 s.
+
+Routes: PLAN asks Nav2's planner for a path from the car to the END marker
+(no motion).  GO is a second deadman hold without A: after 0.5 s of heartbeat
+it requests the supervisor's NAVIGATING mode and sends the goal to Nav2's
+navigator.  Releasing GO cancels the goal and the supervisor brakes.
 """
 
 from __future__ import annotations
@@ -29,20 +34,25 @@ import cv2
 import numpy as np
 import rclpy
 from aiohttp import web
+from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from laksa_interfaces.msg import VehicleState
 from nav_msgs.msg import OccupancyGrid, Odometry
+from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 from rclpy.time import Time
 from sensor_msgs.msg import CompressedImage, Joy, LaserScan
-from std_msgs.msg import Bool, String
+from nav2_msgs.action import ComputePathToPose, NavigateToPose
+from std_msgs.msg import Bool, Empty, String
 from tf2_ros import Buffer, TransformException, TransformListener
 
 from .scan_adapter import LidarMount, scan_to_vehicle_beams
 
 PAGE = Path(__file__).with_name("console_page.html")
 A_BUTTON, B_BUTTON, Y_BUTTON = 0, 1, 3
+NAV_ENGAGE_SEC = 0.5          # heartbeat before requesting NAVIGATING
+NAV_ACCEPT_SEC = 2.0          # time for the supervisor to enter NAVIGATING
 
 
 def _yaw(q) -> float:
@@ -71,9 +81,14 @@ class Console(Node):
         self._joy_pub = self.create_publisher(Joy, "/joy", 10)
         self._start_pub = self.create_publisher(PoseStamped, "/laksa/console/start", latched)
         self._goal_pub = self.create_publisher(PoseStamped, "/laksa/console/goal", latched)
+        self._nav_enabled_pub = self.create_publisher(Bool, "/laksa/dashboard_navigation_enabled", latched)
+        self._planner = ActionClient(self, ComputePathToPose, "/compute_path_to_pose")
+        self._navigator = ActionClient(self, NavigateToPose, "/navigate_to_pose")
+        self.create_subscription(Empty, "/laksa/cancel_navigation",
+                                 lambda _m: self._end_navigation("canceled by supervisor"), 10)
         self._tf = Buffer()
         self._tf_listener = None
-        self._clients = 0
+        self._viewers = 0
         self._last_client_time = 0.0
         self._viewer_subs = []
 
@@ -94,6 +109,15 @@ class Console(Node):
         self._last_heartbeat = 0.0
         self._hold_started = 0.0
         self._pulse = None
+        # Route state: planning and navigation run on the ROS thread (_route_tick);
+        # the web thread only sets these requests.
+        self._route = {"state": "IDLE", "detail": "", "path": None, "length_m": None}
+        self._plan_requested = False
+        self._go_requested = False
+        self._nav_hold = False
+        self._nav_goal_handle = None
+        self._nav_enabled_at = 0.0
+        self._go_latched = False          # a finished route needs GO released first
 
         s = self._status
         self.create_subscription(String, "/laksa/mission_state", lambda m: s.__setitem__("mission", m.data), latched)
@@ -110,6 +134,7 @@ class Console(Node):
         # viewing the page (see _reconcile_viewer_subscriptions).
         self.create_timer(0.5, self._reconcile_viewer_subscriptions)
         self.create_timer(0.05, self._publish_joy)
+        self.create_timer(0.1, self._route_tick)
         threading.Thread(target=self._serve, daemon=True).start()
         self.get_logger().warn(
             f"LAKSA Console on http://{self._host}:{self._port}/?token={self._token}  "
@@ -129,7 +154,7 @@ class Console(Node):
     # --------------------------------------------- demand-driven subscriptions
     def _reconcile_viewer_subscriptions(self):
         with self._lock:
-            wanted = self._clients > 0 or time.monotonic() - self._last_client_time < 10.0
+            wanted = self._viewers > 0 or time.monotonic() - self._last_client_time < 10.0
         if wanted and not self._viewer_subs:
             self._tf_listener = TransformListener(self._tf, self)
             self._viewer_subs = [
@@ -237,7 +262,8 @@ class Console(Node):
         if pulse:
             self._joy((pulse[0],))
         elif alive:
-            self._joy((A_BUTTON,) if engaging else ())
+            # A GO hold never presses A: A would start LiDAR cruise instead.
+            self._joy((A_BUTTON,) if engaging and not self._nav_hold else ())
         # Otherwise publish nothing: the supervisor's controller timeout brakes.
 
     def _set_marker(self, kind: str, x: float, y: float):
@@ -253,6 +279,128 @@ class Console(Node):
             self._goal = (x, y)
             self._goal_pub.publish(message)
 
+    # ---------------------------------------------------------------- routes
+    def _set_route(self, state: str, detail: str = "", **extra):
+        with self._lock:
+            self._route.update(state=state, detail=detail, **extra)
+
+    def _goal_pose(self):
+        """END marker as a map-frame pose, facing away from the car."""
+        with self._lock:
+            goal, pose = self._goal, self._pose
+            frame = self._status.get("pose_frame")
+        if goal is None:
+            return None, "set END on the map first"
+        if pose is None or frame != "map":
+            return None, "car position on the map is unknown (is mapping running?)"
+        yaw = math.atan2(goal[1] - pose[1], goal[0] - pose[0])
+        message = PoseStamped()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = "map"
+        message.pose.position.x, message.pose.position.y = float(goal[0]), float(goal[1])
+        message.pose.orientation.z, message.pose.orientation.w = math.sin(yaw / 2.0), math.cos(yaw / 2.0)
+        return message, ""
+
+    def _route_tick(self):
+        now = time.monotonic()
+        with self._lock:
+            plan, go = self._plan_requested, self._go_requested
+            self._plan_requested = False
+            alive = now - self._last_heartbeat <= self._timeout
+            held = now - self._hold_started if alive and self._nav_hold else 0.0
+            mission = self._status.get("mission")
+            health = self._status.get("health")
+        if plan:
+            self._start_plan()
+        active = self._nav_goal_handle is not None or self._nav_enabled_at != 0.0
+        if go and not active and held >= NAV_ENGAGE_SEC:
+            self._start_navigation()
+        elif active:
+            if not alive:
+                self._end_navigation("GO released")
+            elif mission != "NAVIGATING" and now - self._nav_enabled_at > NAV_ACCEPT_SEC:
+                self._end_navigation(f"supervisor did not enter NAVIGATING: {health}")
+
+    def _start_plan(self):
+        goal, reason = self._goal_pose()
+        if goal is None:
+            self._set_route("FAILED", reason)
+            return
+        if not self._planner.server_is_ready():
+            self._set_route("FAILED", "Nav2 planner is not running")
+            return
+        request = ComputePathToPose.Goal()
+        request.goal, request.planner_id, request.use_start = goal, "GridBased", False
+        self._set_route("PLANNING", "", path=None, length_m=None)
+        self._planner.send_goal_async(request).add_done_callback(self._plan_accepted)
+
+    def _plan_accepted(self, future):
+        handle = future.result()
+        if not handle.accepted:
+            self._set_route("FAILED", "planner rejected the request")
+            return
+        handle.get_result_async().add_done_callback(self._plan_done)
+
+    def _plan_done(self, future):
+        response = future.result()
+        poses = response.result.path.poses
+        if response.status != GoalStatus.STATUS_SUCCEEDED or not poses:
+            self._set_route("FAILED", "no drivable route to END (try another END or map more of the area)")
+            return
+        xy = np.array([[p.pose.position.x, p.pose.position.y] for p in poses])
+        length = float(np.sum(np.hypot(*np.diff(xy, axis=0).T))) if len(xy) > 1 else 0.0
+        keep = np.unique(np.linspace(0, len(xy) - 1, min(len(xy), 300)).astype(int))
+        self._set_route("PLANNED", "", path=np.round(xy[keep], 3).tolist(), length_m=round(length, 2))
+
+    def _start_navigation(self):
+        goal, reason = self._goal_pose()
+        if goal is None or not self._navigator.server_is_ready():
+            self._set_route("FAILED", reason or "Nav2 navigator is not running")
+            with self._lock:
+                self._go_requested = False
+                self._go_latched = True
+            return
+        self._nav_enabled_pub.publish(Bool(data=True))
+        self._nav_enabled_at = time.monotonic()
+        request = NavigateToPose.Goal()
+        request.pose = goal
+        self._set_route("NAVIGATING", "")
+        self._navigator.send_goal_async(request).add_done_callback(self._nav_accepted)
+
+    def _nav_accepted(self, future):
+        handle = future.result()
+        if not handle.accepted:
+            self._end_navigation("navigator rejected the goal")
+            return
+        if self._nav_enabled_at == 0.0:          # released while the goal was in flight
+            handle.cancel_goal_async()
+            return
+        self._nav_goal_handle = handle
+        handle.get_result_async().add_done_callback(self._nav_done)
+
+    def _nav_done(self, future):
+        if self._nav_goal_handle is None:
+            return
+        status = future.result().status
+        self._nav_goal_handle = None
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            self._end_navigation("", arrived=True)
+        else:
+            self._end_navigation(f"navigation ended with status {status}")
+
+    def _end_navigation(self, reason: str, arrived: bool = False):
+        if self._nav_goal_handle is None and self._nav_enabled_at == 0.0:
+            return
+        handle, self._nav_goal_handle = self._nav_goal_handle, None
+        if handle is not None:
+            handle.cancel_goal_async()
+        self._nav_enabled_at = 0.0
+        self._nav_enabled_pub.publish(Bool(data=False))
+        with self._lock:
+            self._go_requested = False
+            self._go_latched = True
+        self._set_route("ARRIVED" if arrived else "STOPPED", reason)
+
     # ------------------------------------------------------------------ web
     def _snapshot(self, map_revision_seen: int) -> dict:
         with self._lock:
@@ -266,6 +414,7 @@ class Console(Node):
                 "detections": self._detections,
                 "start": self._start,
                 "goal": self._goal,
+                "route": dict(self._route),
                 "map_revision": self._map_revision,
             }
             if self._map_png and self._map_revision != map_revision_seen:
@@ -296,7 +445,7 @@ class Console(Node):
             ws = web.WebSocketResponse(heartbeat=2.0)
             await ws.prepare(request)
             with self._lock:
-                self._clients += 1
+                self._viewers += 1
                 self._last_client_time = time.monotonic()
             seen = {"map": -1}
 
@@ -318,17 +467,24 @@ class Console(Node):
                     now = time.monotonic()
                     kind = data.get("cmd")
                     with self._lock:
-                        if kind == "hold":
+                        if kind in ("hold", "go"):
                             if now - self._last_heartbeat > self._timeout:
                                 self._hold_started = now
+                                self._nav_hold = kind == "go"
+                                self._go_latched = False
+                            if kind == "go" and self._nav_hold and not self._go_latched:
+                                self._go_requested = True
                             self._last_heartbeat = now
                         elif kind == "release":
                             self._last_heartbeat = 0.0
+                            self._go_latched = False
                         elif kind == "stop":
                             self._last_heartbeat = 0.0
                             self._pulse = (B_BUTTON, now + 0.6)
                         elif kind == "rearm":
                             self._pulse = (Y_BUTTON, now + 0.6)
+                        elif kind == "plan":
+                            self._plan_requested = True
                     if kind in ("start", "goal"):
                         x, y = float(data["x"]), float(data["y"])
                         if math.isfinite(x) and math.isfinite(y):
@@ -340,7 +496,7 @@ class Console(Node):
                 task.cancel()
                 with self._lock:
                     self._last_heartbeat = 0.0
-                    self._clients = max(0, self._clients - 1)
+                    self._viewers = max(0, self._viewers - 1)
                     self._last_client_time = time.monotonic()
             return ws
 

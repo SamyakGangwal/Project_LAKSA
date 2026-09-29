@@ -20,12 +20,13 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `laksa_learned_driver/driver_node.py` | The `learned_driver` ROS node that combines all of the above; decision log |
 | `laksa_learned_driver/zed_perception_node.py` | The `zed_perception` ROS node |
 | `laksa_learned_driver/operator_cli.py` | `laksa_operator` terminal deadman (run, stop, rearm, status) |
-| `laksa_learned_driver/console_node.py`, `console_page.html` | LAKSA Console web app |
+| `laksa_learned_driver/console_node.py`, `console_page.html` | LAKSA Console web app, including PLAN ROUTE and HOLD TO GO through Nav2 |
 | `laksa_learned_driver/policy_probe.py` | Read-only probe: prints what the policy would command on live scans; publishes nothing |
 | `config/learned_driver.yaml` | Driver parameters: caps, mount, governor, recovery |
 | `config/zed_perception.yaml` | ZED profile: 15 fps, NEURAL_LIGHT, object detection |
 | `config/ekf_field.yaml` | Field EKF: ZED base pose + VESC speed, with VIO-jump rejection |
 | `config/rtabmap_field_overrides.yaml` | Lighter RTAB-Map for the Orin Nano |
+| `config/nav2_field_overrides.yaml` | Nav2 on top of the production config: forward-only (Dubins) planning |
 | `launch/learned_cruise.launch.py` | Launch the driver alone, next to the production manual-control stack |
 | `models/laksa_tinylidarnet_v2.npz`, `.report.json` | The shipped model and its training report |
 | `training/*.py` | Simulator wrapper, tracks, expert, DART/DAgger training, evaluation, smoke test |

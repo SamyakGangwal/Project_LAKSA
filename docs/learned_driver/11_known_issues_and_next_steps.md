@@ -2,7 +2,11 @@
 
 [Index](README.md) · Previous: [Field tests and findings](10_field_tests_and_findings.md) · Next: [Change log](12_change_log.md)
 
-## Reverse does not move the car
+## Unreliable start from standstill (and reverse on the floor)
+
+**Update after the stage-1 bench:** reverse **does** work at the motor (−0.25 m/s ran at −1,052 eRPM on 1.9 A). The real problem is starting from standstill: sometimes the motor starts within 0.3–0.9 s, sometimes it sits stuck at 10–13 A. See [Stage-1 bench](10_field_tests_and_findings.md#stage-1-bench). The fix belongs in the VESC's configuration: enable hall sensors if the motor has them, otherwise tune the sensorless start and open-loop settings. The VESC is only reachable through the ESP32, which doesn't pass configuration through, so connect the VESC's own USB to the Jetson for a read-only check first.
+
+## Reverse does not move the car (original report)
 
 The driver commands reverse and the supervisor passes it on, but the wheels don't turn backwards. Reverse has never been bench-tested; the traction bench aborted on current before reaching it.
 
@@ -25,14 +29,12 @@ The drive needs 6–10 A to start from rest but only about 3 A to keep moving. A
 
 ## Route planning from the console
 
-START and END markers are published (`/laksa/console/start`, `/laksa/console/goal`), but **nothing plans or drives a route** between them yet.
+The console now has **PLAN ROUTE** and **HOLD TO GO**, and the launcher runs Nav2 (see [Console and operation](07_console_and_operation.md#laksa-console)). The console-to-planner path was verified end to end on the car. But the current bench spot is too cramped to produce a route: the car sits 3 cm from a wall, its start cell is "inscribed" in the costmap, only about 180 cells of the small map are low-cost, and 62% is still unknown. Next: test PLAN, then HOLD TO GO in dry-run, in a larger mapped area.
 
-The next step is to connect the markers to Nav2 (Smac Hybrid-A* planner and a controller) through the supervisor's existing navigation mode.
-
-Things to check first:
+Remaining checks for route driving:
 - **CPU budget.** Nav2 adds load; see [Performance](09_performance_optimization.md).
 - **Earlier planner forensics.** In this repo, SmacPlannerHybrid returned invalid paths in 3 of 5 test cases.
-- **MPPI deadband vs. speed cap.** The MPPI config caps speed at 0.15 m/s, but its deadband critic penalises anything below 0.217 m/s.
+- **Speed cap vs. what the motor can do.** MPPI's `vx_max` and the supervisor's navigation cap (620 eRPM) are about 0.15 m/s. But the bench shows the motor runs reliably only from about 0.20 m/s (850 eRPM), which matches MPPI's 0.217 m/s deadband. Route following needs the navigation cap raised to about 0.22 m/s, together with a reliable start, before it can move the car smoothly.
 
 ## Model limits
 

@@ -26,8 +26,9 @@ The goal was a model that is **fast at run time** and **needs little training**.
 | Steering around obstacles | Deployed; checked on live scans, not yet driven |
 | Camera obstacles, person rules, slope handling | Deployed. Slope handling still needs a test on real sloped ground |
 | Steering smoothing | Deployed after the field test showed stutter |
-| Reverse-away recovery | Logic works, but **the car does not actually reverse** (open issue) |
-| Console (map, camera, HOLD TO RUN, EXPLORE, STOP) | Done. Start and end markers are placed but **no route is planned yet** |
+| Reverse-away recovery | Logic works. Reverse works at the motor on the bench; **starting from standstill is unreliable** (VESC start-up, open issue) |
+| Console (map, camera, HOLD TO RUN, EXPLORE, STOP) | Done |
+| A-to-B routes (PLAN ROUTE, HOLD TO GO, Nav2) | Built and wired end to end; not yet planned or driven in a large enough area |
 | Boot services, hotspot, fixed console link | Done. The live home-to-hotspot switch still needs a field re-test |
 | Session recording | Done: a folder per start with logs, a bag and the map database |
 | Jetson load | Reduced; see [Performance](09_performance_optimization.md) |

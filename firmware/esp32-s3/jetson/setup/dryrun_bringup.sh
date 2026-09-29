@@ -29,6 +29,12 @@ BAG_TOPICS=(/laksa/lidar/scan_validated /laksa/command /laksa/brake /laksa/lidar
     /laksa/vesc/state /laksa/state /joy /tf /tf_static /map)
 RTAB_CONFIG="${JETSON}/laksa_mapping/config/rtabmap_fused.yaml"
 DRIVER_CONFIG="${JETSON}/laksa_learned_driver/config/learned_driver.yaml"
+NAV_CONFIG="${JETSON}/laksa_bringup/config/nav2_ackermann.yaml"
+NAV_OVERRIDES="${JETSON}/laksa_learned_driver/config/nav2_field_overrides.yaml"
+BT_XML="${JETSON}/laksa_bringup/config/navigate_ackermann.xml"
+BT_THROUGH_XML="${JETSON}/laksa_bringup/config/navigate_through_poses_ackermann.xml"
+# Nav2 (route planning and following to a console goal); LAKSA_NAV=0 skips it.
+LAKSA_NAV="${LAKSA_NAV:-1}"
 TOKEN_FILE="${HOME}/.config/laksa/console_token"
 HOTSPOT_IP="10.42.0.1"
 
@@ -134,6 +140,20 @@ start|trial)
             --params-file "${RTAB_CONFIG}" --params-file "${RTAB_OVERRIDES}" -p database_path:="${SESSION}/rtabmap.db" \
             -r rgbd_image:=/laksa/fused_mapping/rgbd_image -r scan:=/laksa/lidar/scan_validated \
             -r odom:=/laksa/odometry/fused -r map:=/map
+        if [[ "${LAKSA_NAV}" == "1" ]]; then
+            # Controller and BackUp output go to the supervisor's navigation
+            # input, never to the ESP32: the supervisor gates and caps them.
+            start_one nav_controller ros2 run nav2_controller controller_server --ros-args \
+                --params-file "${NAV_CONFIG}" --params-file "${NAV_OVERRIDES}" -r cmd_vel:=/laksa/nav_cmd_vel
+            start_one nav_planner ros2 run nav2_planner planner_server --ros-args \
+                --params-file "${NAV_CONFIG}" --params-file "${NAV_OVERRIDES}"
+            start_one nav_behavior ros2 run nav2_behaviors behavior_server --ros-args \
+                --params-file "${NAV_CONFIG}" -r cmd_vel:=/laksa/nav_cmd_vel
+            start_one nav_bt ros2 run nav2_bt_navigator bt_navigator --ros-args --params-file "${NAV_CONFIG}" \
+                -p default_nav_to_pose_bt_xml:="${BT_XML}" -p default_nav_through_poses_bt_xml:="${BT_THROUGH_XML}"
+            start_one nav_lifecycle ros2 run nav2_lifecycle_manager lifecycle_manager --ros-args \
+                -r __node:=lifecycle_manager_navigation --params-file "${NAV_CONFIG}"
+        fi
     fi
     start_one recorder ros2 bag record -o "${SESSION}/bag" "${BAG_TOPICS[@]}"
     start_console
