@@ -37,6 +37,8 @@ def main() -> None:
     parser.add_argument("--course-dir", type=Path, default=REPO / "scratch" / "speed_course")
     parser.add_argument("--caps", type=float, nargs="+", default=[0.24, 0.5, 1.0, 1.5, 2.0, 3.0])
     parser.add_argument("--random-tracks", type=int, default=10)
+    parser.add_argument("--obstacle-tracks", type=int, default=10, help="held-out tracks with box obstacles")
+    parser.add_argument("--course-tracks", type=int, default=10, help="held-out 2026-course-style tracks")
     parser.add_argument("--randomized-trials", type=int, default=3)
     parser.add_argument("--laps", type=float, default=2.0)
     parser.add_argument("--workers", type=int, default=default_workers())
@@ -50,6 +52,13 @@ def main() -> None:
     else:
         log(f"competition course not found in {args.course_dir}; skipping it")
     suites.append(("random_tracks", [("random", args.seed + 50_000 + i, "heldout") for i in range(args.random_tracks)]))
+    parser_course = args.course_tracks
+    if parser_course:
+        suites.append(("course_style_tracks", [("course_style", args.seed + 70_000 + i, "heldout")
+                                               for i in range(parser_course)]))
+    if args.obstacle_tracks:
+        suites.append(("obstacle_tracks", [("obstacles", args.seed + 60_000 + i, "heldout")
+                                           for i in range(args.obstacle_tracks)]))
 
     jobs = []
     for suite, specs in suites:

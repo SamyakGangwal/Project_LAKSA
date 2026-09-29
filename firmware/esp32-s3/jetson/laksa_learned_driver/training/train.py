@@ -71,39 +71,49 @@ def train_model(model: TinyLidarNet, data, epochs: int, rng: np.random.Generator
                 "holdout_loss": float(loss_on(torch.from_numpy(holdout)))}
 
 
-def eval_jobs(track_seeds, caps, seed: int, student: str | None, randomized_trials: int) -> list[dict]:
+def eval_jobs(track_seeds, caps, seed: int, student: str | None, randomized_trials: int,
+              kinds=("random",)) -> list[dict]:
     jobs = []
-    for t_index, track_seed in enumerate(track_seeds):
-        for cap in caps:
-            for trial in range(1 + randomized_trials):
-                job_seed = seed + 97 * t_index + int(cap * 100) + 7919 * trial
-                domain = {} if trial == 0 else domain_dict(Domain.sample(np.random.default_rng(job_seed)))
-                jobs.append({"track": ("random", track_seed, "eval"), "cap": cap, "seed": job_seed,
-                             "domain": domain, "student": student, "beta": 0.0 if student else 1.0,
-                             "randomize_start": trial > 0, "record": False, "laps": 1.0,
-                             "randomized": trial > 0})
+    for kind in kinds:
+        for t_index, track_seed in enumerate(track_seeds):
+            for cap in caps:
+                for trial in range(1 + randomized_trials):
+                    job_seed = seed + 97 * t_index + int(cap * 100) + 7919 * trial
+                    domain = {} if trial == 0 else domain_dict(Domain.sample(np.random.default_rng(job_seed)))
+                    jobs.append({"track": (kind, track_seed, "eval"), "cap": cap, "seed": job_seed,
+                                 "domain": domain, "student": student, "beta": 0.0 if student else 1.0,
+                                 "randomize_start": trial > 0, "record": False, "laps": 1.0,
+                                 "randomized": trial > 0, "kind": kind})
     return jobs
 
 
 def summarize(rows, caps) -> dict:
     summary = {}
-    for cap in caps:
-        for label, randomized in (("clean", False), ("randomized", True)):
-            subset = [r for r in rows if r["cap"] == cap and r["randomized"] == randomized]
-            if not subset:
-                continue
-            done = [r for r in subset if r["result"] == "COMPLETE"]
-            summary[f"{cap}_{label}"] = {
-                "completion_rate": len(done) / len(subset),
-                "mean_lap_s": float(np.mean([r["lap_s"] for r in done])) if done else None,
-                "mean_progress_fraction": float(np.mean([min(1.0, r["progress_laps"]) for r in subset])),
-            }
+    kinds = sorted({r.get("kind", "random") for r in rows})
+    for kind in kinds:
+        for cap in caps:
+            for label, randomized in (("clean", False), ("randomized", True)):
+                subset = [r for r in rows if r["cap"] == cap and r["randomized"] == randomized
+                          and r.get("kind", "random") == kind]
+                if not subset:
+                    continue
+                done = [r for r in subset if r["result"] == "COMPLETE"]
+                prefix = "" if kind == "random" else f"{kind}_"
+                summary[f"{prefix}{cap}_{label}"] = {
+                    "completion_rate": len(done) / len(subset),
+                    "mean_lap_s": float(np.mean([r["lap_s"] for r in done])) if done else None,
+                    "mean_progress_fraction": float(np.mean([min(1.0, r["progress_laps"]) for r in subset])),
+                }
     return summary
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--output", type=Path, default=HERE.parent / "models" / "laksa_tinylidarnet_v2.npz")
+    parser.add_argument("--output", type=Path, default=HERE.parent / "models" / "laksa_tinylidarnet_v4.npz")
+    parser.add_argument("--obstacle-fraction", type=float, default=0.6,
+                        help="share of training tracks with box obstacles (0 reproduces v2's data)")
+    parser.add_argument("--course-fraction", type=float, default=0.4,
+                        help="share of training tracks in the 2026 course style (widths, open areas, buckets)")
     parser.add_argument("--rounds", type=int, default=5, help="DART round + DAgger rounds")
     parser.add_argument("--episodes", type=int, default=40, help="episodes per round")
     parser.add_argument("--steps", type=int, default=900, help="control steps per training episode")
@@ -124,11 +134,12 @@ def main() -> None:
     log(f"run directory {run_dir}; {args.workers} workers")
     eval_seeds = [args.seed + 10_000 + i for i in range(args.eval_tracks)]
     eval_caps = (0.5, 1.5, 3.0)
+    eval_kinds = ("random",) + (("obstacles",) if args.obstacle_fraction > 0 else ())         + (("course_style",) if args.course_fraction > 0 else ())
 
     with make_pool(args.workers, args.seed) as pool:
         started = time.time()
         expert_rows = [stats for _, stats in run_parallel(
-            pool, eval_jobs(eval_seeds, eval_caps, args.seed, None, args.eval_randomized_trials),
+            pool, eval_jobs(eval_seeds, eval_caps, args.seed, None, args.eval_randomized_trials, eval_kinds),
             "expert evaluation", log)]
         expert_eval = summarize(expert_rows, eval_caps)
         log(f"expert ({time.time() - started:.0f}s): {json.dumps(expert_eval)}")
@@ -144,7 +155,10 @@ def main() -> None:
             jobs = []
             for _ in range(args.episodes):
                 job_seed = int(rng.integers(2**31))
-                jobs.append({"track": ("random", job_seed, "train"),
+                draw = rng.random()
+                kind = ("course_style" if draw < args.course_fraction else
+                        "obstacles" if draw < args.course_fraction + args.obstacle_fraction else "random")
+                jobs.append({"track": (kind, job_seed, "train"),
                              "cap": sample_cap(rng, args.cap_min, args.cap_max), "seed": job_seed + 1,
                              "domain": domain_dict(Domain.sample(rng)), "steps": args.steps,
                              "student": student if round_index else None, "beta": beta,
@@ -167,7 +181,7 @@ def main() -> None:
             started = time.time()
             student = str(candidate)
             rows = [stats for _, stats in run_parallel(
-                pool, eval_jobs(eval_seeds, eval_caps, args.seed, student, args.eval_randomized_trials),
+                pool, eval_jobs(eval_seeds, eval_caps, args.seed, student, args.eval_randomized_trials, eval_kinds),
                 f"round {round_index} evaluation", log)]
             evaluation = summarize(rows, eval_caps)
             log(f"round {round_index} student ({time.time() - started:.0f}s): {json.dumps(evaluation)}")
@@ -190,12 +204,14 @@ def main() -> None:
         "rounds": history,
         "best_round": best[2],
         "competition_course_used_for_training": False,
+        "obstacle_fraction": args.obstacle_fraction,
+        "course_fraction": args.course_fraction,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(best[1].read_bytes())
     report_text = json.dumps(report, indent=2)
-    args.output.with_suffix(".report.json").write_text(report_text, encoding="utf-8")
-    (run_dir / "report.json").write_text(report_text, encoding="utf-8")
+    args.output.with_suffix(".report.json").write_text(report_text, encoding="utf-8", newline="\n")
+    (run_dir / "report.json").write_text(report_text, encoding="utf-8", newline="\n")
     log(f"all round checkpoints kept in {run_dir}")
     log("TRAINING DONE")
 

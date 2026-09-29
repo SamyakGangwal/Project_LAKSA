@@ -17,17 +17,26 @@ import vehicle as V
 
 
 def smooth_raceline(track: Track, margin_m: float = 0.12, iterations: int = 400) -> np.ndarray:
-    """Elastic-band curvature reduction inside the corridor (cheap min-curvature)."""
+    """Elastic-band curvature reduction inside the corridor (cheap min-curvature).
+
+    With obstacles the band is also kept inside ``track.offset_lo/hi`` so it
+    passes each box on its open side; more iterations spread each swerve over
+    several metres instead of leaving a kink at the constraint.
+    """
     center = track.center
     heading = track.headings()
     normal = np.column_stack([-np.sin(heading), np.cos(heading)])
     bound = np.maximum(track.half_width - (V.FOOTPRINT_HALF_WIDTH_M + V.FOOTPRINT_PADDING_M + margin_m), 0.0)
-    offset = np.zeros(center.shape[0])
+    lo, hi = -bound, bound
+    if track.obstacles and track.offset_lo is not None:
+        lo, hi = np.maximum(lo, track.offset_lo), np.minimum(hi, track.offset_hi)
+        iterations = max(iterations, 4000)
+    offset = np.clip(np.zeros(center.shape[0]), lo, hi)
     for _ in range(iterations):
         points = center + offset[:, None] * normal
         target = 0.5 * (np.roll(points, 1, axis=0) + np.roll(points, -1, axis=0))
         offset += 0.5 * np.einsum("ij,ij->i", target - points, normal)
-        offset = np.clip(offset, -bound, bound)
+        offset = np.clip(offset, lo, hi)
     return resample_closed(center + offset[:, None] * normal, 0.05)
 
 
@@ -53,6 +62,13 @@ class Expert:
         window = max(1, int(round(0.3 / self.spacing)))
         padded = np.concatenate([kappa[-window:], kappa, kappa[:window]])
         self.kappa = np.max(np.lib.stride_tricks.sliding_window_view(padded, 2 * window + 1), axis=1)
+        # Course-style tracks: slow down in narrow sections (20" leaves ~10 cm per side).
+        self.width_cap = None
+        if getattr(track, "width_limits_speed", False):
+            from scipy.spatial import cKDTree
+            _, nearest = cKDTree(track.center).query(raceline)
+            half = track.half_width[nearest]
+            self.width_cap = 0.8 + 3.0 * np.maximum(half - 0.25, 0.0)
         self._index = None
         self._profile_cap = None
         self.profile = None
@@ -62,6 +78,8 @@ class Expert:
             return self.profile
         c = self.config
         v = np.minimum(v_cap, np.sqrt(c.lateral_accel_mps2 / np.maximum(self.kappa, 1e-4)))
+        if self.width_cap is not None:
+            v = np.minimum(v, self.width_cap)
         n = v.size
         ds = self.spacing
         for _ in range(2):

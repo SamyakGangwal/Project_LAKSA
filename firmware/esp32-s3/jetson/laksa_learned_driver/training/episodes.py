@@ -19,9 +19,9 @@ sys.path.insert(0, str(HERE))
 
 import numpy as np  # noqa: E402
 
-from expert import Expert, smooth_raceline  # noqa: E402
+from expert import Expert, ExpertConfig, smooth_raceline  # noqa: E402
 from sim_env import Domain, LaksaSim, Progress  # noqa: E402
-from tracks import generate_track, load_map_track  # noqa: E402
+from tracks import generate_course_track, generate_track, load_map_track, load_obstacle_course  # noqa: E402
 import vehicle as V  # noqa: E402
 from laksa_learned_driver.policy import LearnedDriverPolicy, OutputContract  # noqa: E402
 from laksa_learned_driver.scan_features import ScanContract, normalize  # noqa: E402
@@ -32,17 +32,27 @@ SCAN = ScanContract()
 OUTPUT = OutputContract(V.STEER_LEFT_MAX_RAD, V.STEER_RIGHT_MAX_RAD, 3.0, V.WHEELBASE_M)
 
 
+def _clear_of_obstacles(track, x: float, y: float, clearance_m: float = 1.0) -> bool:
+    no_start = getattr(track, "no_start", None)
+    if no_start and math.hypot(x - no_start[0][0], y - no_start[0][1]) < no_start[1]:
+        return False
+    return all(math.hypot(x - c[0], y - c[1]) > clearance_m for c, _ in getattr(track, "obstacles", []))
+
+
 def start_state(track, rng: np.random.Generator, randomize: bool):
-    index = int(rng.integers(track.center.shape[0])) if randomize else 0
-    heading = track.headings()[index]
-    lateral = 0.0
-    yaw_offset = 0.0
-    if randomize:
-        room = max(0.0, float(track.half_width[index]) - V.FOOTPRINT_HALF_WIDTH_M - 0.12)
-        lateral = rng.uniform(-0.6, 0.6) * room
-        yaw_offset = rng.uniform(-0.15, 0.15)
-    x = track.center[index, 0] - math.sin(heading) * lateral
-    y = track.center[index, 1] + math.cos(heading) * lateral
+    for _ in range(50):
+        index = int(rng.integers(track.center.shape[0])) if randomize else 0
+        heading = track.headings()[index]
+        lateral = 0.0
+        yaw_offset = 0.0
+        if randomize:
+            room = max(0.0, float(track.half_width[index]) - V.FOOTPRINT_HALF_WIDTH_M - 0.12)
+            lateral = rng.uniform(-0.6, 0.6) * room
+            yaw_offset = rng.uniform(-0.15, 0.15)
+        x = track.center[index, 0] - math.sin(heading) * lateral
+        y = track.center[index, 1] + math.cos(heading) * lateral
+        if not randomize or _clear_of_obstacles(track, x, y):
+            break
     return x, y, heading + yaw_offset
 
 
@@ -108,14 +118,47 @@ def _track(spec: tuple):
         if spec[0] == "random":
             _, seed, prefix = spec
             track = generate_track(np.random.default_rng(seed), out, f"{prefix}_{seed}")
+        elif spec[0] == "obstacle_course":
+            _, seed, prefix = spec
+            track = _drivable_obstacle_course(seed, out, prefix)
+        elif spec[0] == "course_style":
+            _, seed, prefix = spec
+            track = generate_course_track(np.random.default_rng(seed), out, f"{prefix}_course_{seed}")
+        elif spec[0] == "obstacles":
+            _, seed, prefix = spec
+            rng = np.random.default_rng(seed)
+            track = generate_track(rng, out, f"{prefix}_obs_{seed}", obstacles=int(rng.integers(3, 9)))
         elif spec[0] == "course":
             track = load_course(Path(spec[1]), out)[0]
         else:
             raise ValueError(spec)
         if len(cache) > 24:
             cache.pop(next(iter(cache)))
-        cache[spec] = (track, Expert(track, smooth_raceline(track)))
+        # The obstacle course has 20" paths and hoops on a curve: a shorter
+        # look-ahead keeps pure pursuit from cutting inside (~L^2/2R).
+        config = ExpertConfig(lookahead_base_m=0.25, lookahead_min_m=0.3) if spec[0] == "obstacle_course" else None
+        cache[spec] = (track, Expert(track, smooth_raceline(track), config))
     return cache[spec]
+
+
+def _drivable_obstacle_course(seed: int, out: Path, prefix: str, attempts: int = 12):
+    """A course layout the expert can lap cleanly (the course guarantees a path).
+
+    Buckets and hoops may land anywhere allowed by the rules; layouts the
+    privileged expert cannot drive at 0.5 m/s are redrawn.
+    """
+    sim = _STATE["sim"]
+    for attempt in range(attempts):
+        rng = np.random.default_rng(seed * 101 + attempt)
+        track = load_obstacle_course(rng, out, f"{prefix}_oc_{seed}_{attempt}")
+        expert = Expert(track, smooth_raceline(track), ExpertConfig(lookahead_base_m=0.25, lookahead_min_m=0.3))
+        sim.load(track, Domain())
+        steps = int(1.3 * track.center.shape[0] * track.spacing / (0.3 * 0.5) / V.CONTROL_PERIOD_S)
+        _, stats = run_episode(sim, track, expert, 0.5, steps, np.random.default_rng(0), randomize_start=False,
+                               record=False)
+        if stats["result"] == "COMPLETE":
+            return track
+    return track
 
 
 def _policy(path: str | None):
