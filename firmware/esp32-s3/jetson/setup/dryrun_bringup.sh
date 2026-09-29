@@ -9,6 +9,11 @@
 #
 #   dryrun_bringup.sh start    everything, supervisor actuation DISABLED
 #   dryrun_bringup.sh trial    everything, actuation ENABLED, cruise ~0.15 m/s
+#   dryrun_bringup.sh race     actuation ENABLED, no operator needed: ARM a mode in the
+#                              console, the car starts on a green signal and stops on red
+#                              (speed per mode, up to the model's 3 m/s)
+#   dryrun_bringup.sh auto     the mode chosen on the console (trial or race; default trial),
+#                              saved in ~/.config/laksa/car_mode; used by laksa-car.service
 #   dryrun_bringup.sh console  restart only the console (host follows network)
 #   dryrun_bringup.sh stop | status
 set -uo pipefail
@@ -94,13 +99,28 @@ start_console() {
 }
 
 MODE="${1:-status}"
+CAR_MODE_FILE="${HOME}/.config/laksa/car_mode"
+if [[ "${MODE}" == "auto" ]]; then
+    MODE="$(cat "${CAR_MODE_FILE}" 2>/dev/null || true)"
+    [[ "${MODE}" == "race" ]] || MODE=trial
+fi
 ACTUATION=false
 CRUISE_ERPM=1000.0
 DRIVER_CAP=0.24
+SUPERVISOR_EXTRA=()
+DRIVER_EXTRA=()
 if [[ "${MODE}" == "trial" ]]; then ACTUATION=true; CRUISE_ERPM=620.0; DRIVER_CAP=0.15; fi
+if [[ "${MODE}" == "race" ]]; then
+    # No speed cap below the model's trained 3 m/s (12,430 eRPM at 4,142 eRPM per m/s);
+    # the race manager sets the speed per mode.  Operator-free, odometry sanity
+    # check allows 4 m/s, and the clearance check looks 8 m ahead.
+    ACTUATION=true; CRUISE_ERPM=12500.0; DRIVER_CAP=2.5
+    SUPERVISOR_EXTRA=(-p require_operator:=false -p max_odom_linear_speed_mps:=4.0)
+    DRIVER_EXTRA=(-p governor_horizon_m:=8.0)
+fi
 
 case "${MODE}" in
-start|trial)
+start|trial|race)
     mkdir -p "${RUN_DIR}"
     SESSION="${SESSIONS_DIR}/$(date +%Y%m%dT%H%M%S)"
     mkdir -p "${SESSION}"
@@ -127,9 +147,14 @@ start|trial)
     fi
     start_one supervisor ros2 run laksa_bringup drive_supervisor_node.py --ros-args \
         --params-file "${SUPERVISOR_CONFIG}" -p actuation_enabled:=${ACTUATION} -p autonomy_enabled:=true \
-        -p exploration_max_erpm:=${CRUISE_ERPM}
+        -p exploration_max_erpm:=${CRUISE_ERPM} "${SUPERVISOR_EXTRA[@]}"
     start_one learned_driver ros2 run laksa_learned_driver learned_driver_node --ros-args \
-        --params-file "${DRIVER_CONFIG}" -p speed_cap_mps:=${DRIVER_CAP} -p decision_log:="${SESSION}/decisions.csv"
+        --params-file "${DRIVER_CONFIG}" -p speed_cap_mps:=${DRIVER_CAP} -p decision_log:="${SESSION}/decisions.csv" "${DRIVER_EXTRA[@]}"
+    # Bluetooth/USB gamepad, if one is paired: B = emergency stop, sticks take over.
+    start_one joy ros2 run joy game_controller_node --ros-args -r __node:=joy_node --params-file "${SUPERVISOR_CONFIG}"
+    if [[ "${MODE}" == "race" ]]; then
+        start_one race_manager ros2 run laksa_learned_driver race_manager
+    fi
     if [[ -f "${HOME}/zed_ws/install/setup.bash" ]]; then
         start_one zed_perception ros2 run laksa_learned_driver zed_perception
         start_one rgbd_sync ros2 run rtabmap_sync rgbd_sync --ros-args -r __ns:=/laksa/fused_mapping \
@@ -158,6 +183,7 @@ start|trial)
     start_one recorder ros2 bag record -o "${SESSION}/bag" "${BAG_TOPICS[@]}"
     start_console
     echo "mode=${MODE} actuation=${ACTUATION} cruise_erpm=${CRUISE_ERPM} driver_cap=${DRIVER_CAP} started=$(date -Is)" > "${SESSION}/session.txt"
+    echo "${MODE}" > "${RUN_DIR}/car_mode_active"
     echo "mode ${MODE}: supervisor actuation_enabled=${ACTUATION}, cruise cap ${CRUISE_ERPM} eRPM, driver cap ${DRIVER_CAP} m/s"
     ;;
 console)
@@ -180,7 +206,7 @@ status)
     done
     ;;
 *)
-    echo "usage: $0 start|trial|console|stop|status" >&2
+    echo "usage: $0 start|trial|race|console|stop|status" >&2
     exit 64
     ;;
 esac

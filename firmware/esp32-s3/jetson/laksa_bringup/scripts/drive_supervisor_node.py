@@ -90,6 +90,11 @@ class DriveSupervisor(Node):
             "max_odom_yaw_rate_rps": 4.0,
             "odom_jump_position_margin_m": 0.15,
             "odom_jump_yaw_margin_rad": 0.35,
+            # Race mode: autonomy runs without an operator holding a controller
+            # or console button.  Obstacle, stale-sensor and e-stop gates stay.
+            "require_operator": True,
+            # Physical emergency stop (Bool true = stop, latches like Xbox B).
+            "hardware_estop_topic": "/laksa/estop_hw",
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
@@ -180,6 +185,7 @@ class DriveSupervisor(Node):
             self.get_parameter("odom_jump_yaw_margin_rad").value
         )
         self._vesc_telemetry_timeout_ms = self._state_timeout_ns // 1_000_000
+        self._require_operator = bool(self.get_parameter("require_operator").value)
 
         positive = (
             self._exploration_max_erpm,
@@ -319,6 +325,12 @@ class DriveSupervisor(Node):
             SetBool,
             "/laksa/autonomy/set_armed",
             self._set_armed_callback,
+        )
+        self.create_subscription(
+            Bool,
+            str(self.get_parameter("hardware_estop_topic").value),
+            self._hardware_estop_callback,
+            10,
         )
         self.create_timer(1.0 / publish_rate, self._update)
 
@@ -565,6 +577,10 @@ class DriveSupervisor(Node):
 
     def _button(self, index: int) -> bool:
         return 0 <= index < len(self._buttons) and bool(self._buttons[index])
+
+    def _hardware_estop_callback(self, message: Bool) -> None:
+        if message.data:
+            self._latch_estop("hardware emergency stop")
 
     def _latch_estop(self, reason: str) -> None:
         if self._estop_latched:
@@ -834,7 +850,6 @@ class DriveSupervisor(Node):
             exploring = self._exploring
         now_ns = self._now_ns()
         checks = [
-            (self._last_joy_ns, self._joy_timeout_ns, "XBOX_STALE"),
             (self._last_state_ns, self._state_timeout_ns, "ESP32_STATE_STALE"),
             (self._last_scan_ns, self._scan_timeout_ns, "OBSTACLE_SOURCE_STALE: LiDAR scan"),
             (self._last_odom_ns, self._odom_timeout_ns, "ODOM_STALE"),
@@ -844,6 +859,8 @@ class DriveSupervisor(Node):
                 "OBSTACLE_SOURCE_STALE: ZED obstacle cloud",
             ),
         ]
+        if self._require_operator:
+            checks.insert(0, (self._last_joy_ns, self._joy_timeout_ns, "XBOX_STALE"))
         # Rollout cruise uses LiDAR odometry for visit memory and movement-gated
         # recovery, but remains independent of the global map and map TF.
         if not exploring:
@@ -987,7 +1004,7 @@ class DriveSupervisor(Node):
 
         autonomy_abort_reason = ""
         if self._autonomous:
-            if not joy_fresh:
+            if not joy_fresh and self._require_operator:
                 autonomy_abort_reason = "Xbox controller timeout"
             elif not autonomy_ready:
                 autonomy_abort_reason = autonomy_health
@@ -1054,9 +1071,10 @@ class DriveSupervisor(Node):
                 if self._exploring
                 else "Waiting for a fresh Nav2 command"
             )
-        elif not joy_fresh:
+        elif not joy_fresh and (self._require_operator or not self._autonomous):
             # The Xbox controller is the operator's brake/mode escape device.
-            # Never allow autonomous motion if that safety link disappears.
+            # Never allow autonomous motion if that safety link disappears,
+            # unless this runtime is explicitly operator-free (race mode).
             reason = "Xbox controller timeout"
         elif not self._autonomous and self._manual_neutral_required:
             reason = "Manual throttle must return to neutral"

@@ -82,6 +82,8 @@ class Console(Node):
         self._start_pub = self.create_publisher(PoseStamped, "/laksa/console/start", latched)
         self._goal_pub = self.create_publisher(PoseStamped, "/laksa/console/goal", latched)
         self._nav_enabled_pub = self.create_publisher(Bool, "/laksa/dashboard_navigation_enabled", latched)
+        self._race_pub = self.create_publisher(String, "/laksa/race/command", 10)
+        self.create_subscription(String, "/laksa/race/state", self._race_cb, latched)
         self._planner = ActionClient(self, ComputePathToPose, "/compute_path_to_pose")
         self._navigator = ActionClient(self, NavigateToPose, "/navigate_to_pose")
         self.create_subscription(Empty, "/laksa/cancel_navigation",
@@ -187,6 +189,30 @@ class Console(Node):
     def _detections_cb(self, message):
         try:
             self._detections = json.loads(message.data)
+        except ValueError:
+            pass
+
+    def _car_mode(self) -> dict:
+        run = Path.home() / "laksa_run"
+        read = lambda p: p.read_text(encoding="utf-8").strip() if p.is_file() else ""
+        return {"active": read(run / "car_mode_active") or "unknown",
+                "chosen": read(Path.home() / ".config" / "laksa" / "car_mode") or "trial",
+                "restarting": (run / "restart_request").is_file()}
+
+    def _set_car_mode(self, mode: str) -> None:
+        if mode not in ("trial", "race"):
+            return
+        config = Path.home() / ".config" / "laksa"
+        config.mkdir(parents=True, exist_ok=True)
+        (config / "car_mode").write_text(mode + "\n", encoding="utf-8")
+        run = Path.home() / "laksa_run"
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "restart_request").write_text(mode + "\n", encoding="utf-8")
+        self.get_logger().warn(f"Car mode set to {mode}; the stack restarts within ~15 s")
+
+    def _race_cb(self, message):
+        try:
+            self._status["race"] = json.loads(message.data)
         except ValueError:
             pass
 
@@ -415,6 +441,7 @@ class Console(Node):
                 "start": self._start,
                 "goal": self._goal,
                 "route": dict(self._route),
+                "car_mode": self._car_mode(),
                 "map_revision": self._map_revision,
             }
             if self._map_png and self._map_revision != map_revision_seen:
@@ -485,6 +512,16 @@ class Console(Node):
                             self._pulse = (Y_BUTTON, now + 0.6)
                         elif kind == "plan":
                             self._plan_requested = True
+                    if kind == "car_mode":
+                        self._set_car_mode(str(data.get("mode", "")))
+                    if kind in ("race_arm", "race_disarm", "race_start"):
+                        command = {"cmd": kind.replace("race_", "")}
+                        if kind == "race_arm":
+                            command["mode"] = "obstacle" if data.get("mode") == "obstacle" else "speed"
+                            speed = data.get("speed")
+                            if isinstance(speed, (int, float)) and math.isfinite(speed):
+                                command["speed"] = float(speed)
+                        self._race_pub.publish(String(data=json.dumps(command)))
                     if kind in ("start", "goal"):
                         x, y = float(data["x"]), float(data["y"])
                         if math.isfinite(x) and math.isfinite(y):

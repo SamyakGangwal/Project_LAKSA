@@ -27,5 +27,6 @@ setup(
         "laksa_operator = laksa_learned_driver.operator_cli:main",
         "zed_perception = laksa_learned_driver.zed_perception_node:main",
         "laksa_console = laksa_learned_driver.console_node:main",
+        "race_manager = laksa_learned_driver.race_node:main",
     ]},
 )

@@ -11,9 +11,10 @@ Group=samyak
 Environment=HOME=/home/samyak
 # Give the USB devices, the ESP32 micro-ROS agent and the network time to settle.
 ExecStartPre=/bin/sleep 25
-# trial = actuation enabled, cruise capped at ~0.15 m/s.  The car stays braked
-# until an operator starts driving from the console (or laksa_operator).
-ExecStart=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh trial
+# auto = the mode chosen on the console: trial (default; an operator must hold a
+# button) or race (ARM in the console, starts on the green signal).  The car
+# stays braked until then either way.
+ExecStart=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh auto
 ExecStop=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh stop
 TimeoutStartSec=240
 TimeoutStopSec=60

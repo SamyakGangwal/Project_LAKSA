@@ -37,6 +37,14 @@
         background:#1d3553; color:#fff; touch-action:none; user-select:none; }
   #go.on { background:var(--blue); }
   #routeinfo { font-size:12px; color:var(--muted); margin-top:6px; }
+  #raceMode, #raceSpeed { background:#222733; color:var(--text); border:1px solid var(--line); border-radius:8px;
+                          height:40px; padding:0 8px; font-size:15px; }
+  #raceMode { flex:2; } #raceSpeed { flex:1; width:80px; }
+  #arm { background:var(--green); } #disarm { background:#4a5160; } #raceGo { background:#1d3553; }
+  #raceinfo { font-size:13px; margin-top:6px; }
+  #modeTrial, #modeRace { background:#4a5160; } #modeTrial.cur, #modeRace.cur { background:var(--blue); }
+  #modeTrial.confirm, #modeRace.confirm { background:var(--amber); color:#000; }
+  #modeinfo { font-size:13px; margin-top:6px; }
   dl { display:grid; grid-template-columns: auto 1fr; gap:4px 10px; margin:0; }
   dt { color:var(--muted); } dd { margin:0; font-variant-numeric: tabular-nums; }
   .ok { color:var(--green); } .warn { color:var(--amber); } .bad { color:var(--red); }
@@ -65,6 +73,20 @@
       <button id="hold">HOLD TO RUN</button>
       <button id="explore">EXPLORE (2 min, slow)</button>
       <div class="row"><button id="stop">STOP</button><button id="rearm">REARM</button></div>
+    </div>
+    <div class="panel">
+      <h2>Car mode</h2>
+      <div class="row"><button id="modeTrial">TRIAL</button><button id="modeRace">RACE</button></div>
+      <div id="modeinfo">–</div>
+    </div>
+    <div class="panel">
+      <h2>Race (starts on green, stops on red)</h2>
+      <div class="row">
+        <select id="raceMode"><option value="speed">Speed run</option><option value="obstacle">Obstacle course</option></select>
+        <input id="raceSpeed" type="number" min="0.2" max="3.0" step="0.1" value="2.5" title="speed, m/s">
+      </div>
+      <div class="row"><button id="arm">ARM</button><button id="disarm">DISARM</button><button id="raceGo">START NOW</button></div>
+      <div id="raceinfo">Race: –</div>
     </div>
     <div class="panel">
       <h2>Route to END (Nav2)</h2>
@@ -143,6 +165,27 @@ $('hold').addEventListener('pointerdown', startHold);
 $('go').addEventListener('pointerdown', startGo);
 ['pointerup','pointercancel','pointerleave'].forEach(t => $('go').addEventListener(t, endGo));
 $('plan').onclick = () => send({cmd:'plan'});
+$('raceMode').onchange = () => { $('raceSpeed').value = $('raceMode').value === 'obstacle' ? '2.0' : '2.5'; };
+$('arm').onclick = () => send({cmd:'race_arm', mode:$('raceMode').value, speed:parseFloat($('raceSpeed').value)});
+$('disarm').onclick = () => send({cmd:'race_disarm'});
+$('raceGo').onclick = () => send({cmd:'race_start'});
+// Car mode: tap once to select, tap again within 4 s to confirm (restarts the car's software).
+let pendingMode = null, pendingTimer = null;
+function pickMode(mode) {
+  const btn = $(mode === 'race' ? 'modeRace' : 'modeTrial');
+  if (pendingMode === mode) {
+    clearTimeout(pendingTimer); pendingMode = null; btn.classList.remove('confirm');
+    send({cmd:'car_mode', mode}); return;
+  }
+  ['modeTrial', 'modeRace'].forEach(id => $(id).classList.remove('confirm'));
+  pendingMode = mode; btn.classList.add('confirm');
+  btn.textContent = 'TAP AGAIN: ' + mode.toUpperCase();
+  clearTimeout(pendingTimer);
+  pendingTimer = setTimeout(() => { pendingMode = null; btn.classList.remove('confirm'); resetModeLabels(); }, 4000);
+}
+function resetModeLabels() { $('modeTrial').textContent = 'TRIAL'; $('modeRace').textContent = 'RACE'; }
+$('modeTrial').onclick = () => pickMode('trial');
+$('modeRace').onclick = () => pickMode('race');
 ['pointerup','pointercancel','pointerleave'].forEach(t => $('hold').addEventListener(t, endHold));
 document.addEventListener('visibilitychange', () => { if (document.hidden) endHold(); });
 window.addEventListener('blur', () => endHold());
@@ -240,6 +283,20 @@ function updateStatus() {
     ARRIVED: 'arrived at END', STOPPED: 'stopped' + (r.detail ? ': ' + r.detail : ''),
     FAILED: 'no route' + (r.detail ? ': ' + r.detail : '')};
   $('routeinfo').textContent = routeText[r.state] || r.state || '';
+  const m = state.car_mode || {};
+  if (!pendingMode) resetModeLabels();
+  $('modeTrial').classList.toggle('cur', m.active === 'trial');
+  $('modeRace').classList.toggle('cur', m.active === 'race');
+  $('modeinfo').textContent = m.restarting ? `switching to ${m.chosen} — restarting (~1-2 min)…`
+    : (m.active === 'race' ? 'RACE: ARM below, the car starts on the green signal — no operator needed'
+      : (m.active === 'trial' ? 'TRIAL: hold-to-run / EXPLORE, an operator must hold a button' : `active: ${m.active}`));
+  const race = s.race;
+  if (race) {
+    const sig = `green ${(race.green * 100).toFixed(2)}% · red ${(race.red * 100).toFixed(2)}%`;
+    const t = race.elapsed_s != null ? ` · ${race.elapsed_s} s` : '';
+    $('raceinfo').textContent = `${race.state} — ${race.mode} @ ${race.speed_mps} m/s${t} · ${race.detail || ''} · camera ${sig}`;
+    cls($('raceinfo'), race.state === 'RUNNING' || race.state === 'FINISHED' ? 'ok' : (race.state === 'ABORTED' ? 'bad' : (race.state === 'ARMED' ? 'warn' : '')));
+  }
   cls($('routeinfo'), r.state === 'FAILED' ? 'bad' : (r.state === 'ARRIVED' || r.state === 'PLANNED' ? 'ok' : ''));
   $('health').textContent = s.health; cls($('health'), s.health === 'READY' ? 'ok' : 'warn');
   $('estop').textContent = s.estop === null ? '–' : (s.estop ? 'LATCHED ' + (s.estop_reason || '') : 'clear'); cls($('estop'), s.estop ? 'bad' : 'ok');

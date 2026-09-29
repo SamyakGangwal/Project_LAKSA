@@ -73,5 +73,12 @@ while true; do
             sleep 60
         fi
     fi
+    # The console asks for a restart after the car mode is changed (trial/race);
+    # this service already restarts laksa-car, so the web page needs no sudo.
+    if [[ -f "${RUN_DIR}/restart_request" ]]; then
+        rm -f "${RUN_DIR}/restart_request"
+        log "car mode change requested from the console; restarting laksa-car"
+        systemctl restart laksa-car.service
+    fi
     sleep "${PERIOD_S}"
 done

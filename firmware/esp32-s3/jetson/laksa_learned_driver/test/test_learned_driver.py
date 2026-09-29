@@ -6,6 +6,8 @@ import unittest
 import numpy as np
 
 from laksa_learned_driver.policy import LearnedDriverPolicy, OutputContract
+from laksa_learned_driver.race import MAX_SPEED_MPS, RaceManager
+from laksa_learned_driver.signals import Debounce, SignalConfig, read_signals
 from laksa_learned_driver.perception import (Detection, PerceptionConfig, box_footprint_points,
                                              filter_cloud, fit_ground_plane, lidar_ground_mask,
                                              person_speed_rule)
@@ -153,6 +155,77 @@ class AvoidTest(unittest.TestCase):
         wall = np.array([[0.419 + 0.15, y] for y in np.linspace(-1.5, 1.5, 121)])
         wall = np.vstack([wall, [[x, s * 0.45] for x in np.linspace(0.0, 0.6, 20) for s in (-1, 1)]])
         self.assertTrue(choose_steering(wall, 0.0, self.gov, self.cfg).all_blocked)
+
+
+
+def _frame(color_bgr=None, box=(100, 60, 140, 100), size=(240, 320)):
+    import cv2
+    image = np.full(size + (3,), 90, np.uint8)             # grey scene
+    if color_bgr is not None:
+        cv2.rectangle(image, box[:2], box[2:], color_bgr, -1)
+    return image
+
+
+class SignalTest(unittest.TestCase):
+    def test_green_light_is_seen(self):
+        reading = read_signals(_frame((40, 230, 40)))
+        self.assertTrue(reading.green)
+        self.assertFalse(reading.red)
+
+    def test_red_light_is_seen(self):
+        reading = read_signals(_frame((30, 30, 230)))
+        self.assertTrue(reading.red)
+        self.assertFalse(reading.green)
+
+    def test_orange_bucket_is_not_a_stop_signal(self):
+        self.assertFalse(read_signals(_frame((0, 140, 255))).red)       # BGR orange
+
+    def test_floor_colours_are_ignored(self):
+        self.assertFalse(read_signals(_frame((40, 230, 40), box=(100, 200, 160, 239))).green)
+
+    def test_tiny_specks_are_ignored(self):
+        self.assertFalse(read_signals(_frame((40, 230, 40), box=(100, 60, 103, 63))).green)
+
+    def test_debounce_needs_consecutive_frames(self):
+        d = Debounce(3)
+        self.assertEqual([d.update(x) for x in (True, True, False, True, True, True)],
+                         [False, False, False, False, False, True])
+
+
+class RaceTest(unittest.TestCase):
+    def test_green_starts_and_red_stops(self):
+        race = RaceManager(min_run_s=3.0)
+        self.assertEqual(race.arm("speed", None).speed_cap, 2.5)
+        self.assertIsNone(race.on_signals(0.0, False, False).autonomy)
+        self.assertTrue(race.on_signals(1.0, True, False).autonomy)
+        self.assertEqual(race.status.state, "RUNNING")
+        self.assertIsNone(race.on_signals(2.0, False, True).autonomy)   # stop ignored in the first 3 s
+        self.assertFalse(race.on_signals(5.0, False, True).autonomy)
+        self.assertEqual(race.status.state, "FINISHED")
+
+    def test_speed_is_clamped_to_the_trained_range(self):
+        race = RaceManager()
+        self.assertEqual(race.arm("obstacle", 9.0).speed_cap, MAX_SPEED_MPS)
+        self.assertEqual(RaceManager().arm("obstacle", None).speed_cap, 2.0)
+
+    def test_nothing_starts_unless_armed(self):
+        race = RaceManager()
+        self.assertIsNone(race.on_signals(0.0, True, False).autonomy)
+        self.assertEqual(race.status.state, "IDLE")
+
+    def test_emergency_stop_aborts_the_run(self):
+        race = RaceManager()
+        race.arm("speed", None)
+        race.on_signals(0.0, True, False)
+        self.assertFalse(race.on_mission(0.5, "EMERGENCY_STOP", "").autonomy)
+        self.assertEqual(race.status.state, "ABORTED")
+
+    def test_refused_start_aborts_after_timeout(self):
+        race = RaceManager(start_timeout_s=2.0)
+        race.arm("speed", None)
+        race.on_signals(0.0, True, False)
+        self.assertIsNone(race.on_mission(1.0, "MANUAL", "VESC telemetry is stale").autonomy)
+        self.assertFalse(race.on_mission(2.5, "MANUAL", "VESC telemetry is stale").autonomy)
 
 
 class ReverseRecoveryTest(unittest.TestCase):

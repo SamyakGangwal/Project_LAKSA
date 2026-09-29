@@ -26,7 +26,7 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan, PointCloud2
 from sensor_msgs_py import point_cloud2
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool, Float32, String
 
 from .policy import LearnedDriverPolicy
 from .recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_free_distance
@@ -57,6 +57,9 @@ class LearnedDriver(Node):
         # Clearance governor (independent of the network): stop margin in front of
         # the bumper, conservative deceleration and end-to-end latency.
         self.declare_parameter("stop_margin_m", 0.25)
+        # How far ahead the clearance check looks; at 3 m/s the stopping
+        # distance is ~5 m, so race mode uses a longer horizon.
+        self.declare_parameter("governor_horizon_m", 4.0)
         self.declare_parameter("lateral_margin_m", 0.10)
         self.declare_parameter("brake_decel_mps2", 1.0)
         self.declare_parameter("latency_sec", 0.25)
@@ -94,6 +97,7 @@ class LearnedDriver(Node):
             lateral_margin_m=float(self.get_parameter("lateral_margin_m").value),
             decel_mps2=float(self.get_parameter("brake_decel_mps2").value),
             latency_s=float(self.get_parameter("latency_sec").value),
+            horizon_m=float(self.get_parameter("governor_horizon_m").value),
         )
 
         latched = QoSProfile(depth=1)
@@ -105,6 +109,8 @@ class LearnedDriver(Node):
         self.create_subscription(Bool, str(self.get_parameter("enabled_topic").value), self._enabled_cb, latched)
         self.create_subscription(LaserScan, str(self.get_parameter("scan_topic").value), self._scan_cb,
                                  qos_profile_sensor_data)
+        # Race mode sets the speed per course (Speed run / Obstacle).
+        self.create_subscription(Float32, "/laksa/race/speed_cap", self._speed_cap_cb, latched)
         self.create_timer(0.10, self._watchdog)
         self.create_timer(1.0, self._diagnostics)
 
@@ -181,6 +187,14 @@ class LearnedDriver(Node):
             )
             return False
         return True
+
+    def _speed_cap_cb(self, message: Float32) -> None:
+        cap = float(message.data)
+        top = self._policy.output.speed_cap_norm_mps
+        if not math.isfinite(cap) or cap <= 0.0:
+            return
+        self._cap = min(cap, top)
+        self.get_logger().warn(f"Speed cap set to {self._cap:.2f} m/s (trained maximum {top:.1f} m/s)")
 
     def _camera_cb(self, message: PointCloud2) -> None:
         points = np.asarray(point_cloud2.read_points(message, field_names=("x", "y"), skip_nans=True))
