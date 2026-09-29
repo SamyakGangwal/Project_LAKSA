@@ -1,0 +1,9 @@
+# Field overrides on top of laksa_mapping/config/rtabmap_fused.yaml: the Orin
+# Nano ran 1.5-3.6 s per RTAB-Map update against a 0.7 s budget while also
+# running ZED depth + object detection.
+/laksa/fused_mapping/rtabmap:
+  ros__parameters:
+    Rtabmap/DetectionRate: '0.5'
+    Kp/MaxFeatures: '300'
+    Vis/MaxFeatures: '400'
+    Grid/3D: 'false'

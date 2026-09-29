@@ -1,0 +1,43 @@
+# Field copy of laksa_mapping/config/flat_ground_fusion.yaml with outlier
+# rejection: ZED VIO jumped 0.25-0.92 m in ~0.1 s outdoors in low light.
+ekf_filter_node:
+  ros__parameters:
+    frequency: 30.0
+    sensor_timeout: 0.5
+    two_d_mode: true
+    transform_time_offset: 0.0
+    transform_timeout: 0.2
+    print_diagnostics: true
+    publish_acceleration: false
+    publish_tf: true
+
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_footprint
+    world_frame: odom
+
+    # A rigid TF adapter converts the raw odom<-camera ZED pose to
+    # odom<-base_footprint. The flat-ground state then accepts only its
+    # well-performing planar position and absolute yaw.
+    pose0: /laksa/zed_base_pose
+    pose0_config: [true,  true,  false,
+                   false, false, true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
+    pose0_queue_size: 10
+    pose0_differential: false
+    pose0_relative: false
+    pose0_rejection_threshold: 3.0   # Mahalanobis gate against VIO jumps
+
+    # This adapter publishes measured VESC longitudinal velocity only. It
+    # publishes nothing while VESC telemetry is stale, so ZED can fail-soft.
+    odom1: /laksa/vesc_odom
+    odom1_config: [false, false, false,
+                   false, false, false,
+                   true,  false, false,
+                   false, false, false,
+                   false, false, false]
+    odom1_queue_size: 10
+    odom1_differential: false
+    odom1_relative: false
