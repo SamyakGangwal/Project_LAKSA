@@ -41,7 +41,7 @@ MODEL_CAP_MIN_MPS = 0.25
 class LearnedDriver(Node):
     def __init__(self) -> None:
         super().__init__("learned_driver")
-        default_model = Path(get_package_share_directory("laksa_learned_driver")) / "models" / "laksa_tinylidarnet_v2.npz"
+        default_model = Path(get_package_share_directory("laksa_learned_driver")) / "models" / "laksa_tinylidarnet_v5.npz"
         self.declare_parameter("model_path", str(default_model))
         self.declare_parameter("scan_topic", "/laksa/lidar/scan_validated")
         self.declare_parameter("command_topic", "/laksa/lidar_cruise_cmd_vel")

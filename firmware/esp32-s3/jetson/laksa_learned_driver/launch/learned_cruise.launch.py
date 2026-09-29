@@ -18,7 +18,7 @@ def generate_launch_description():
     share = Path(get_package_share_directory("laksa_learned_driver"))
     return LaunchDescription([
         DeclareLaunchArgument("config", default_value=str(share / "config" / "learned_driver.yaml")),
-        DeclareLaunchArgument("model_path", default_value=str(share / "models" / "laksa_tinylidarnet_v2.npz")),
+        DeclareLaunchArgument("model_path", default_value=str(share / "models" / "laksa_tinylidarnet_v5.npz")),
         Node(
             package="laksa_learned_driver",
             executable="learned_driver_node",

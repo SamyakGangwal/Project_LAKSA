@@ -18,7 +18,7 @@ from laksa_learned_driver.scan_adapter import LidarMount, scan_to_vehicle_beams
 from laksa_learned_driver.scan_features import ScanContract, bin_scan
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL = ROOT / "models" / "laksa_tinylidarnet_v2.npz"
+MODEL = ROOT / "models" / "laksa_tinylidarnet_v5.npz"
 
 
 class ScanFeatureTest(unittest.TestCase):

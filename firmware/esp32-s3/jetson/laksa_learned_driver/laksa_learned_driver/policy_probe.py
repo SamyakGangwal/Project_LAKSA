@@ -28,7 +28,7 @@ from .scan_features import bin_scan
 class PolicyProbe(Node):
     def __init__(self) -> None:
         super().__init__("learned_driver_probe")
-        default_model = Path(get_package_share_directory("laksa_learned_driver")) / "models" / "laksa_tinylidarnet_v2.npz"
+        default_model = Path(get_package_share_directory("laksa_learned_driver")) / "models" / "laksa_tinylidarnet_v5.npz"
         self.declare_parameter("model_path", str(default_model))
         self.declare_parameter("scan_topic", "/laksa/lidar/scan_validated")
         self.declare_parameter("speed_cap_mps", 0.24)
