@@ -59,6 +59,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Domain randomisation](04_training_pipeline.md#domain-randomisation)
 - [Parallel workers](04_training_pipeline.md#parallel-workers)
 - [Results](04_training_pipeline.md#results)
+- [Obstacles and the 2026 courses (in progress)](04_training_pipeline.md#obstacles-and-the-2026-courses-in-progress)
 - [How to retrain](04_training_pipeline.md#how-to-retrain)
 
 ### 5. [Runtime driving and safety](05_runtime_safety.md)

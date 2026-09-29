@@ -1,0 +1,937 @@
+{
+  "method": "DART + DAgger imitation of privileged raceline/pure-pursuit expert",
+  "architecture": "TinyLidarNet-1D",
+  "scan_contract": {
+    "fov_rad": 3.141592653589793,
+    "bins": 120,
+    "max_range_m": 10.0,
+    "min_range_m": 0.05
+  },
+  "output_contract": {
+    "steering_left_max_rad": 0.523,
+    "steering_right_max_rad": 0.288,
+    "speed_cap_norm_mps": 3.0,
+    "wheelbase_m": 0.324
+  },
+  "vehicle": {
+    "CONTROL_PERIOD_S": 0.08,
+    "FOOTPRINT_FRONT_M": 0.419,
+    "FOOTPRINT_HALF_WIDTH_M": 0.148,
+    "FOOTPRINT_PADDING_M": 0.02,
+    "FOOTPRINT_REAR_M": 0.149,
+    "LF_M": 0.162,
+    "LIDAR_DIST_FROM_COG_M": 0.15341999999999997,
+    "LIDAR_X_FROM_BASE_M": 0.31542,
+    "LR_M": 0.162,
+    "MASS_KG": 3.75,
+    "PHYSICS_DT_S": 0.01,
+    "STEER_LEFT_MAX_RAD": 0.523,
+    "STEER_RIGHT_MAX_RAD": 0.288,
+    "WHEELBASE_M": 0.324
+  },
+  "args": {
+    "output": "D:\\projects\\Project_LAKSA\\firmware\\esp32-s3\\jetson\\laksa_learned_driver\\models\\laksa_tinylidarnet_v4.npz",
+    "obstacle_fraction": 0.6,
+    "course_fraction": 0.4,
+    "rounds": 8,
+    "episodes": 60,
+    "steps": 900,
+    "epochs": 15,
+    "eval_tracks": 12,
+    "eval_randomized_trials": 2,
+    "cap_min": 0.25,
+    "cap_max": 3.0,
+    "workers": 12,
+    "seed": 2026
+  },
+  "expert_evaluation": {
+    "course_style_0.5_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 111.34000000000002,
+      "mean_progress_fraction": 1.0
+    },
+    "course_style_0.5_randomized": {
+      "completion_rate": 0.875,
+      "mean_lap_s": 109.15047619047618,
+      "mean_progress_fraction": 0.9775419028138792
+    },
+    "course_style_1.5_clean": {
+      "completion_rate": 0.9166666666666666,
+      "mean_lap_s": 42.727272727272734,
+      "mean_progress_fraction": 0.9545904887714664
+    },
+    "course_style_1.5_randomized": {
+      "completion_rate": 0.75,
+      "mean_lap_s": 45.29333333333332,
+      "mean_progress_fraction": 0.8542447693227014
+    },
+    "course_style_3.0_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 41.06666666666666,
+      "mean_progress_fraction": 1.0
+    },
+    "course_style_3.0_randomized": {
+      "completion_rate": 0.6666666666666666,
+      "mean_lap_s": 40.879999999999995,
+      "mean_progress_fraction": 0.7813796843495447
+    },
+    "obstacles_0.5_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 128.34666666666666,
+      "mean_progress_fraction": 1.0
+    },
+    "obstacles_0.5_randomized": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 132.16,
+      "mean_progress_fraction": 1.0
+    },
+    "obstacles_1.5_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 42.98,
+      "mean_progress_fraction": 1.0
+    },
+    "obstacles_1.5_randomized": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 44.73,
+      "mean_progress_fraction": 1.0
+    },
+    "obstacles_3.0_clean": {
+      "completion_rate": 0.9166666666666666,
+      "mean_lap_s": 23.105454545454545,
+      "mean_progress_fraction": 0.9189234935680434
+    },
+    "obstacles_3.0_randomized": {
+      "completion_rate": 0.5833333333333334,
+      "mean_lap_s": 23.38285714285714,
+      "mean_progress_fraction": 0.5927926417359801
+    },
+    "0.5_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 121.41333333333334,
+      "mean_progress_fraction": 1.0
+    },
+    "0.5_randomized": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 124.36666666666667,
+      "mean_progress_fraction": 1.0
+    },
+    "1.5_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 40.653333333333336,
+      "mean_progress_fraction": 1.0
+    },
+    "1.5_randomized": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 41.97666666666667,
+      "mean_progress_fraction": 1.0
+    },
+    "3.0_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 20.846666666666668,
+      "mean_progress_fraction": 1.0
+    },
+    "3.0_randomized": {
+      "completion_rate": 0.9166666666666666,
+      "mean_lap_s": 21.45090909090909,
+      "mean_progress_fraction": 0.9183990760058567
+    }
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "samples": 40167,
+      "train_loss": 0.09218383580446243,
+      "holdout_loss": 0.09350739419460297,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.3333333333333333,
+          "mean_lap_s": 101.22,
+          "mean_progress_fraction": 0.543806074720771
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.20833333333333334,
+          "mean_lap_s": 143.168,
+          "mean_progress_fraction": 0.4205130285297478
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 38.08,
+          "mean_progress_fraction": 0.7126571926654114
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.5,
+          "mean_lap_s": 43.19333333333333,
+          "mean_progress_fraction": 0.6479232339876223
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 0.08333333333333333,
+          "mean_lap_s": 26.72,
+          "mean_progress_fraction": 0.36683123601507434
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.041666666666666664,
+          "mean_lap_s": 30.32,
+          "mean_progress_fraction": 0.25980129175470407
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.25,
+          "mean_lap_s": 142.34666666666666,
+          "mean_progress_fraction": 0.5428581951399458
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 0.25,
+          "mean_lap_s": 149.28,
+          "mean_progress_fraction": 0.41188107209356817
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 0.4166666666666667,
+          "mean_lap_s": 39.792,
+          "mean_progress_fraction": 0.7117062251074077
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 45.040000000000006,
+          "mean_progress_fraction": 0.7679663269345821
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 0.5,
+          "mean_lap_s": 21.52,
+          "mean_progress_fraction": 0.7033948328934821
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.3333333333333333,
+          "mean_lap_s": 23.01,
+          "mean_progress_fraction": 0.5458151158340211
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 119.79333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 119.44727272727276,
+          "mean_progress_fraction": 0.9581932175311517
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.18,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 41.13090909090909,
+          "mean_progress_fraction": 0.9472925702863714
+        },
+        "3.0_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 19.91272727272727,
+          "mean_progress_fraction": 0.9600151909722223
+        },
+        "3.0_randomized": {
+          "completion_rate": 0.7916666666666666,
+          "mean_lap_s": 20.33263157894737,
+          "mean_progress_fraction": 0.8805560877800312
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round0.npz"
+    },
+    {
+      "round": 1,
+      "samples": 85600,
+      "train_loss": 0.06412350386381149,
+      "holdout_loss": 0.06492045521736145,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.5,
+          "mean_lap_s": 114.78666666666668,
+          "mean_progress_fraction": 0.6693096901695764
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.2916666666666667,
+          "mean_lap_s": 106.11428571428573,
+          "mean_progress_fraction": 0.5179124252517683
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 42.73777777777778,
+          "mean_progress_fraction": 0.8575482190429392
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.5,
+          "mean_lap_s": 44.900000000000006,
+          "mean_progress_fraction": 0.6417528435251415
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 0.6666666666666666,
+          "mean_lap_s": 34.040000000000006,
+          "mean_progress_fraction": 0.8227485973308241
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.20833333333333334,
+          "mean_lap_s": 36.816,
+          "mean_progress_fraction": 0.5301886005577193
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 125.5657142857143,
+          "mean_progress_fraction": 0.770319506710329
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 0.5,
+          "mean_lap_s": 144.06,
+          "mean_progress_fraction": 0.584628598800469
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 43.093333333333334,
+          "mean_progress_fraction": 0.8079001486553571
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 45.715555555555554,
+          "mean_progress_fraction": 0.844920695743708
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 24.429090909090913,
+          "mean_progress_fraction": 0.9718928414580588
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.5416666666666666,
+          "mean_lap_s": 27.87692307692308,
+          "mean_progress_fraction": 0.6604621160526162
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 118.68,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 121.7688888888889,
+          "mean_progress_fraction": 0.8901554098637151
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 39.726666666666674,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.93333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 20.793333333333333,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_randomized": {
+          "completion_rate": 0.9583333333333334,
+          "mean_lap_s": 21.79826086956522,
+          "mean_progress_fraction": 0.9942400594574506
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round1.npz"
+    },
+    {
+      "round": 2,
+      "samples": 133142,
+      "train_loss": 0.0742793083190918,
+      "holdout_loss": 0.07436417043209076,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 102.25142857142859,
+          "mean_progress_fraction": 0.8179334998050819
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.625,
+          "mean_lap_s": 112.41066666666666,
+          "mean_progress_fraction": 0.7339799878404619
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.96,
+          "mean_progress_fraction": 1.0
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.7083333333333334,
+          "mean_lap_s": 43.896470588235296,
+          "mean_progress_fraction": 0.7952660122937482
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 30.199999999999996,
+          "mean_progress_fraction": 0.967156156585166
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.4166666666666667,
+          "mean_lap_s": 36.76,
+          "mean_progress_fraction": 0.6399578685208751
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 131.5781818181818,
+          "mean_progress_fraction": 0.9888701833146273
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 0.7083333333333334,
+          "mean_lap_s": 137.49176470588233,
+          "mean_progress_fraction": 0.8358834154953909
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 42.946666666666665,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 45.30909090909091,
+          "mean_progress_fraction": 0.9707492462247895
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 22.326666666666668,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 24.137142857142855,
+          "mean_progress_fraction": 0.6920086257655661
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 118.02,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 120.82333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 39.60666666666666,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.796666666666674,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 20.220000000000002,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_randomized": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 21.355999999999998,
+          "mean_progress_fraction": 0.8757289768574225
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round2.npz"
+    },
+    {
+      "round": 3,
+      "samples": 177027,
+      "train_loss": 0.07340884953737259,
+      "holdout_loss": 0.0750727653503418,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.5,
+          "mean_lap_s": 116.74666666666667,
+          "mean_progress_fraction": 0.7149052225301563
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 122.10857142857144,
+          "mean_progress_fraction": 0.7717380523342642
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 42.11636363636364,
+          "mean_progress_fraction": 0.9756320041699246
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 45.059999999999995,
+          "mean_progress_fraction": 0.8813934006320036
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 31.64444444444444,
+          "mean_progress_fraction": 0.9347186985344053
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.375,
+          "mean_lap_s": 35.19111111111111,
+          "mean_progress_fraction": 0.6961519097445136
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 126.75999999999999,
+          "mean_progress_fraction": 0.9611504240913186
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 128.628,
+          "mean_progress_fraction": 0.8636353230425636
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 43.02666666666667,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 46.44363636363636,
+          "mean_progress_fraction": 0.975076855511638
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 23.26666666666667,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.5416666666666666,
+          "mean_lap_s": 23.944615384615386,
+          "mean_progress_fraction": 0.6678104984823081
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 118.54666666666667,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 121.39999999999999,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 39.699999999999996,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.9,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 20.513333333333335,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 21.47666666666667,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round3.npz"
+    },
+    {
+      "round": 4,
+      "samples": 220121,
+      "train_loss": 0.06888175755739212,
+      "holdout_loss": 0.07025617361068726,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 117.78285714285714,
+          "mean_progress_fraction": 0.7898455723883893
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.5416666666666666,
+          "mean_lap_s": 114.24615384615385,
+          "mean_progress_fraction": 0.7292969863699955
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 44.744,
+          "mean_progress_fraction": 0.9632848438706313
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.7083333333333334,
+          "mean_lap_s": 45.924705882352946,
+          "mean_progress_fraction": 0.8860689587026348
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 34.85333333333333,
+          "mean_progress_fraction": 1.0
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.5416666666666666,
+          "mean_lap_s": 36.73230769230769,
+          "mean_progress_fraction": 0.6886865305822716
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 122.968,
+          "mean_progress_fraction": 0.9194136797960811
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 0.7916666666666666,
+          "mean_lap_s": 132.56842105263158,
+          "mean_progress_fraction": 0.8763545266490596
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 41.92,
+          "mean_progress_fraction": 0.9904346955128206
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 45.443636363636365,
+          "mean_progress_fraction": 0.9852830734709132
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 23.025454545454544,
+          "mean_progress_fraction": 0.9216746794871794
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.6666666666666666,
+          "mean_lap_s": 26.33,
+          "mean_progress_fraction": 0.7854479841945817
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 118.39333333333336,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 121.31000000000002,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 39.63333333333333,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.86333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 20.513333333333332,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 21.436666666666667,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round4.npz"
+    },
+    {
+      "round": 5,
+      "samples": 263847,
+      "train_loss": 0.0688246339559555,
+      "holdout_loss": 0.07180661708116531,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 109.52000000000001,
+          "mean_progress_fraction": 0.9316113797137792
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 109.86666666666669,
+          "mean_progress_fraction": 0.8657818469089751
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 42.39333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 46.052,
+          "mean_progress_fraction": 0.913618028237067
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 34.087272727272726,
+          "mean_progress_fraction": 0.9498949894989499
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.6666666666666666,
+          "mean_lap_s": 35.465,
+          "mean_progress_fraction": 0.801948580890587
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 128.2311111111111,
+          "mean_progress_fraction": 0.925311150063545
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 133.56799999999998,
+          "mean_progress_fraction": 0.9204891997503192
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 42.95333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 45.27272727272728,
+          "mean_progress_fraction": 0.9647357709093441
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 23.68,
+          "mean_progress_fraction": 0.8472346267862573
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.6666666666666666,
+          "mean_lap_s": 26.53,
+          "mean_progress_fraction": 0.763489188695638
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 118.08,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 121.01666666666667,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 39.60666666666666,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.81333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 20.486666666666668,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_randomized": {
+          "completion_rate": 0.9583333333333334,
+          "mean_lap_s": 21.676521739130433,
+          "mean_progress_fraction": 0.994611668524712
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round5.npz"
+    },
+    {
+      "round": 6,
+      "samples": 311714,
+      "train_loss": 0.07144507765769958,
+      "holdout_loss": 0.07502300292253494,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 120.17777777777776,
+          "mean_progress_fraction": 0.9055813217955334
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 118.01333333333332,
+          "mean_progress_fraction": 0.830826288256266
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 42.443636363636365,
+          "mean_progress_fraction": 0.9624155405405409
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.7916666666666666,
+          "mean_lap_s": 45.717894736842105,
+          "mean_progress_fraction": 0.8126255298668053
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 34.215999999999994,
+          "mean_progress_fraction": 0.91190312021067
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.5833333333333334,
+          "mean_lap_s": 38.18857142857143,
+          "mean_progress_fraction": 0.8351835708438474
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 125.20727272727272,
+          "mean_progress_fraction": 0.9908854166666655
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 0.9583333333333334,
+          "mean_lap_s": 130.58434782608697,
+          "mean_progress_fraction": 0.971279046474359
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 43.06666666666667,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 44.85666666666666,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 24.008000000000003,
+          "mean_progress_fraction": 0.8661888449714535
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.5,
+          "mean_lap_s": 23.560000000000002,
+          "mean_progress_fraction": 0.6271415382469293
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 118.15333333333335,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 120.93333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 39.586666666666666,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.78666666666667,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 20.46666666666667,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 21.413333333333338,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round6.npz"
+    },
+    {
+      "round": 7,
+      "samples": 358246,
+      "train_loss": 0.06990337371826172,
+      "holdout_loss": 0.07305575907230377,
+      "evaluation": {
+        "course_style_0.5_clean": {
+          "completion_rate": 0.8333333333333334,
+          "mean_lap_s": 112.96799999999999,
+          "mean_progress_fraction": 0.9141457311122566
+        },
+        "course_style_0.5_randomized": {
+          "completion_rate": 0.6666666666666666,
+          "mean_lap_s": 111.25,
+          "mean_progress_fraction": 0.8404153690609545
+        },
+        "course_style_1.5_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 42.92363636363636,
+          "mean_progress_fraction": 0.9627674549549553
+        },
+        "course_style_1.5_randomized": {
+          "completion_rate": 0.7916666666666666,
+          "mean_lap_s": 46.94736842105262,
+          "mean_progress_fraction": 0.8645015422448581
+        },
+        "course_style_3.0_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 35.2,
+          "mean_progress_fraction": 0.955788149164951
+        },
+        "course_style_3.0_randomized": {
+          "completion_rate": 0.7083333333333334,
+          "mean_lap_s": 39.32235294117647,
+          "mean_progress_fraction": 0.8780482058891778
+        },
+        "obstacles_0.5_clean": {
+          "completion_rate": 0.9166666666666666,
+          "mean_lap_s": 124.99636363636364,
+          "mean_progress_fraction": 0.9903846153846142
+        },
+        "obstacles_0.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 132.31333333333336,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 43.01333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "obstacles_1.5_randomized": {
+          "completion_rate": 0.9583333333333334,
+          "mean_lap_s": 45.68695652173913,
+          "mean_progress_fraction": 0.984903381642512
+        },
+        "obstacles_3.0_clean": {
+          "completion_rate": 0.75,
+          "mean_lap_s": 22.462222222222223,
+          "mean_progress_fraction": 0.8596972764362455
+        },
+        "obstacles_3.0_randomized": {
+          "completion_rate": 0.625,
+          "mean_lap_s": 25.40266666666667,
+          "mean_progress_fraction": 0.7719749614296975
+        },
+        "0.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 118.25333333333333,
+          "mean_progress_fraction": 1.0
+        },
+        "0.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 121.03666666666668,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 39.60666666666666,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 40.82,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_clean": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 20.54,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0_randomized": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 21.536666666666665,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260928T221934\\round7.npz"
+    }
+  ],
+  "best_round": 7,
+  "competition_course_used_for_training": false,
+  "obstacle_fraction": 0.6,
+  "course_fraction": 0.4
+}

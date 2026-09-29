@@ -86,6 +86,46 @@ Shipped model: `models/laksa_tinylidarnet_v2.npz`, round 4 (the best), 168,602 s
 
 The 3 m/s randomised failure on the competition course is the one known gap. It is far above what the car does today (0.15–0.24 m/s caps).
 
+## Obstacles and the 2026 courses (in progress)
+
+Added after the first field test, to teach the network to drive **around** things rather than only along empty corridors. `train.py` now mixes four kinds of track (`--obstacle-fraction`, `--course-fraction`), and every round is evaluated on each kind:
+
+| Kind | What it is |
+|---|---|
+| `random` | the original procedural corridors |
+| `obstacles` | the same, with 3–8 boxes (0.20–0.45 m) placed mostly on the natural driving line, always leaving a gap of at least 0.74 m |
+| `course_style` | built from the *2026 Course Layouts* PDF: sections 20", 32", 36", 41.5" and 48" wide, occasional 11 ft open areas with clusters of 2–9 five-gallon buckets (0.30 m) |
+| `obstacle_course` | a replica of the PDF's **Obstacle Course** (`training/courses/`), below |
+
+How the expert handles obstacles:
+- The racing line is squeezed through the open side of each obstacle.
+- The squeeze tapers as a 2.5 m-radius parabola, so the line curves into the gap instead of kinking.
+- The line keeps 0.22 m of side clearance to account for the car's front corner swinging out.
+- On course-style tracks it slows in narrow sections.
+
+Expert completion is 100% at 0.5 and 1.5 m/s on obstacle and course-style tracks. It is lower at 3 m/s with randomised physics (58%), which is far above the car's speeds.
+
+Student results so far (completion on held-out tracks, clean conditions, 0.5 / 1.5 m/s):
+
+| Model | Training mix | Obstacle tracks | Course-style tracks | Plain tracks |
+|---|---|---|---|---|
+| v2 (shipped) | plain only | not trained | not trained | 100% / 100% |
+| v3 | 60% obstacles, 5 rounds | 83% / 100% | — | 100% / 100% |
+| v4 | 40% course-style, 60% obstacles, 8 rounds | 92% / 100% | 83% / 92% | 100% / 100% |
+
+v3 and v4 are in `models/`. **The car still runs v2**; neither has been evaluated on the held-out Speed Course or deployed yet.
+
+### Obstacle Course replica
+
+`training/courses/build_obstacle_course_2026.py --pdf "2026 Course Layouts.pdf"` builds `training/courses/obstacle_course_2026/`:
+- **Walls** are read from the PDF's **vector barrier blocks** at 17.9 pt per ft; the 48 ft dimension matches the barrier extents exactly. Each block is drawn at 1 cm and downsampled, so the 20" narrow path measures 0.50 m in the map.
+- The helical ramp's rails, the straight ramp's rail and the bank's edges are added from the drawing.
+- **The route** (75.9 m) follows the drawing's arrows. The bridge over the tunnel becomes a figure-8 crossing in 2-D, and ramps, gravel, bank and potholes are flat.
+- **Per episode:** a random direction, 2–9 buckets in the bucket box, and the three hoops (posts 0.55 m apart) on their dashed lines.
+- Each layout is checked with an expert lap at 0.5 m/s and redrawn up to 12 times if the expert can't complete it.
+
+**Status: not yet in the training mix.** The expert completes the replica on about 5 of 8 layouts. The failures are all at **hoop 3 on the right-hand loop**: with this car's right-steering limit (1.09 m radius), some legal hoop positions there can't be driven. See [Known issues](11_known_issues_and_next_steps.md#model-limits).
+
 ## How to retrain
 
 Requirements: Python 3.10+, `numpy scipy opencv-python torch pyyaml`, and F1TENTH Gym `v1.0.0`:

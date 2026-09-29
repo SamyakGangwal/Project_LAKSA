@@ -29,7 +29,9 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `config/nav2_field_overrides.yaml` | Nav2 on top of the production config: forward-only (Dubins) planning |
 | `launch/learned_cruise.launch.py` | Launch the driver alone, next to the production manual-control stack |
 | `models/laksa_tinylidarnet_v2.npz`, `.report.json` | The shipped model and its training report |
-| `training/*.py` | Simulator wrapper, tracks, expert, DART/DAgger training, evaluation, smoke test |
+| `models/laksa_tinylidarnet_v3.npz`, `v4.npz` + reports | Obstacle- and course-trained candidates (not deployed) |
+| `training/*.py` | Simulator wrapper, tracks (plain, obstacles, 2026 course-style, Obstacle Course replica), expert, DAgger training, evaluation, smoke test |
+| `training/courses/` | Obstacle Course replica builder (from the PDF) and its map, route and features |
 | `test/test_learned_driver.py` | 38 tests: features, adapter, governor, obstacle avoidance, recovery, perception, smoothing, model contracts, topic authority |
 | `README.md`, `package.xml`, `setup.py`, `setup.cfg`, `resource/` | Package metadata |
 

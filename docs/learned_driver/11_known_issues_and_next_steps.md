@@ -44,6 +44,8 @@ Remaining checks for route driving:
 | Trained only on obstacle-free corridors 0.9–2.2 m wide; rooms and outdoors are out of distribution | add open areas, obstacles and clutter to the procedural worlds, then retrain |
 | Never learned to stop or reverse; that's the rule layers' job | fine, by design |
 | Sim-only data | use the session bags plus the expert labels offline to fine-tune on real scans |
+| Obstacle Course replica: the expert fails about 3 of 8 layouts at hoop 3 on the right loop | the right-steering limit (0.288 rad, 1.09 m radius, against 0.523 rad left) makes some legal hoop positions undrivable; more right steering travel on the car would fix it. In training, either keep hoop 3 near the natural line or give the expert a tracking controller that doesn't cut corners |
+| v3/v4 not deployed | evaluate on the held-out Speed Course with `evaluate.py`, then deploy |
 
 ## Awaiting real-world confirmation
 
