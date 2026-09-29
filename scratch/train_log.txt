@@ -1,0 +1,20 @@
+[18:43:45] 12 held-out tracks ready; evaluating expert
+[18:44:33] expert: {"0.5": {"completion_rate": 1.0, "mean_lap_s": 112.56000000000002, "mean_progress_fraction": 1.0}, "1.5": {"completion_rate": 1.0, "mean_lap_s": 37.71333333333333, "mean_progress_fraction": 1.0}, "3.0": {"completion_rate": 1.0, "mean_lap_s": 19.493333333333332, "mean_progress_fraction": 1.0}}
+[18:45:39] round 0 (beta=1.000): 34861 samples total, episode outcomes {'COMPLETE': 6, 'COLLISION': 0, 'TIMEOUT': 34}, collection 66s
+[18:46:41] round 0: losses {'train_loss': 0.021396905183792114, 'holdout_loss': 0.0222463458776474}, training 62s
+[18:46:41] round 0 student: {"0.5": {"completion_rate": 1.0, "mean_lap_s": 112.56, "mean_progress_fraction": 1.0}, "1.5": {"completion_rate": 1.0, "mean_lap_s": 37.76, "mean_progress_fraction": 1.0}, "3.0": {"completion_rate": 1.0, "mean_lap_s": 19.166666666666668, "mean_progress_fraction": 1.0}}
+[18:47:45] round 1 (beta=0.500): 69817 samples total, episode outcomes {'COMPLETE': 4, 'COLLISION': 0, 'TIMEOUT': 36}, collection 63s
+[18:48:55] round 1: losses {'train_loss': 0.026184415444731712, 'holdout_loss': 0.02537856437265873}, training 71s
+[18:48:55] round 1 student: {"0.5": {"completion_rate": 1.0, "mean_lap_s": 112.59333333333335, "mean_progress_fraction": 1.0}, "1.5": {"completion_rate": 1.0, "mean_lap_s": 37.77333333333333, "mean_progress_fraction": 1.0}, "3.0": {"completion_rate": 1.0, "mean_lap_s": 19.166666666666668, "mean_progress_fraction": 1.0}}
+[18:49:59] round 2 (beta=0.250): 103776 samples total, episode outcomes {'COMPLETE': 4, 'COLLISION': 1, 'TIMEOUT': 35}, collection 63s
+[18:51:25] round 2: losses {'train_loss': 0.027071397751569748, 'holdout_loss': 0.028037576004862785}, training 87s
+[18:51:25] round 2 student: {"0.5": {"completion_rate": 1.0, "mean_lap_s": 112.56000000000002, "mean_progress_fraction": 1.0}, "1.5": {"completion_rate": 1.0, "mean_lap_s": 37.76, "mean_progress_fraction": 1.0}, "3.0": {"completion_rate": 1.0, "mean_lap_s": 19.180000000000003, "mean_progress_fraction": 1.0}}
+[18:54:35] round 3 (beta=0.125): 137639 samples total, episode outcomes {'COMPLETE': 3, 'COLLISION': 2, 'TIMEOUT': 35}, collection 189s
+[18:58:22] round 3: losses {'train_loss': 0.027682580053806305, 'holdout_loss': 0.02798926830291748}, training 227s
+[18:58:22] round 3 student: {"0.5": {"completion_rate": 1.0, "mean_lap_s": 112.61999999999999, "mean_progress_fraction": 1.0}, "1.5": {"completion_rate": 1.0, "mean_lap_s": 37.733333333333334, "mean_progress_fraction": 1.0}, "3.0": {"completion_rate": 1.0, "mean_lap_s": 19.173333333333336, "mean_progress_fraction": 1.0}}
+[19:00:00] round 4 (beta=0.062): 171580 samples total, episode outcomes {'COMPLETE': 8, 'COLLISION': 1, 'TIMEOUT': 31}, collection 98s
+[19:06:34] round 4: losses {'train_loss': 0.020108772441744804, 'holdout_loss': 0.021623561158776283}, training 394s
+[19:06:34] round 4 student: {"0.5": {"completion_rate": 1.0, "mean_lap_s": 112.56666666666668, "mean_progress_fraction": 1.0}, "1.5": {"completion_rate": 1.0, "mean_lap_s": 37.71333333333333, "mean_progress_fraction": 1.0}, "3.0": {"completion_rate": 1.0, "mean_lap_s": 19.166666666666668, "mean_progress_fraction": 1.0}}
+[19:06:34] best round 0 -> D:\projects\Project_LAKSA\firmware\esp32-s3\jetson\laksa_learned_driver\models\laksa_tinylidarnet_v1.npz
+[19:06:34] TRAINING DONE
+exit 0

@@ -1,0 +1,56 @@
+[18:42:25] python 3.12.5; maps -> D:\projects\Project_LAKSA\scratch\learned_driver_maps
+[18:42:26] imports ok (1.4s)
+[18:42:26] track 0: length 57.9 m, width 0.97 m, generated in 0.0s
+[18:42:26]   raceline ready (0.0s)
+[18:42:35]   cap 0.5: sim loaded/reset (8.7s)
+[18:42:35]     step 250: progress 9.9/57.9 m, speed 0.50 m/s, 615 steps/s
+[18:42:36]     step 500: progress 19.9/57.9 m, speed 0.50 m/s, 632 steps/s
+[18:42:36]     step 750: progress 30.1/57.9 m, speed 0.50 m/s, 648 steps/s
+[18:42:37]     step 1000: progress 40.1/57.9 m, speed 0.50 m/s, 641 steps/s
+[18:42:37]     step 1250: progress 50.1/57.9 m, speed 0.50 m/s, 642 steps/s
+[18:42:37]   cap 0.5: LAP after 1443 steps (115.4s sim), progress 57.9/57.9 m, wall 2.2s
+[18:42:37]   cap 1.5: sim loaded/reset (0.0s)
+[18:42:38]     step 250: progress 29.9/57.9 m, speed 1.50 m/s, 628 steps/s
+[18:42:38]   cap 1.5: LAP after 483 steps (38.6s sim), progress 57.9/57.9 m, wall 0.8s
+[18:42:38]   cap 3.0: sim loaded/reset (0.0s)
+[18:42:38]   cap 3.0: LAP after 246 steps (19.7s sim), progress 57.9/57.9 m, wall 0.4s
+[18:42:38] track 1: length 62.1 m, width 0.96 m, generated in 0.0s
+[18:42:39]   raceline ready (0.0s)
+[18:42:39]   cap 0.5: sim loaded/reset (0.0s)
+[18:42:39]     step 250: progress 9.9/62.1 m, speed 0.50 m/s, 638 steps/s
+[18:42:39]     step 500: progress 19.9/62.1 m, speed 0.50 m/s, 645 steps/s
+[18:42:40]     step 750: progress 30.0/62.1 m, speed 0.50 m/s, 655 steps/s
+[18:42:40]     step 1000: progress 40.0/62.1 m, speed 0.50 m/s, 642 steps/s
+[18:42:40]     step 1250: progress 50.1/62.1 m, speed 0.50 m/s, 646 steps/s
+[18:42:41]     step 1500: progress 60.1/62.1 m, speed 0.50 m/s, 647 steps/s
+[18:42:41]   cap 0.5: LAP after 1548 steps (123.8s sim), progress 62.1/62.1 m, wall 2.4s
+[18:42:41]   cap 1.5: sim loaded/reset (0.0s)
+[18:42:41]     step 250: progress 29.8/62.1 m, speed 1.50 m/s, 648 steps/s
+[18:42:42]     step 500: progress 59.9/62.1 m, speed 1.50 m/s, 645 steps/s
+[18:42:42]   cap 1.5: LAP after 519 steps (41.5s sim), progress 62.2/62.1 m, wall 0.8s
+[18:42:42]   cap 3.0: sim loaded/reset (0.0s)
+[18:42:42]     step 250: progress 59.0/62.1 m, speed 3.00 m/s, 640 steps/s
+[18:42:42]   cap 3.0: LAP after 263 steps (21.0s sim), progress 62.1/62.1 m, wall 0.4s
+[18:42:42] track 2: length 93.1 m, width 2.20 m, generated in 0.0s
+[18:42:42]   raceline ready (0.0s)
+[18:42:42]   cap 0.5: sim loaded/reset (0.0s)
+[18:42:43]     step 250: progress 10.1/93.1 m, speed 0.50 m/s, 612 steps/s
+[18:42:43]     step 500: progress 20.1/93.1 m, speed 0.50 m/s, 577 steps/s
+[18:42:44]     step 750: progress 30.1/93.1 m, speed 0.50 m/s, 571 steps/s
+[18:42:44]     step 1000: progress 40.1/93.1 m, speed 0.50 m/s, 582 steps/s
+[18:42:44]     step 1250: progress 50.2/93.1 m, speed 0.50 m/s, 595 steps/s
+[18:42:45]     step 1500: progress 60.2/93.1 m, speed 0.50 m/s, 598 steps/s
+[18:42:45]     step 1750: progress 70.2/93.1 m, speed 0.50 m/s, 593 steps/s
+[18:42:46]     step 2000: progress 80.2/93.1 m, speed 0.50 m/s, 596 steps/s
+[18:42:46]     step 2250: progress 90.2/93.1 m, speed 0.50 m/s, 599 steps/s
+[18:42:46]   cap 0.5: LAP after 2320 steps (185.6s sim), progress 93.1/93.1 m, wall 3.9s
+[18:42:46]   cap 1.5: sim loaded/reset (0.0s)
+[18:42:46]     step 250: progress 29.9/93.1 m, speed 1.50 m/s, 579 steps/s
+[18:42:47]     step 500: progress 60.0/93.1 m, speed 1.50 m/s, 599 steps/s
+[18:42:47]     step 750: progress 90.0/93.1 m, speed 1.50 m/s, 599 steps/s
+[18:42:47]   cap 1.5: LAP after 776 steps (62.1s sim), progress 93.1/93.1 m, wall 1.3s
+[18:42:47]   cap 3.0: sim loaded/reset (0.0s)
+[18:42:48]     step 250: progress 58.2/93.1 m, speed 3.00 m/s, 589 steps/s
+[18:42:48]   cap 3.0: LAP after 396 steps (31.7s sim), progress 93.2/93.1 m, wall 0.7s
+[18:42:48] SMOKE TEST DONE
+exit 0

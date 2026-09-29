@@ -1,0 +1,44 @@
+[INFO] [1790640945.861495640] [learned_driver]: Learned driver state -> IDLE
+[INFO] [1790640945.866935288] [learned_driver]: Learned driver loaded TinyLidarNet-1D (120 bins), speed cap 0.150 m/s
+[INFO] [1790641029.462919832] [learned_driver]: Learned driver state -> WAITING_FOR_SCAN
+[INFO] [1790641029.521405560] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641071.420175096] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641071.968342456] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641074.535603288] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641075.085648856] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641075.383160248] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641075.943344984] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641078.471705848] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641079.565938904] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641082.130064920] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641082.661559640] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641082.814559384] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641083.360025048] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641085.920662296] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641086.470944440] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641086.534883960] [learned_driver]: Learned driver state -> BLOCKED
+[WARN] [1790641086.535988760] [learned_driver]: Path blocked 0.00 m ahead of the bumper and no recovery left; stopping
+[INFO] [1790641086.546542904] [learned_driver]: Learned driver state -> IDLE
+[INFO] [1790641105.607799800] [learned_driver]: Learned driver state -> WAITING_FOR_SCAN
+[INFO] [1790641105.666311576] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641106.201856248] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641108.775703192] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641109.853994648] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641112.418381912] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641113.016408760] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641113.128553144] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641113.635478232] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641116.215861752] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641116.733043960] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641117.146890584] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641117.669104440] [learned_driver]: Learned driver state -> RECOVERY_REVERSE
+[INFO] [1790641120.214002328] [learned_driver]: Learned driver state -> RECOVERY_PAUSE
+[INFO] [1790641120.726629688] [learned_driver]: Learned driver state -> BLOCKED
+[WARN] [1790641120.727794168] [learned_driver]: Path blocked 0.00 m ahead of the bumper and no recovery left; stopping
+[INFO] [1790641120.741304824] [learned_driver]: Learned driver state -> IDLE
+[INFO] [1790641189.617028184] [learned_driver]: Learned driver state -> WAITING_FOR_SCAN
+[INFO] [1790641189.688444280] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641227.059615480] [learned_driver]: Learned driver state -> IDLE
+[INFO] [1790641458.058234392] [learned_driver]: Learned driver state -> WAITING_FOR_SCAN
+[INFO] [1790641458.108188088] [learned_driver]: Learned driver state -> LEARNED_DRIVING
+[INFO] [1790641544.795867704] [learned_driver]: Learned driver state -> IDLE

@@ -1,0 +1,62 @@
+[WARN] [1790640945.677724792] [laksa.fused_mapping.rgbd_sync]: Parameter "queue_size" has been renamed to "sync_queue_size" and will be removed in future versions! The value (10) is copied to "sync_queue_size".
+[INFO] [1790640945.678334264] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: approx_sync = true
+[INFO] [1790640945.678382968] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: approx_sync_max_interval = 0.050000
+[INFO] [1790640945.678420376] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: topic_queue_size  = 10
+[INFO] [1790640945.678443352] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: sync_queue_size  = 10
+[INFO] [1790640945.678463736] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: qos             = 2
+[INFO] [1790640945.678482648] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: qos_camera_info = 2
+[INFO] [1790640945.678501272] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: depth_scale = 1.000000
+[INFO] [1790640945.678522424] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: decimation = 1
+[INFO] [1790640945.678542200] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: compressed_rate = 0.000000
+[INFO] [1790640945.678562488] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: image_transport = raw
+[INFO] [1790640945.678581208] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: depth_transport = raw
+[INFO] [1790640945.756419256] [laksa.fused_mapping.rgbd_sync]: 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790640950.768689816] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641215.768634680] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641230.768655480] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641265.768634680] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641310.768682392] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641330.768672088] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641385.768652504] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641420.768672728] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info
+[WARN] [1790641570.768665496] [laksa.fused_mapping.rgbd_sync]: rgbd_sync: Did not receive data since 5 seconds! Make sure the input topics are published ("$ rostopic hz my_topic") and the timestamps in their header are set. Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. 
+rgbd_sync subscribed to (approx sync, max interval=0.050000s):
+   /zed/zed_node/rgb/color/rect/image,
+   /zed/zed_node/depth/depth_registered,
+   /zed/zed_node/rgb/color/rect/camera_info

@@ -1,0 +1,6 @@
+image: train_2014362070.png
+resolution: 0.05
+origin: [-13.434117, -10.802729, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

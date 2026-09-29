@@ -79,3 +79,6 @@ Desktop.ini
 .vscode/
 .clangd
 .devcontainer
+# Local F1TENTH Gym clones used for training (clone from github.com/f1tenth/f1tenth_gym)
+scratch/f1tenth_gym/
+scratch/f1tenth_gym_v1/

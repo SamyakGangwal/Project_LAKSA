@@ -1,0 +1,159 @@
+{
+  "method": "DART + DAgger imitation of privileged raceline/pure-pursuit expert",
+  "architecture": "TinyLidarNet-1D",
+  "scan_contract": {
+    "fov_rad": 3.141592653589793,
+    "bins": 120,
+    "max_range_m": 10.0,
+    "min_range_m": 0.05
+  },
+  "output_contract": {
+    "steering_left_max_rad": 0.523,
+    "steering_right_max_rad": 0.288,
+    "speed_cap_norm_mps": 3.0,
+    "wheelbase_m": 0.324
+  },
+  "vehicle": {
+    "CONTROL_PERIOD_S": 0.08,
+    "FOOTPRINT_FRONT_M": 0.419,
+    "FOOTPRINT_HALF_WIDTH_M": 0.148,
+    "FOOTPRINT_PADDING_M": 0.02,
+    "FOOTPRINT_REAR_M": 0.149,
+    "LF_M": 0.162,
+    "LIDAR_DIST_FROM_COG_M": 0.15341999999999997,
+    "LIDAR_X_FROM_BASE_M": 0.31542,
+    "LR_M": 0.162,
+    "MASS_KG": 3.75,
+    "PHYSICS_DT_S": 0.01,
+    "STEER_LEFT_MAX_RAD": 0.523,
+    "STEER_RIGHT_MAX_RAD": 0.288,
+    "WHEELBASE_M": 0.324
+  },
+  "args": {
+    "output": "C:\\Users\\samga\\AppData\\Local\\Temp\\tiny2\\tiny.npz",
+    "rounds": 2,
+    "episodes": 4,
+    "steps": 150,
+    "epochs": 1,
+    "eval_tracks": 2,
+    "eval_randomized_trials": 1,
+    "cap_min": 0.25,
+    "cap_max": 3.0,
+    "workers": 12,
+    "seed": 2026
+  },
+  "expert_evaluation": {
+    "0.5_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 117.24,
+      "mean_progress_fraction": 1.0
+    },
+    "0.5_randomized": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 120.0,
+      "mean_progress_fraction": 1.0
+    },
+    "1.5_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 39.28,
+      "mean_progress_fraction": 1.0
+    },
+    "1.5_randomized": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 37.76,
+      "mean_progress_fraction": 1.0
+    },
+    "3.0_clean": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 20.240000000000002,
+      "mean_progress_fraction": 1.0
+    },
+    "3.0_randomized": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 21.759999999999998,
+      "mean_progress_fraction": 1.0
+    }
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "samples": 600,
+      "train_loss": 0.39555105566978455,
+      "holdout_loss": 0.4123486876487732,
+      "evaluation": {
+        "0.5_clean": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.02982534706672638
+        },
+        "0.5_randomized": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.06551724137931031
+        },
+        "1.5_clean": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.030150022391401705
+        },
+        "1.5_randomized": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.06878638602776528
+        },
+        "3.0_clean": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.02862740707568294
+        },
+        "3.0_randomized": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.07603000447828034
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260924T193711\\round0.npz"
+    },
+    {
+      "round": 1,
+      "samples": 1074,
+      "train_loss": 0.44614455103874207,
+      "holdout_loss": 0.4516746401786804,
+      "evaluation": {
+        "0.5_clean": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.02276085982982535
+        },
+        "0.5_randomized": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.06873040752351094
+        },
+        "1.5_clean": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.023085535154500673
+        },
+        "1.5_randomized": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.06878638602776528
+        },
+        "3.0_clean": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.022469771607702645
+        },
+        "3.0_randomized": {
+          "completion_rate": 0.0,
+          "mean_lap_s": null,
+          "mean_progress_fraction": 0.07603000447828034
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\scratch\\learned_driver_runs\\20260924T193711\\round1.npz"
+    }
+  ],
+  "best_round": 0,
+  "competition_course_used_for_training": false
+}

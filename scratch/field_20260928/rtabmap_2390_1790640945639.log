@@ -1,0 +1,406 @@
+[INFO] [1790640945.862774040] [laksa.fused_mapping.rtabmap]: rtabmap(maps): latch                      = true
+[INFO] [1790640945.863246040] [laksa.fused_mapping.rtabmap]: rtabmap(maps): map_filter_radius          = 0.000000
+[INFO] [1790640945.863308088] [laksa.fused_mapping.rtabmap]: rtabmap(maps): map_filter_angle           = 30.000000
+[INFO] [1790640945.863337624] [laksa.fused_mapping.rtabmap]: rtabmap(maps): map_cleanup                = true
+[INFO] [1790640945.863359672] [laksa.fused_mapping.rtabmap]: rtabmap(maps): map_always_update          = false
+[INFO] [1790640945.863378968] [laksa.fused_mapping.rtabmap]: rtabmap(maps): map_empty_ray_tracing      = true
+[INFO] [1790640945.863396760] [laksa.fused_mapping.rtabmap]: rtabmap(maps): map_cache_loaded_on_init   = true
+[INFO] [1790640945.863418968] [laksa.fused_mapping.rtabmap]: rtabmap(maps): cloud_output_voxelized     = true
+[INFO] [1790640945.863437880] [laksa.fused_mapping.rtabmap]: rtabmap(maps): cloud_subtract_filtering   = false
+[INFO] [1790640945.863455576] [laksa.fused_mapping.rtabmap]: rtabmap(maps): cloud_subtract_filtering_min_neighbors = 2
+[INFO] [1790640945.863710456] [laksa.fused_mapping.rtabmap]: rtabmap(maps): octomap_tree_depth         = 16
+[INFO] [1790640945.988449912] [laksa.fused_mapping.rtabmap]: rtabmap: frame_id      = "base_footprint"
+[INFO] [1790640945.988580760] [laksa.fused_mapping.rtabmap]: rtabmap: odom_frame_id = "odom"
+[INFO] [1790640945.988624728] [laksa.fused_mapping.rtabmap]: rtabmap: ground_truth_frame_id = "" -> ground_truth_base_frame_id = "base_footprint"
+[INFO] [1790640945.988649528] [laksa.fused_mapping.rtabmap]: rtabmap: map_frame_id  = "map"
+[INFO] [1790640945.988669240] [laksa.fused_mapping.rtabmap]: rtabmap: log_to_rosout_level  = 4
+[INFO] [1790640945.988688120] [laksa.fused_mapping.rtabmap]: rtabmap: initial_pose  = ""
+[INFO] [1790640945.988705816] [laksa.fused_mapping.rtabmap]: rtabmap: use_action_for_goal  = false
+[INFO] [1790640945.988723096] [laksa.fused_mapping.rtabmap]: rtabmap: tf_delay      = 0.050000
+[INFO] [1790640945.988750008] [laksa.fused_mapping.rtabmap]: rtabmap: tf_tolerance  = 0.100000
+[INFO] [1790640945.988769528] [laksa.fused_mapping.rtabmap]: rtabmap: odom_sensor_sync   = false
+[INFO] [1790640945.988787928] [laksa.fused_mapping.rtabmap]: rtabmap: pub_loc_pose_only_when_localizing = false
+[INFO] [1790640945.988811576] [laksa.fused_mapping.rtabmap]: rtabmap: wait_for_transform = 1.000000
+[INFO] [1790640945.988832856] [laksa.fused_mapping.rtabmap]: rtabmap: staleness_factor = 0.000000
+[INFO] [1790640945.988852792] [laksa.fused_mapping.rtabmap]: rtabmap: gen_scan  = false
+[INFO] [1790640945.988871352] [laksa.fused_mapping.rtabmap]: rtabmap: gen_depth  = false
+[INFO] [1790640946.074143608] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/3D"="true" (rosparam)
+[INFO] [1790640946.074584536] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/CellSize"="0.05" (rosparam)
+[INFO] [1790640946.075417784] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/DepthDecimation"="2" (rosparam)
+[INFO] [1790640946.076462200] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/FootprintHeight"="0.30" (rosparam)
+[INFO] [1790640946.076843864] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/FootprintLength"="0.57" (rosparam)
+[INFO] [1790640946.077196824] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/FootprintWidth"="0.36" (rosparam)
+[INFO] [1790640946.078571256] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/MaxGroundHeight"="0.08" (rosparam)
+[INFO] [1790640946.078952280] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/MaxObstacleHeight"="1.50" (rosparam)
+[INFO] [1790640946.079916088] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/NoiseFilteringMinNeighbors"="5" (rosparam)
+[INFO] [1790640946.080264984] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/NoiseFilteringRadius"="0.0" (rosparam)
+[INFO] [1790640946.081628504] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/RangeMax"="8.0" (rosparam)
+[INFO] [1790640946.082092408] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/RangeMin"="0.30" (rosparam)
+[INFO] [1790640946.082440248] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/RayTracing"="true" (rosparam)
+[INFO] [1790640946.083351576] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Grid/Sensor"="2" (rosparam)
+[INFO] [1790640946.100845720] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Kp/DetectorStrategy"="6" (rosparam)
+[INFO] [1790640946.102410904] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Kp/MaxFeatures"="400" (rosparam)
+[INFO] [1790640946.118879480] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Mem/IncrementalMemory"="true" (rosparam)
+[INFO] [1790640946.119324152] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Mem/InitWMWithAllNodes"="false" (rosparam)
+[INFO] [1790640946.127674264] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Mem/STMSize"="30" (rosparam)
+[INFO] [1790640946.137642744] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "RGBD/CreateOccupancyGrid"="true" (rosparam)
+[INFO] [1790640946.143678616] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "RGBD/NeighborLinkRefining"="true" (rosparam)
+[INFO] [1790640946.146290584] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "RGBD/ProximityBySpace"="true" (rosparam)
+[INFO] [1790640946.149557752] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "RGBD/ProximityByTime"="true" (rosparam)
+[INFO] [1790640946.151710456] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "RGBD/ProximityPathMaxNeighbors"="10" (rosparam)
+[INFO] [1790640946.153478008] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Reg/Strategy"="2" (rosparam)
+[INFO] [1790640946.154370584] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Rtabmap/DetectionRate"="1.0" (rosparam)
+[INFO] [1790640946.163371160] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Rtabmap/TimeThr"="700" (rosparam)
+[INFO] [1790640946.182787224] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Vis/EstimationType"="1" (rosparam)
+[INFO] [1790640946.183176536] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Vis/FeatureType"="6" (rosparam)
+[INFO] [1790640946.184569080] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Vis/MaxFeatures"="600" (rosparam)
+[INFO] [1790640946.185787160] [laksa.fused_mapping.rtabmap]: Setting RTAB-Map parameter "Vis/MinInliers"="15" (rosparam)
+[INFO] [1790640946.193815608] [laksa.fused_mapping.rtabmap]: RTAB-Map detection rate = 1.000000 Hz
+[INFO] [1790640946.194286264] [laksa.fused_mapping.rtabmap]: rtabmap: Deleted database "/home/samyak/laksa_run/rtabmap.db" (--delete_db_on_start or -d are set).
+[INFO] [1790640946.194367800] [laksa.fused_mapping.rtabmap]: rtabmap: Using database from "/home/samyak/laksa_run/rtabmap.db" (0 MB).
+[INFO] [1790640946.328950840] [laksa.fused_mapping.rtabmap]: rtabmap: Database version = "0.23.7".
+[INFO] [1790640946.329154520] [laksa.fused_mapping.rtabmap]: rtabmap: SLAM mode (Mem/IncrementalMemory=true)
+[INFO] [1790640946.454323928] [laksa.fused_mapping.rtabmap]: Setup callbacks
+[INFO] [1790640946.454770200] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_depth = false
+[INFO] [1790640946.454839992] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_rgb = false
+[INFO] [1790640946.454880504] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_stereo = false
+[INFO] [1790640946.454906808] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_rgbd = true (rgbd_cameras=1)
+[INFO] [1790640946.454930008] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_sensor_data = false
+[INFO] [1790640946.454949368] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_odom = false ("odom_frame_id" is set)
+[INFO] [1790640946.454968920] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_odom_info = false
+[INFO] [1790640946.454987864] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_user_data = false
+[INFO] [1790640946.455005624] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_scan = true
+[INFO] [1790640946.455080600] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_scan_cloud = false
+[INFO] [1790640946.455101816] [laksa.fused_mapping.rtabmap]: rtabmap: subscribe_scan_descriptor = false
+[INFO] [1790640946.455131480] [laksa.fused_mapping.rtabmap]: rtabmap: topic_queue_size = 10
+[INFO] [1790640946.455152280] [laksa.fused_mapping.rtabmap]: rtabmap: sync_queue_size  = 10
+[INFO] [1790640946.455169752] [laksa.fused_mapping.rtabmap]: rtabmap: qos_image       = 2
+[INFO] [1790640946.455188056] [laksa.fused_mapping.rtabmap]: rtabmap: qos_camera_info = 2
+[INFO] [1790640946.455205656] [laksa.fused_mapping.rtabmap]: rtabmap: qos_scan        = 2
+[INFO] [1790640946.455222264] [laksa.fused_mapping.rtabmap]: rtabmap: qos_odom        = 2
+[INFO] [1790640946.455238520] [laksa.fused_mapping.rtabmap]: rtabmap: qos_user_data   = 0
+[INFO] [1790640946.455255704] [laksa.fused_mapping.rtabmap]: rtabmap: approx_sync     = true
+[INFO] [1790640946.455273240] [laksa.fused_mapping.rtabmap]: rtabmap: image_transport = raw
+[INFO] [1790640946.455290456] [laksa.fused_mapping.rtabmap]: rtabmap: depth_transport = raw
+[INFO] [1790640946.456007128] [laksa.fused_mapping.rtabmap]: Setup rgbd callback
+[INFO] [1790640946.463921688] [laksa.fused_mapping.rtabmap]: 
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[WARN] [1790640951.472144440] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790640956.272864728] [laksa.fused_mapping.rtabmap]: rtabmap (1): Rate=1.00s, Limit=0.700s, Conversion=0.0143s, RTAB-Map=0.7802s, Maps update=0.0304s pub=0.0049s delay=0.9801s (local map=1, WM=1)
+[INFO] [1790640958.023332152] [laksa.fused_mapping.rtabmap]: rtabmap (2): Rate=1.00s, Limit=0.700s, Conversion=0.0039s, RTAB-Map=0.7059s, Maps update=0.0145s pub=0.0001s delay=0.9574s (local map=1, WM=1)
+[INFO] [1790640959.214011160] [laksa.fused_mapping.rtabmap]: rtabmap (3): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=0.8207s, Maps update=0.0003s pub=0.0001s delay=0.9885s (local map=1, WM=1)
+[INFO] [1790640960.004718552] [laksa.fused_mapping.rtabmap]: rtabmap (4): Rate=1.00s, Limit=0.700s, Conversion=0.0060s, RTAB-Map=0.5042s, Maps update=0.0003s pub=0.0001s delay=0.6920s (local map=1, WM=1)
+[INFO] [1790640961.195798008] [laksa.fused_mapping.rtabmap]: rtabmap (5): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=0.6097s, Maps update=0.0003s pub=0.0001s delay=0.7961s (local map=1, WM=1)
+[INFO] [1790640963.199714296] [laksa.fused_mapping.rtabmap]: rtabmap (6): Rate=1.00s, Limit=0.700s, Conversion=0.0024s, RTAB-Map=1.4277s, Maps update=0.0082s pub=0.0101s delay=1.6272s (local map=2, WM=2)
+[INFO] [1790640965.166784568] [laksa.fused_mapping.rtabmap]: rtabmap (7): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.3460s, Maps update=0.0094s pub=0.0071s delay=1.5614s (local map=3, WM=3)
+[INFO] [1790640967.621179096] [laksa.fused_mapping.rtabmap]: rtabmap (8): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=1.7448s, Maps update=0.0217s pub=0.0087s delay=1.9863s (local map=4, WM=4)
+[INFO] [1790640969.796809752] [laksa.fused_mapping.rtabmap]: rtabmap (9): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.9272s, Maps update=0.0176s pub=0.0035s delay=2.1436s (local map=5, WM=5)
+[INFO] [1790640971.576398424] [laksa.fused_mapping.rtabmap]: rtabmap (10): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=0.9056s, Maps update=0.0039s pub=0.0453s delay=1.1914s (local map=6, WM=6)
+[INFO] [1790640972.862080088] [laksa.fused_mapping.rtabmap]: rtabmap (11): Rate=1.00s, Limit=0.700s, Conversion=0.0026s, RTAB-Map=0.8795s, Maps update=0.0115s pub=0.0002s delay=1.1565s (local map=6, WM=6)
+[INFO] [1790640974.753170840] [laksa.fused_mapping.rtabmap]: rtabmap (12): Rate=1.00s, Limit=0.700s, Conversion=0.0028s, RTAB-Map=1.0628s, Maps update=0.0094s pub=0.0001s delay=1.3447s (local map=6, WM=6)
+[INFO] [1790640975.657215672] [laksa.fused_mapping.rtabmap]: rtabmap (13): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=0.7368s, Maps update=0.0003s pub=0.0002s delay=1.2479s (local map=6, WM=6)
+[INFO] [1790640978.044126168] [laksa.fused_mapping.rtabmap]: rtabmap (14): Rate=1.00s, Limit=0.700s, Conversion=0.0026s, RTAB-Map=1.0131s, Maps update=0.0003s pub=0.0001s delay=1.2356s (local map=6, WM=6)
+[INFO] [1790640979.886245432] [laksa.fused_mapping.rtabmap]: rtabmap (15): Rate=1.00s, Limit=0.700s, Conversion=0.0038s, RTAB-Map=0.9704s, Maps update=0.0111s pub=0.0001s delay=1.2290s (local map=6, WM=6)
+[INFO] [1790640982.310272952] [laksa.fused_mapping.rtabmap]: rtabmap (16): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=0.9951s, Maps update=0.0111s pub=0.0001s delay=1.2535s (local map=6, WM=6)
+[INFO] [1790640985.182228312] [laksa.fused_mapping.rtabmap]: rtabmap (17): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.0150s, Maps update=0.0094s pub=0.0002s delay=1.3474s (local map=6, WM=6)
+[INFO] [1790640986.638745016] [laksa.fused_mapping.rtabmap]: rtabmap (18): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=0.9484s, Maps update=0.0086s pub=0.0001s delay=1.1101s (local map=6, WM=6)
+[INFO] [1790640988.185019832] [laksa.fused_mapping.rtabmap]: rtabmap (19): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.1800s, Maps update=0.0228s pub=0.0001s delay=1.4158s (local map=6, WM=6)
+[INFO] [1790640989.506629272] [laksa.fused_mapping.rtabmap]: rtabmap (20): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.1422s, Maps update=0.0023s pub=0.0001s delay=1.3448s (local map=6, WM=6)
+[INFO] [1790640990.767687704] [laksa.fused_mapping.rtabmap]: rtabmap (21): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=0.9554s, Maps update=0.0094s pub=0.0001s delay=1.1433s (local map=6, WM=6)
+[INFO] [1790640994.189771288] [laksa.fused_mapping.rtabmap]: rtabmap (22): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.0017s, Maps update=0.0017s pub=0.0001s delay=1.2494s (local map=6, WM=6)
+[INFO] [1790640996.307112536] [laksa.fused_mapping.rtabmap]: rtabmap (23): Rate=1.00s, Limit=0.700s, Conversion=0.0029s, RTAB-Map=0.9450s, Maps update=0.0003s pub=0.0001s delay=1.1234s (local map=6, WM=6)
+[INFO] [1790640998.157857112] [laksa.fused_mapping.rtabmap]: rtabmap (24): Rate=1.00s, Limit=0.700s, Conversion=0.0045s, RTAB-Map=0.9542s, Maps update=0.0004s pub=0.0001s delay=1.1915s (local map=6, WM=6)
+[INFO] [1790641000.510078872] [laksa.fused_mapping.rtabmap]: rtabmap (25): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=0.9188s, Maps update=0.0158s pub=0.0001s delay=1.2375s (local map=6, WM=6)
+[INFO] [1790641002.126532984] [laksa.fused_mapping.rtabmap]: rtabmap (26): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.0025s, Maps update=0.0087s pub=0.0001s delay=1.3066s (local map=6, WM=6)
+[INFO] [1790641003.204516568] [laksa.fused_mapping.rtabmap]: rtabmap (27): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=0.8043s, Maps update=0.0170s pub=0.0001s delay=1.1509s (local map=6, WM=6)
+[INFO] [1790641004.724426296] [laksa.fused_mapping.rtabmap]: rtabmap (28): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=0.9942s, Maps update=0.0085s pub=0.0001s delay=1.2818s (local map=6, WM=6)
+[INFO] [1790641006.945840184] [laksa.fused_mapping.rtabmap]: rtabmap (29): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.1518s, Maps update=0.0003s pub=0.0001s delay=1.5750s (local map=6, WM=6)
+[INFO] [1790641008.976544536] [laksa.fused_mapping.rtabmap]: rtabmap (30): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=0.9712s, Maps update=0.0244s pub=0.0001s delay=1.4388s (local map=6, WM=6)
+[INFO] [1790641010.142620536] [laksa.fused_mapping.rtabmap]: rtabmap (31): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=0.8654s, Maps update=0.0135s pub=0.0001s delay=1.1432s (local map=6, WM=6)
+[INFO] [1790641011.908461176] [laksa.fused_mapping.rtabmap]: rtabmap (32): Rate=1.00s, Limit=0.700s, Conversion=0.0028s, RTAB-Map=0.9976s, Maps update=0.0003s pub=0.0001s delay=1.2808s (local map=6, WM=6)
+[INFO] [1790641014.568747096] [laksa.fused_mapping.rtabmap]: rtabmap (33): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=0.8251s, Maps update=0.0232s pub=0.0001s delay=1.3992s (local map=6, WM=6)
+[INFO] [1790641016.424378968] [laksa.fused_mapping.rtabmap]: rtabmap (34): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=0.7963s, Maps update=0.0004s pub=0.0001s delay=1.1670s (local map=6, WM=6)
+[INFO] [1790641019.987196344] [laksa.fused_mapping.rtabmap]: rtabmap (35): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=0.7971s, Maps update=0.0139s pub=0.0001s delay=1.0923s (local map=6, WM=6)
+[INFO] [1790641022.862388696] [laksa.fused_mapping.rtabmap]: rtabmap (36): Rate=1.00s, Limit=0.700s, Conversion=0.0043s, RTAB-Map=0.9384s, Maps update=0.0157s pub=0.0001s delay=1.4341s (local map=6, WM=6)
+[INFO] [1790641024.277585272] [laksa.fused_mapping.rtabmap]: rtabmap (37): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=0.9138s, Maps update=0.0160s pub=0.0001s delay=1.3811s (local map=6, WM=6)
+[INFO] [1790641026.202855416] [laksa.fused_mapping.rtabmap]: rtabmap (38): Rate=1.00s, Limit=0.700s, Conversion=0.0033s, RTAB-Map=0.8489s, Maps update=0.0110s pub=0.0001s delay=1.2243s (local map=6, WM=6)
+[INFO] [1790641027.581131576] [laksa.fused_mapping.rtabmap]: rtabmap (39): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=0.9580s, Maps update=0.0003s pub=0.0001s delay=1.2154s (local map=6, WM=6)
+[INFO] [1790641028.799885336] [laksa.fused_mapping.rtabmap]: rtabmap (40): Rate=1.00s, Limit=0.700s, Conversion=0.0039s, RTAB-Map=0.8119s, Maps update=0.0089s pub=0.0001s delay=1.0464s (local map=6, WM=6)
+[INFO] [1790641030.980373016] [laksa.fused_mapping.rtabmap]: rtabmap (41): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.5049s, Maps update=0.0003s pub=0.0001s delay=1.7548s (local map=6, WM=6)
+[INFO] [1790641033.380283096] [laksa.fused_mapping.rtabmap]: rtabmap (42): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=1.8262s, Maps update=0.0005s pub=0.0001s delay=2.0692s (local map=6, WM=6)
+[INFO] [1790641035.162983576] [laksa.fused_mapping.rtabmap]: rtabmap (43): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.6979s, Maps update=0.0065s pub=0.0113s delay=2.0724s (local map=7, WM=7)
+[INFO] [1790641037.705158360] [laksa.fused_mapping.rtabmap]: rtabmap (44): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=2.1781s, Maps update=0.0060s pub=0.0347s delay=2.6005s (local map=8, WM=8)
+[INFO] [1790641043.941836056] [laksa.fused_mapping.rtabmap]: rtabmap (45): Rate=1.00s, Limit=0.700s, Conversion=0.0022s, RTAB-Map=2.3168s, Maps update=0.0454s pub=0.0234s delay=2.6156s (local map=9, WM=9)
+[INFO] [1790641047.916579768] [laksa.fused_mapping.rtabmap]: rtabmap (46): Rate=1.00s, Limit=0.700s, Conversion=0.0028s, RTAB-Map=3.7551s, Maps update=0.0378s pub=0.0330s delay=4.0320s (local map=10, WM=10)
+[INFO] [1790641050.733844696] [laksa.fused_mapping.rtabmap]: rtabmap (47): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=2.6117s, Maps update=0.0571s pub=0.0643s delay=3.1327s (local map=11, WM=11)
+[INFO] [1790641055.176690584] [laksa.fused_mapping.rtabmap]: rtabmap (48): Rate=1.00s, Limit=0.700s, Conversion=0.0034s, RTAB-Map=1.8923s, Maps update=0.0115s pub=0.1229s delay=2.4532s (local map=12, WM=12)
+[INFO] [1790641058.672885944] [laksa.fused_mapping.rtabmap]: rtabmap (49): Rate=1.00s, Limit=0.700s, Conversion=0.0032s, RTAB-Map=2.2626s, Maps update=0.0136s pub=0.0402s delay=2.6951s (local map=13, WM=13)
+[INFO] [1790641062.276696120] [laksa.fused_mapping.rtabmap]: rtabmap (50): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=3.3397s, Maps update=0.0480s pub=0.0557s delay=3.8123s (local map=14, WM=14)
+[INFO] [1790641066.281355416] [laksa.fused_mapping.rtabmap]: rtabmap (51): Rate=1.00s, Limit=0.700s, Conversion=0.0028s, RTAB-Map=2.5337s, Maps update=0.0055s pub=0.1886s delay=3.0209s (local map=15, WM=15)
+[INFO] [1790641068.972132664] [laksa.fused_mapping.rtabmap]: rtabmap (52): Rate=1.00s, Limit=0.700s, Conversion=0.0028s, RTAB-Map=2.1520s, Maps update=0.0337s pub=0.0352s delay=2.6895s (local map=16, WM=16)
+[INFO] [1790641076.257190904] [laksa.fused_mapping.rtabmap]: rtabmap (53): Rate=1.00s, Limit=0.700s, Conversion=0.0033s, RTAB-Map=2.2306s, Maps update=0.0128s pub=0.1006s delay=2.8272s (local map=17, WM=17)
+[INFO] [1790641080.777064888] [laksa.fused_mapping.rtabmap]: rtabmap (54): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=2.2661s, Maps update=0.0006s pub=0.0001s delay=2.5429s (local map=17, WM=17)
+[INFO] [1790641086.836384824] [laksa.fused_mapping.rtabmap]: rtabmap (55): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=2.2487s, Maps update=0.0116s pub=0.0001s delay=2.8008s (local map=17, WM=17)
+[INFO] [1790641092.046391416] [laksa.fused_mapping.rtabmap]: rtabmap (56): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.3489s, Maps update=0.0099s pub=0.0001s delay=1.5860s (local map=17, WM=17)
+[INFO] [1790641097.279416856] [laksa.fused_mapping.rtabmap]: rtabmap (57): Rate=1.00s, Limit=0.700s, Conversion=0.0024s, RTAB-Map=1.2842s, Maps update=0.0086s pub=0.0001s delay=1.5762s (local map=17, WM=17)
+[INFO] [1790641102.511743128] [laksa.fused_mapping.rtabmap]: rtabmap (58): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.3176s, Maps update=0.0194s pub=0.0001s delay=1.5625s (local map=17, WM=17)
+[INFO] [1790641104.563888792] [laksa.fused_mapping.rtabmap]: rtabmap (59): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.3327s, Maps update=0.0122s pub=0.0001s delay=1.6085s (local map=17, WM=17)
+[INFO] [1790641107.082037144] [laksa.fused_mapping.rtabmap]: rtabmap (60): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=1.6943s, Maps update=0.0539s pub=0.0001s delay=2.0439s (local map=17, WM=17)
+[INFO] [1790641111.997317144] [laksa.fused_mapping.rtabmap]: rtabmap (61): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=2.5943s, Maps update=0.0336s pub=0.0003s delay=2.9440s (local map=17, WM=17)
+[INFO] [1790641115.032825528] [laksa.fused_mapping.rtabmap]: rtabmap (62): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=2.1701s, Maps update=0.0088s pub=0.0001s delay=2.4176s (local map=17, WM=17)
+[WARN] [1790641121.471002712] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641124.109923416] [laksa.fused_mapping.rtabmap]: rtabmap (63): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.4090s, Maps update=0.0113s pub=0.0001s delay=1.9695s (local map=17, WM=17)
+[INFO] [1790641126.405012440] [laksa.fused_mapping.rtabmap]: rtabmap (64): Rate=1.00s, Limit=0.700s, Conversion=0.0054s, RTAB-Map=1.3311s, Maps update=0.0004s pub=0.0001s delay=1.6395s (local map=17, WM=17)
+[INFO] [1790641127.787887160] [laksa.fused_mapping.rtabmap]: rtabmap (65): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.1692s, Maps update=0.0275s pub=0.0001s delay=1.4096s (local map=17, WM=17)
+[INFO] [1790641132.256131864] [laksa.fused_mapping.rtabmap]: rtabmap (66): Rate=1.00s, Limit=0.700s, Conversion=0.0034s, RTAB-Map=1.2961s, Maps update=0.0133s pub=0.0001s delay=1.6296s (local map=17, WM=17)
+[INFO] [1790641134.546713656] [laksa.fused_mapping.rtabmap]: rtabmap (67): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.3990s, Maps update=0.0109s pub=0.0023s delay=1.6847s (local map=17, WM=17)
+[INFO] [1790641137.060411960] [laksa.fused_mapping.rtabmap]: rtabmap (68): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.4388s, Maps update=0.0142s pub=0.0001s delay=1.7355s (local map=17, WM=17)
+[INFO] [1790641140.094861048] [laksa.fused_mapping.rtabmap]: rtabmap (69): Rate=1.00s, Limit=0.700s, Conversion=0.0026s, RTAB-Map=1.3292s, Maps update=0.0277s pub=0.0001s delay=1.5342s (local map=17, WM=17)
+[INFO] [1790641142.029866392] [laksa.fused_mapping.rtabmap]: rtabmap (70): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=1.3361s, Maps update=0.0214s pub=0.0001s delay=1.6208s (local map=17, WM=17)
+[INFO] [1790641144.032683096] [laksa.fused_mapping.rtabmap]: rtabmap (71): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.5778s, Maps update=0.0101s pub=0.0001s delay=1.7666s (local map=17, WM=17)
+[INFO] [1790641145.340592504] [laksa.fused_mapping.rtabmap]: rtabmap (72): Rate=1.00s, Limit=0.700s, Conversion=0.0036s, RTAB-Map=1.1791s, Maps update=0.0083s pub=0.0001s delay=1.3877s (local map=17, WM=17)
+[INFO] [1790641146.860776760] [laksa.fused_mapping.rtabmap]: rtabmap (73): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=1.3129s, Maps update=0.0004s pub=0.0001s delay=1.5203s (local map=17, WM=17)
+[INFO] [1790641151.666185272] [laksa.fused_mapping.rtabmap]: rtabmap (74): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.3308s, Maps update=0.0106s pub=0.0001s delay=1.5478s (local map=17, WM=17)
+[INFO] [1790641153.906794072] [laksa.fused_mapping.rtabmap]: rtabmap (75): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=1.6261s, Maps update=0.0234s pub=0.0001s delay=1.9341s (local map=17, WM=17)
+[INFO] [1790641155.387293400] [laksa.fused_mapping.rtabmap]: rtabmap (76): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=1.4360s, Maps update=0.0004s pub=0.0001s delay=1.6400s (local map=17, WM=17)
+[INFO] [1790641156.936822840] [laksa.fused_mapping.rtabmap]: rtabmap (77): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.3848s, Maps update=0.0005s pub=0.0001s delay=1.5692s (local map=17, WM=17)
+[INFO] [1790641158.653765816] [laksa.fused_mapping.rtabmap]: rtabmap (78): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.5735s, Maps update=0.0004s pub=0.0001s delay=1.7493s (local map=17, WM=17)
+[INFO] [1790641160.088192600] [laksa.fused_mapping.rtabmap]: rtabmap (79): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=1.3693s, Maps update=0.0175s pub=0.0001s delay=1.5690s (local map=17, WM=17)
+[INFO] [1790641161.591449336] [laksa.fused_mapping.rtabmap]: rtabmap (80): Rate=1.00s, Limit=0.700s, Conversion=0.0055s, RTAB-Map=1.3180s, Maps update=0.0234s pub=0.0001s delay=1.6018s (local map=17, WM=17)
+[INFO] [1790641163.293648536] [laksa.fused_mapping.rtabmap]: rtabmap (81): Rate=1.00s, Limit=0.700s, Conversion=0.0039s, RTAB-Map=1.2106s, Maps update=0.0082s pub=0.0001s delay=1.4586s (local map=17, WM=17)
+[INFO] [1790641164.890693112] [laksa.fused_mapping.rtabmap]: rtabmap (82): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.2764s, Maps update=0.0128s pub=0.0001s delay=1.5942s (local map=17, WM=17)
+[INFO] [1790641166.459098648] [laksa.fused_mapping.rtabmap]: rtabmap (83): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=1.4714s, Maps update=0.0098s pub=0.0008s delay=1.9270s (local map=17, WM=17)
+[INFO] [1790641168.601240952] [laksa.fused_mapping.rtabmap]: rtabmap (84): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.2107s, Maps update=0.0082s pub=0.0001s delay=1.3745s (local map=17, WM=17)
+[INFO] [1790641170.232156056] [laksa.fused_mapping.rtabmap]: rtabmap (85): Rate=1.00s, Limit=0.700s, Conversion=0.0042s, RTAB-Map=1.4441s, Maps update=0.0281s pub=0.0001s delay=1.7716s (local map=17, WM=17)
+[INFO] [1790641171.506678136] [laksa.fused_mapping.rtabmap]: rtabmap (86): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.1297s, Maps update=0.0004s pub=0.0001s delay=1.3509s (local map=17, WM=17)
+[INFO] [1790641174.090941656] [laksa.fused_mapping.rtabmap]: rtabmap (87): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.5227s, Maps update=0.0111s pub=0.0001s delay=1.6996s (local map=17, WM=17)
+[INFO] [1790641175.961465720] [laksa.fused_mapping.rtabmap]: rtabmap (88): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.2144s, Maps update=0.0144s pub=0.0001s delay=1.4092s (local map=17, WM=17)
+[INFO] [1790641177.391390552] [laksa.fused_mapping.rtabmap]: rtabmap (89): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.3771s, Maps update=0.0128s pub=0.0001s delay=1.6805s (local map=17, WM=17)
+[INFO] [1790641179.384793240] [laksa.fused_mapping.rtabmap]: rtabmap (90): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.7463s, Maps update=0.0493s pub=0.0072s delay=2.0564s (local map=18, WM=18)
+[INFO] [1790641181.610024824] [laksa.fused_mapping.rtabmap]: rtabmap (91): Rate=1.00s, Limit=0.700s, Conversion=0.0032s, RTAB-Map=1.9926s, Maps update=0.0272s pub=0.0444s delay=2.4027s (local map=19, WM=19)
+[INFO] [1790641184.344561368] [laksa.fused_mapping.rtabmap]: rtabmap (92): Rate=1.00s, Limit=0.700s, Conversion=0.0050s, RTAB-Map=1.4324s, Maps update=0.0134s pub=0.1151s delay=2.1081s (local map=20, WM=20)
+[INFO] [1790641186.026999384] [laksa.fused_mapping.rtabmap]: rtabmap (93): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.6782s, Maps update=0.0007s pub=0.0001s delay=2.0084s (local map=20, WM=20)
+[INFO] [1790641187.778075128] [laksa.fused_mapping.rtabmap]: rtabmap (94): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.5555s, Maps update=0.0004s pub=0.0001s delay=2.1410s (local map=20, WM=20)
+[INFO] [1790641190.112432152] [laksa.fused_mapping.rtabmap]: rtabmap (95): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=2.2752s, Maps update=0.0006s pub=0.0001s delay=2.4561s (local map=20, WM=20)
+[INFO] [1790641194.077314712] [laksa.fused_mapping.rtabmap]: rtabmap (96): Rate=1.00s, Limit=0.700s, Conversion=0.0043s, RTAB-Map=3.6510s, Maps update=0.0116s pub=0.0001s delay=3.8756s (local map=20, WM=20)
+[INFO] [1790641198.563107960] [laksa.fused_mapping.rtabmap]: rtabmap (97): Rate=1.00s, Limit=0.700s, Conversion=0.0036s, RTAB-Map=3.5324s, Maps update=0.0300s pub=0.0415s delay=3.8679s (local map=21, WM=21)
+[INFO] [1790641202.154294936] [laksa.fused_mapping.rtabmap]: rtabmap (98): Rate=1.00s, Limit=0.700s, Conversion=0.0024s, RTAB-Map=3.1918s, Maps update=0.1953s pub=0.0215s delay=3.7248s (local map=22, WM=22)
+[INFO] [1790641209.261114264] [laksa.fused_mapping.rtabmap]: rtabmap (99): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=2.9683s, Maps update=0.0692s pub=0.0926s delay=3.3715s (local map=23, WM=23)
+[INFO] [1790641212.760601560] [laksa.fused_mapping.rtabmap]: rtabmap (100): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=2.8695s, Maps update=0.0342s pub=0.3210s delay=3.6779s (local map=24, WM=24)
+[WARN] [1790641216.471919960] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641220.960629432] [laksa.fused_mapping.rtabmap]: rtabmap (101): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=3.1953s, Maps update=0.0056s pub=0.0636s delay=3.7217s (local map=25, WM=25)
+[WARN] [1790641226.471999352] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[WARN] [1790641231.471048312] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641233.896756184] [laksa.fused_mapping.rtabmap]: rtabmap (102): Rate=1.00s, Limit=0.700s, Conversion=0.0025s, RTAB-Map=1.7219s, Maps update=0.0200s pub=0.1386s delay=2.6131s (local map=26, WM=26)
+[INFO] [1790641237.072267672] [laksa.fused_mapping.rtabmap]: rtabmap (103): Rate=1.00s, Limit=0.700s, Conversion=0.0024s, RTAB-Map=1.8669s, Maps update=0.0104s pub=0.0001s delay=2.5335s (local map=26, WM=26)
+[INFO] [1790641242.401458296] [laksa.fused_mapping.rtabmap]: rtabmap (104): Rate=1.00s, Limit=0.700s, Conversion=0.0022s, RTAB-Map=1.8944s, Maps update=0.0130s pub=0.0001s delay=2.4720s (local map=26, WM=26)
+[INFO] [1790641244.990492152] [laksa.fused_mapping.rtabmap]: rtabmap (105): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.8219s, Maps update=0.0099s pub=0.0001s delay=2.1258s (local map=26, WM=26)
+[INFO] [1790641248.205071288] [laksa.fused_mapping.rtabmap]: rtabmap (106): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.8862s, Maps update=0.0112s pub=0.0001s delay=2.3319s (local map=26, WM=26)
+[INFO] [1790641250.552885336] [laksa.fused_mapping.rtabmap]: rtabmap (107): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.8493s, Maps update=0.0095s pub=0.0001s delay=2.1308s (local map=26, WM=26)
+[INFO] [1790641257.204795704] [laksa.fused_mapping.rtabmap]: rtabmap (108): Rate=1.00s, Limit=0.700s, Conversion=0.0034s, RTAB-Map=2.1334s, Maps update=0.0258s pub=0.0001s delay=2.8317s (local map=26, WM=26)
+[INFO] [1790641260.109965176] [laksa.fused_mapping.rtabmap]: rtabmap (109): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.5535s, Maps update=0.0105s pub=0.0001s delay=1.9602s (local map=26, WM=26)
+[WARN] [1790641266.472543448] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641270.943986712] [laksa.fused_mapping.rtabmap]: rtabmap (110): Rate=1.00s, Limit=0.700s, Conversion=0.0039s, RTAB-Map=1.5614s, Maps update=0.0115s pub=0.0001s delay=2.1461s (local map=26, WM=26)
+[INFO] [1790641274.538928216] [laksa.fused_mapping.rtabmap]: rtabmap (111): Rate=1.00s, Limit=0.700s, Conversion=0.0027s, RTAB-Map=1.6354s, Maps update=0.0111s pub=0.0001s delay=2.2717s (local map=26, WM=26)
+[INFO] [1790641276.877803032] [laksa.fused_mapping.rtabmap]: rtabmap (112): Rate=1.00s, Limit=0.700s, Conversion=0.0030s, RTAB-Map=1.7488s, Maps update=0.0005s pub=0.0001s delay=2.1421s (local map=26, WM=26)
+[INFO] [1790641279.183380280] [laksa.fused_mapping.rtabmap]: rtabmap (113): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.5727s, Maps update=0.0114s pub=0.0001s delay=2.2145s (local map=26, WM=26)
+[INFO] [1790641281.910789208] [laksa.fused_mapping.rtabmap]: rtabmap (114): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.6541s, Maps update=0.0072s pub=0.0001s delay=2.4034s (local map=26, WM=26)
+[INFO] [1790641283.769396888] [laksa.fused_mapping.rtabmap]: rtabmap (115): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.7141s, Maps update=0.0087s pub=0.0001s delay=2.1003s (local map=26, WM=26)
+[INFO] [1790641288.120605304] [laksa.fused_mapping.rtabmap]: rtabmap (116): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.5659s, Maps update=0.0125s pub=0.0001s delay=2.2073s (local map=26, WM=26)
+[INFO] [1790641290.096347160] [laksa.fused_mapping.rtabmap]: rtabmap (117): Rate=1.00s, Limit=0.700s, Conversion=0.0036s, RTAB-Map=1.6591s, Maps update=0.0084s pub=0.0001s delay=2.1822s (local map=26, WM=26)
+[INFO] [1790641295.730166296] [laksa.fused_mapping.rtabmap]: rtabmap (118): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.5368s, Maps update=0.0115s pub=0.0001s delay=2.4120s (local map=26, WM=26)
+[WARN] [1790641301.470807480] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641304.469080760] [laksa.fused_mapping.rtabmap]: rtabmap (119): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.7747s, Maps update=0.0091s pub=0.0001s delay=2.2832s (local map=26, WM=26)
+[INFO] [1790641312.473235576] [laksa.fused_mapping.rtabmap]: rtabmap (120): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=1.6434s, Maps update=0.0099s pub=0.0001s delay=2.3411s (local map=26, WM=26)
+[INFO] [1790641315.654904504] [laksa.fused_mapping.rtabmap]: rtabmap (121): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.6140s, Maps update=0.0217s pub=0.0001s delay=2.1267s (local map=26, WM=26)
+[INFO] [1790641318.275266552] [laksa.fused_mapping.rtabmap]: rtabmap (122): Rate=1.00s, Limit=0.700s, Conversion=0.0049s, RTAB-Map=1.5507s, Maps update=0.0109s pub=0.0001s delay=1.9706s (local map=26, WM=26)
+[WARN] [1790641321.472159224] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641323.426091160] [laksa.fused_mapping.rtabmap]: rtabmap (123): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.8845s, Maps update=0.0115s pub=0.0001s delay=2.4883s (local map=26, WM=26)
+[INFO] [1790641333.032051608] [laksa.fused_mapping.rtabmap]: rtabmap (124): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.8108s, Maps update=0.0248s pub=0.0010s delay=2.0699s (local map=26, WM=26)
+[INFO] [1790641335.815742808] [laksa.fused_mapping.rtabmap]: rtabmap (125): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=2.0254s, Maps update=0.0098s pub=0.0001s delay=2.8518s (local map=26, WM=26)
+[INFO] [1790641337.614579864] [laksa.fused_mapping.rtabmap]: rtabmap (126): Rate=1.00s, Limit=0.700s, Conversion=0.0029s, RTAB-Map=1.7220s, Maps update=0.0119s pub=0.0001s delay=2.0275s (local map=26, WM=26)
+[INFO] [1790641339.541587864] [laksa.fused_mapping.rtabmap]: rtabmap (127): Rate=1.00s, Limit=0.700s, Conversion=0.0025s, RTAB-Map=1.6879s, Maps update=0.0104s pub=0.0001s delay=1.9462s (local map=26, WM=26)
+[INFO] [1790641343.886065784] [laksa.fused_mapping.rtabmap]: rtabmap (128): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.6267s, Maps update=0.0188s pub=0.0001s delay=1.9741s (local map=26, WM=26)
+[INFO] [1790641346.309316280] [laksa.fused_mapping.rtabmap]: rtabmap (129): Rate=1.00s, Limit=0.700s, Conversion=0.0032s, RTAB-Map=1.9835s, Maps update=0.0109s pub=0.0001s delay=2.4700s (local map=26, WM=26)
+[INFO] [1790641348.304013112] [laksa.fused_mapping.rtabmap]: rtabmap (130): Rate=1.00s, Limit=0.700s, Conversion=0.0073s, RTAB-Map=1.5693s, Maps update=0.0107s pub=0.0001s delay=1.8423s (local map=26, WM=26)
+[INFO] [1790641352.187904120] [laksa.fused_mapping.rtabmap]: rtabmap (131): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.7023s, Maps update=0.0091s pub=0.0001s delay=2.1826s (local map=26, WM=26)
+[INFO] [1790641358.028478936] [laksa.fused_mapping.rtabmap]: rtabmap (132): Rate=1.00s, Limit=0.700s, Conversion=0.0031s, RTAB-Map=1.5988s, Maps update=0.0004s pub=0.0001s delay=2.0915s (local map=26, WM=26)
+[INFO] [1790641360.074384024] [laksa.fused_mapping.rtabmap]: rtabmap (133): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.7381s, Maps update=0.0406s pub=0.0001s delay=2.1341s (local map=26, WM=26)
+[INFO] [1790641364.900118744] [laksa.fused_mapping.rtabmap]: rtabmap (134): Rate=1.00s, Limit=0.700s, Conversion=0.0030s, RTAB-Map=1.5258s, Maps update=0.0083s pub=0.0001s delay=1.8703s (local map=26, WM=26)
+[INFO] [1790641371.793073464] [laksa.fused_mapping.rtabmap]: rtabmap (135): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.8756s, Maps update=0.0213s pub=0.0001s delay=2.2093s (local map=26, WM=26)
+[INFO] [1790641375.602895032] [laksa.fused_mapping.rtabmap]: rtabmap (136): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=1.7785s, Maps update=0.0005s pub=0.0001s delay=2.0087s (local map=26, WM=26)
+[INFO] [1790641377.847272824] [laksa.fused_mapping.rtabmap]: rtabmap (137): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=2.1018s, Maps update=0.0005s pub=0.0001s delay=2.3242s (local map=26, WM=26)
+[INFO] [1790641380.445998392] [laksa.fused_mapping.rtabmap]: rtabmap (138): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.0119s, Maps update=0.0093s pub=0.0001s delay=2.3087s (local map=26, WM=26)
+[WARN] [1790641386.471073624] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641390.732294360] [laksa.fused_mapping.rtabmap]: rtabmap (139): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.9869s, Maps update=0.0004s pub=0.0001s delay=2.4985s (local map=26, WM=26)
+[INFO] [1790641393.387282680] [laksa.fused_mapping.rtabmap]: rtabmap (140): Rate=1.00s, Limit=0.700s, Conversion=0.0023s, RTAB-Map=1.9513s, Maps update=0.0461s pub=0.0002s delay=2.3854s (local map=26, WM=26)
+[INFO] [1790641398.740344728] [laksa.fused_mapping.rtabmap]: rtabmap (141): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=2.0083s, Maps update=0.0129s pub=0.0001s delay=2.4185s (local map=26, WM=26)
+[INFO] [1790641400.701718776] [laksa.fused_mapping.rtabmap]: rtabmap (142): Rate=1.00s, Limit=0.700s, Conversion=0.0040s, RTAB-Map=1.8980s, Maps update=0.0190s pub=0.0001s delay=2.3791s (local map=26, WM=26)
+[INFO] [1790641403.393615352] [laksa.fused_mapping.rtabmap]: rtabmap (143): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=2.2069s, Maps update=0.0007s pub=0.0001s delay=2.4476s (local map=26, WM=26)
+[INFO] [1790641407.489717720] [laksa.fused_mapping.rtabmap]: rtabmap (144): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=2.5816s, Maps update=0.0178s pub=0.0001s delay=2.8445s (local map=26, WM=26)
+[INFO] [1790641409.704447096] [laksa.fused_mapping.rtabmap]: rtabmap (145): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=1.8900s, Maps update=0.0004s pub=0.0001s delay=2.0603s (local map=26, WM=26)
+[INFO] [1790641412.168804632] [laksa.fused_mapping.rtabmap]: rtabmap (146): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=2.1113s, Maps update=0.0004s pub=0.0001s delay=2.2887s (local map=26, WM=26)
+[INFO] [1790641416.203562040] [laksa.fused_mapping.rtabmap]: rtabmap (147): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.7036s, Maps update=0.0102s pub=0.0001s delay=2.4714s (local map=26, WM=26)
+[WARN] [1790641421.470839224] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641424.536615608] [laksa.fused_mapping.rtabmap]: rtabmap (148): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.7368s, Maps update=0.0102s pub=0.0001s delay=2.1718s (local map=26, WM=26)
+[INFO] [1790641430.514747256] [laksa.fused_mapping.rtabmap]: rtabmap (149): Rate=1.00s, Limit=0.700s, Conversion=0.0039s, RTAB-Map=1.6593s, Maps update=0.0122s pub=0.0001s delay=2.2117s (local map=26, WM=26)
+[INFO] [1790641435.751486392] [laksa.fused_mapping.rtabmap]: rtabmap (150): Rate=1.00s, Limit=0.700s, Conversion=0.0047s, RTAB-Map=1.7766s, Maps update=0.0098s pub=0.0001s delay=2.2100s (local map=26, WM=26)
+[INFO] [1790641443.624964408] [laksa.fused_mapping.rtabmap]: rtabmap (151): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=2.2031s, Maps update=0.0243s pub=0.0001s delay=2.5283s (local map=26, WM=26)
+[INFO] [1790641446.119579704] [laksa.fused_mapping.rtabmap]: rtabmap (152): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.6961s, Maps update=0.0250s pub=0.0001s delay=1.9401s (local map=26, WM=26)
+[INFO] [1790641448.467336664] [laksa.fused_mapping.rtabmap]: rtabmap (153): Rate=1.00s, Limit=0.700s, Conversion=0.0022s, RTAB-Map=1.7714s, Maps update=0.0190s pub=0.0001s delay=1.9760s (local map=26, WM=26)
+[INFO] [1790641450.863848216] [laksa.fused_mapping.rtabmap]: rtabmap (154): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=1.8272s, Maps update=0.0004s pub=0.0001s delay=2.0558s (local map=26, WM=26)
+[INFO] [1790641453.817361496] [laksa.fused_mapping.rtabmap]: rtabmap (155): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.9349s, Maps update=0.0147s pub=0.0001s delay=2.2354s (local map=26, WM=26)
+[INFO] [1790641455.629905144] [laksa.fused_mapping.rtabmap]: rtabmap (156): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.6811s, Maps update=0.0129s pub=0.0001s delay=1.9654s (local map=26, WM=26)
+[INFO] [1790641457.916038968] [laksa.fused_mapping.rtabmap]: rtabmap (157): Rate=1.00s, Limit=0.700s, Conversion=0.0024s, RTAB-Map=1.7883s, Maps update=0.0004s pub=0.0001s delay=2.0889s (local map=26, WM=26)
+[INFO] [1790641462.390140088] [laksa.fused_mapping.rtabmap]: rtabmap (158): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=4.0356s, Maps update=0.0175s pub=0.0001s delay=4.3292s (local map=26, WM=26)
+[INFO] [1790641468.489932120] [laksa.fused_mapping.rtabmap]: rtabmap (159): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=4.2373s, Maps update=0.0287s pub=0.1130s delay=4.7551s (local map=27, WM=27)
+[INFO] [1790641473.576238552] [laksa.fused_mapping.rtabmap]: rtabmap (160): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.5774s, Maps update=0.0526s pub=0.1277s delay=3.0796s (local map=28, WM=28)
+[INFO] [1790641479.306478168] [laksa.fused_mapping.rtabmap]: rtabmap (161): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=3.1728s, Maps update=0.0420s pub=0.2007s delay=3.7557s (local map=29, WM=29)
+[INFO] [1790641485.098840632] [laksa.fused_mapping.rtabmap]: rtabmap (162): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=3.6884s, Maps update=0.0302s pub=0.2754s delay=4.3161s (local map=30, WM=30)
+[INFO] [1790641492.569197848] [laksa.fused_mapping.rtabmap]: rtabmap (163): Rate=1.00s, Limit=0.700s, Conversion=0.0027s, RTAB-Map=4.0227s, Maps update=0.0217s pub=0.0477s delay=4.3137s (local map=31, WM=31)
+[INFO] [1790641497.095287512] [laksa.fused_mapping.rtabmap]: rtabmap (164): Rate=1.00s, Limit=0.700s, Conversion=0.0048s, RTAB-Map=3.7827s, Maps update=0.0061s pub=0.1667s delay=4.2462s (local map=31, WM=31)
+[WARN] [1790641501.471000376] [laksa.fused_mapping.rtabmap]: rtabmap: Did not receive data since 5 seconds! Make sure the input topics are published ("$ ros2 topic hz my_topic") and the timestamps in their header are set. If topics are coming from different computers, make sure the clocks of the computers are synchronized ("ntpdate"). Ajusting topic_queue_size (10) and sync_queue_size (10) can also help for better synchronization if framerates and/or delays are different. If topics are not published at the same rate, you could increase "sync_queue_size" and/or "topic_queue_size" parameters (current=10 and 10 respectively).
+rtabmap subscribed to (approx sync):
+   /laksa/fused_mapping/rgbd_image \
+   /laksa/lidar/scan_validated
+[INFO] [1790641507.772864856] [laksa.fused_mapping.rtabmap]: rtabmap (165): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=3.8008s, Maps update=0.0141s pub=0.0789s delay=4.2651s (local map=33, WM=33)
+[INFO] [1790641511.352623672] [laksa.fused_mapping.rtabmap]: rtabmap (166): Rate=1.00s, Limit=0.700s, Conversion=0.0030s, RTAB-Map=2.8224s, Maps update=0.0207s pub=0.1939s delay=3.3195s (local map=34, WM=34)
+[INFO] [1790641516.456881912] [laksa.fused_mapping.rtabmap]: rtabmap (167): Rate=1.00s, Limit=0.700s, Conversion=0.0084s, RTAB-Map=3.6242s, Maps update=0.0423s pub=0.2952s delay=4.2210s (local map=35, WM=35)
+[INFO] [1790641522.685935128] [laksa.fused_mapping.rtabmap]: rtabmap (168): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=3.6536s, Maps update=0.0151s pub=0.1110s delay=4.3090s (local map=36, WM=36)
+[INFO] [1790641527.481716088] [laksa.fused_mapping.rtabmap]: rtabmap (169): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=3.5744s, Maps update=0.0620s pub=0.4373s delay=4.3642s (local map=37, WM=37)
+[INFO] [1790641534.689363288] [laksa.fused_mapping.rtabmap]: rtabmap (170): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=5.2449s, Maps update=0.0099s pub=0.0779s delay=5.6630s (local map=38, WM=38)
+[INFO] [1790641539.048573240] [laksa.fused_mapping.rtabmap]: rtabmap (171): Rate=1.00s, Limit=0.700s, Conversion=0.0131s, RTAB-Map=4.0383s, Maps update=0.0687s pub=0.1515s delay=4.5701s (local map=39, WM=39)
+[INFO] [1790641545.177414488] [laksa.fused_mapping.rtabmap]: rtabmap (172): Rate=1.00s, Limit=0.700s, Conversion=0.0037s, RTAB-Map=5.1550s, Maps update=0.0206s pub=0.1591s delay=5.7305s (local map=40, WM=40)
+[INFO] [1790641548.702060184] [laksa.fused_mapping.rtabmap]: rtabmap (173): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.2752s, Maps update=0.0118s pub=0.0323s delay=2.8731s (local map=41, WM=41)
+[INFO] [1790641552.537489208] [laksa.fused_mapping.rtabmap]: rtabmap (174): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.2484s, Maps update=0.0088s pub=0.0001s delay=2.4608s (local map=41, WM=41)
+[INFO] [1790641555.695753528] [laksa.fused_mapping.rtabmap]: rtabmap (175): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=2.3742s, Maps update=0.0146s pub=0.0001s delay=2.6041s (local map=41, WM=41)
+[INFO] [1790641558.037774520] [laksa.fused_mapping.rtabmap]: rtabmap (176): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=2.2420s, Maps update=0.0119s pub=0.0001s delay=2.6310s (local map=41, WM=41)
+[INFO] [1790641560.252843416] [laksa.fused_mapping.rtabmap]: rtabmap (177): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.0009s, Maps update=0.0127s pub=0.0001s delay=2.2916s (local map=41, WM=41)
+[INFO] [1790641565.003203864] [laksa.fused_mapping.rtabmap]: rtabmap (178): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.7371s, Maps update=0.0091s pub=0.0001s delay=2.3185s (local map=41, WM=41)
+[INFO] [1790641573.033632824] [laksa.fused_mapping.rtabmap]: rtabmap (179): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=2.2141s, Maps update=0.0005s pub=0.0001s delay=2.5324s (local map=41, WM=41)
+[INFO] [1790641575.551058232] [laksa.fused_mapping.rtabmap]: rtabmap (180): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=2.4693s, Maps update=0.0005s pub=0.0001s delay=2.7968s (local map=41, WM=41)
+[INFO] [1790641578.369132824] [laksa.fused_mapping.rtabmap]: rtabmap (181): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=2.7501s, Maps update=0.0005s pub=0.0001s delay=2.9849s (local map=41, WM=41)
+[INFO] [1790641582.008770392] [laksa.fused_mapping.rtabmap]: rtabmap (182): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=3.5530s, Maps update=0.0211s pub=0.0534s delay=3.9111s (local map=42, WM=42)
+[INFO] [1790641586.419091192] [laksa.fused_mapping.rtabmap]: rtabmap (183): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=3.1244s, Maps update=0.0158s pub=0.1031s delay=3.4579s (local map=43, WM=43)
+[INFO] [1790641590.116330200] [laksa.fused_mapping.rtabmap]: rtabmap (184): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=2.3815s, Maps update=0.0124s pub=0.2196s delay=2.8925s (local map=44, WM=44)
+[INFO] [1790641597.589227800] [laksa.fused_mapping.rtabmap]: rtabmap (185): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.7450s, Maps update=0.0121s pub=0.3490s delay=2.4411s (local map=45, WM=45)
+[INFO] [1790641601.177064536] [laksa.fused_mapping.rtabmap]: rtabmap (186): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.8442s, Maps update=0.0005s pub=0.0001s delay=2.2374s (local map=45, WM=45)
+[INFO] [1790641605.004443224] [laksa.fused_mapping.rtabmap]: rtabmap (187): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=1.8376s, Maps update=0.0094s pub=0.0001s delay=2.1837s (local map=45, WM=45)
+[INFO] [1790641607.589051320] [laksa.fused_mapping.rtabmap]: rtabmap (188): Rate=1.00s, Limit=0.700s, Conversion=0.0038s, RTAB-Map=1.7398s, Maps update=0.0011s pub=0.0001s delay=2.4467s (local map=45, WM=45)
+[INFO] [1790641609.651732408] [laksa.fused_mapping.rtabmap]: rtabmap (189): Rate=1.00s, Limit=0.700s, Conversion=0.0038s, RTAB-Map=1.9433s, Maps update=0.0005s pub=0.0001s delay=2.1824s (local map=45, WM=45)
+[INFO] [1790641611.883252600] [laksa.fused_mapping.rtabmap]: rtabmap (190): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=2.1347s, Maps update=0.0005s pub=0.0001s delay=2.3985s (local map=45, WM=45)
+[INFO] [1790641614.007087800] [laksa.fused_mapping.rtabmap]: rtabmap (191): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=1.8298s, Maps update=0.0192s pub=0.0001s delay=2.0422s (local map=45, WM=45)
+[INFO] [1790641616.301572920] [laksa.fused_mapping.rtabmap]: rtabmap (192): Rate=1.00s, Limit=0.700s, Conversion=0.0044s, RTAB-Map=2.2164s, Maps update=0.0088s pub=0.0001s delay=2.4765s (local map=45, WM=45)
+[INFO] [1790641619.204381496] [laksa.fused_mapping.rtabmap]: rtabmap (193): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=2.2258s, Maps update=0.0005s pub=0.0001s delay=2.4368s (local map=45, WM=45)
+[INFO] [1790641621.786019864] [laksa.fused_mapping.rtabmap]: rtabmap (194): Rate=1.00s, Limit=0.700s, Conversion=0.0037s, RTAB-Map=1.8768s, Maps update=0.0103s pub=0.0001s delay=2.3048s (local map=45, WM=45)
+[INFO] [1790641624.855917720] [laksa.fused_mapping.rtabmap]: rtabmap (195): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=2.2121s, Maps update=0.0155s pub=0.0001s delay=2.5871s (local map=45, WM=45)
+[INFO] [1790641627.248390328] [laksa.fused_mapping.rtabmap]: rtabmap (196): Rate=1.00s, Limit=0.700s, Conversion=0.0031s, RTAB-Map=1.9787s, Maps update=0.0344s pub=0.0001s delay=2.2629s (local map=45, WM=45)
+[INFO] [1790641629.307664568] [laksa.fused_mapping.rtabmap]: rtabmap (197): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.9631s, Maps update=0.0267s pub=0.0001s delay=2.3099s (local map=45, WM=45)
+[INFO] [1790641632.992611832] [laksa.fused_mapping.rtabmap]: rtabmap (198): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.9914s, Maps update=0.0178s pub=0.0001s delay=2.2738s (local map=45, WM=45)
+[INFO] [1790641635.535437720] [laksa.fused_mapping.rtabmap]: rtabmap (199): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.3746s, Maps update=0.0183s pub=0.0001s delay=2.7224s (local map=45, WM=45)
+[INFO] [1790641638.214328056] [laksa.fused_mapping.rtabmap]: rtabmap (200): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=2.4367s, Maps update=0.0132s pub=0.0001s delay=2.6906s (local map=45, WM=45)
+[INFO] [1790641640.968781784] [laksa.fused_mapping.rtabmap]: rtabmap (201): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=2.5161s, Maps update=0.0008s pub=0.0002s delay=2.6498s (local map=45, WM=45)
+[INFO] [1790641643.765434104] [laksa.fused_mapping.rtabmap]: rtabmap (202): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=2.6313s, Maps update=0.0287s pub=0.0001s delay=2.8212s (local map=45, WM=45)
+[INFO] [1790641646.015492056] [laksa.fused_mapping.rtabmap]: rtabmap (203): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=1.9745s, Maps update=0.0021s pub=0.0001s delay=2.2044s (local map=45, WM=45)
+[INFO] [1790641648.536097336] [laksa.fused_mapping.rtabmap]: rtabmap (204): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.3870s, Maps update=0.0113s pub=0.0001s delay=2.5570s (local map=45, WM=45)
+[INFO] [1790641650.860355224] [laksa.fused_mapping.rtabmap]: rtabmap (205): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=2.2266s, Maps update=0.0559s pub=0.0001s delay=2.5596s (local map=45, WM=45)
+[INFO] [1790641654.665491832] [laksa.fused_mapping.rtabmap]: rtabmap (206): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=3.5645s, Maps update=0.0114s pub=0.0713s delay=3.8532s (local map=46, WM=46)
+[INFO] [1790641656.711886680] [laksa.fused_mapping.rtabmap]: rtabmap (207): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.7453s, Maps update=0.0263s pub=0.1292s delay=2.1164s (local map=47, WM=47)
+[INFO] [1790641660.702558360] [laksa.fused_mapping.rtabmap]: rtabmap (208): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=3.3949s, Maps update=0.0413s pub=0.0212s delay=3.7456s (local map=48, WM=48)
+[INFO] [1790641664.111302616] [laksa.fused_mapping.rtabmap]: rtabmap (209): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=3.2147s, Maps update=0.0096s pub=0.0228s delay=3.5470s (local map=49, WM=49)
+[INFO] [1790641666.100049464] [laksa.fused_mapping.rtabmap]: rtabmap (210): Rate=1.00s, Limit=0.700s, Conversion=0.0012s, RTAB-Map=1.6423s, Maps update=0.0276s pub=0.0479s delay=1.9234s (local map=50, WM=50)
+[INFO] [1790641668.402513880] [laksa.fused_mapping.rtabmap]: rtabmap (211): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=2.0709s, Maps update=0.0316s pub=0.0596s delay=2.6607s (local map=51, WM=51)
+[INFO] [1790641671.077797784] [laksa.fused_mapping.rtabmap]: rtabmap (212): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.3866s, Maps update=0.0208s pub=0.0941s delay=2.7317s (local map=50, WM=50)
+[INFO] [1790641674.773953848] [laksa.fused_mapping.rtabmap]: rtabmap (213): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=3.5698s, Maps update=0.0596s pub=0.0601s delay=3.9110s (local map=52, WM=52)
+[INFO] [1790641679.304223768] [laksa.fused_mapping.rtabmap]: rtabmap (214): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=4.1786s, Maps update=0.0631s pub=0.0867s delay=4.4934s (local map=52, WM=52)
+[INFO] [1790641683.209999896] [laksa.fused_mapping.rtabmap]: rtabmap (215): Rate=1.00s, Limit=0.700s, Conversion=0.0031s, RTAB-Map=3.7748s, Maps update=0.0456s pub=0.0800s delay=4.2407s (local map=54, WM=54)
+[INFO] [1790641688.321123864] [laksa.fused_mapping.rtabmap]: rtabmap (216): Rate=1.00s, Limit=0.700s, Conversion=0.0027s, RTAB-Map=4.5090s, Maps update=0.0352s pub=0.4640s delay=5.2675s (local map=56, WM=56)
+[INFO] [1790641694.504836856] [laksa.fused_mapping.rtabmap]: rtabmap (217): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=4.7914s, Maps update=0.0284s pub=0.0670s delay=5.0845s (local map=33, WM=55)
+[INFO] [1790641699.184340984] [laksa.fused_mapping.rtabmap]: rtabmap (218): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=4.1686s, Maps update=0.0507s pub=0.4147s delay=4.8692s (local map=32, WM=54)
+[INFO] [1790641704.781773048] [laksa.fused_mapping.rtabmap]: rtabmap (219): Rate=1.00s, Limit=0.700s, Conversion=0.0013s, RTAB-Map=4.3186s, Maps update=0.4765s pub=0.0980s delay=5.0872s (local map=31, WM=55)
+[INFO] [1790641706.919149432] [laksa.fused_mapping.rtabmap]: rtabmap (220): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.9031s, Maps update=0.0009s pub=0.1040s delay=2.1890s (local map=31, WM=55)
+[INFO] [1790641710.064803768] [laksa.fused_mapping.rtabmap]: rtabmap (221): Rate=1.00s, Limit=0.700s, Conversion=0.0029s, RTAB-Map=2.2528s, Maps update=0.0371s pub=0.3437s delay=2.8095s (local map=31, WM=54)
+[INFO] [1790641710.508934744] [laksa.fused_mapping.rtabmap]: rtabmap (222): Rate=1.00s, Limit=0.700s, Conversion=0.0025s, RTAB-Map=0.0784s, Maps update=0.0006s pub=0.1251s delay=0.4284s (local map=32, WM=55)
+[INFO] [1790641711.460934648] [laksa.fused_mapping.rtabmap]: rtabmap (223): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=0.0908s, Maps update=0.0004s pub=0.0001s delay=0.2824s (local map=32, WM=55)
+[INFO] [1790641715.060711992] [laksa.fused_mapping.rtabmap]: rtabmap (224): Rate=1.00s, Limit=0.700s, Conversion=0.0026s, RTAB-Map=2.0916s, Maps update=0.4067s pub=0.0901s delay=2.7768s (local map=32, WM=54)
+[INFO] [1790641715.242202104] [laksa.fused_mapping.rtabmap]: rtabmap (225): Rate=1.00s, Limit=0.700s, Conversion=0.0033s, RTAB-Map=0.0881s, Maps update=0.0033s pub=0.0810s delay=0.4450s (local map=33, WM=55)
+[INFO] [1790641719.128646776] [laksa.fused_mapping.rtabmap]: rtabmap (226): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=2.6143s, Maps update=0.4348s pub=0.0956s delay=3.3198s (local map=33, WM=54)
+[INFO] [1790641721.377061496] [laksa.fused_mapping.rtabmap]: rtabmap (227): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.8813s, Maps update=0.0004s pub=0.0001s delay=2.1058s (local map=32, WM=53)
+[INFO] [1790641724.621876152] [laksa.fused_mapping.rtabmap]: rtabmap (228): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.5917s, Maps update=0.0009s pub=0.1096s delay=2.9047s (local map=31, WM=54)
+[INFO] [1790641727.661580216] [laksa.fused_mapping.rtabmap]: rtabmap (229): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.6753s, Maps update=0.0315s pub=0.0431s delay=2.9556s (local map=31, WM=54)
+[INFO] [1790641731.960664984] [laksa.fused_mapping.rtabmap]: rtabmap (230): Rate=1.00s, Limit=0.700s, Conversion=0.0030s, RTAB-Map=2.0465s, Maps update=0.0448s pub=0.1863s delay=2.5143s (local map=31, WM=53)
+[INFO] [1790641734.017207288] [laksa.fused_mapping.rtabmap]: rtabmap (231): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.6885s, Maps update=0.0333s pub=0.0001s delay=2.0648s (local map=30, WM=52)
+[INFO] [1790641735.980023896] [laksa.fused_mapping.rtabmap]: rtabmap (232): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.5923s, Maps update=0.0169s pub=0.0001s delay=1.8532s (local map=30, WM=51)
+[INFO] [1790641738.454571832] [laksa.fused_mapping.rtabmap]: rtabmap (233): Rate=1.00s, Limit=0.700s, Conversion=0.0022s, RTAB-Map=1.9552s, Maps update=0.0121s pub=0.0001s delay=2.2282s (local map=30, WM=50)
+[INFO] [1790641740.898650904] [laksa.fused_mapping.rtabmap]: rtabmap (234): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=1.8990s, Maps update=0.0402s pub=0.0001s delay=2.1745s (local map=30, WM=50)
+[INFO] [1790641743.267453624] [laksa.fused_mapping.rtabmap]: rtabmap (235): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=2.3092s, Maps update=0.0004s pub=0.0001s delay=2.7579s (local map=30, WM=50)
+[INFO] [1790641745.770355832] [laksa.fused_mapping.rtabmap]: rtabmap (236): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=2.4046s, Maps update=0.0205s pub=0.0001s delay=2.6294s (local map=30, WM=50)
+[INFO] [1790641747.701812216] [laksa.fused_mapping.rtabmap]: rtabmap (237): Rate=1.00s, Limit=0.700s, Conversion=0.0025s, RTAB-Map=1.8864s, Maps update=0.0004s pub=0.0001s delay=2.1515s (local map=30, WM=50)
+[INFO] [1790641749.663319640] [laksa.fused_mapping.rtabmap]: rtabmap (238): Rate=1.00s, Limit=0.700s, Conversion=0.0021s, RTAB-Map=1.9103s, Maps update=0.0005s pub=0.0001s delay=2.1739s (local map=30, WM=50)
+[INFO] [1790641751.598111992] [laksa.fused_mapping.rtabmap]: rtabmap (239): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.5945s, Maps update=0.0182s pub=0.0001s delay=1.7758s (local map=30, WM=50)
+[INFO] [1790641753.619716440] [laksa.fused_mapping.rtabmap]: rtabmap (240): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.9166s, Maps update=0.0140s pub=0.0001s delay=2.5562s (local map=30, WM=50)
+[INFO] [1790641756.303446968] [laksa.fused_mapping.rtabmap]: rtabmap (241): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.9664s, Maps update=0.0344s pub=0.0001s delay=2.2131s (local map=30, WM=51)
+[INFO] [1790641758.363998712] [laksa.fused_mapping.rtabmap]: rtabmap (242): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=2.0429s, Maps update=0.0008s pub=0.0001s delay=2.3331s (local map=30, WM=50)
+[INFO] [1790641760.674498904] [laksa.fused_mapping.rtabmap]: rtabmap (243): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=2.1938s, Maps update=0.0004s pub=0.0001s delay=2.3893s (local map=30, WM=50)
+[INFO] [1790641762.759217688] [laksa.fused_mapping.rtabmap]: rtabmap (244): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.9129s, Maps update=0.0005s pub=0.0001s delay=2.1466s (local map=30, WM=50)
+[INFO] [1790641764.903425176] [laksa.fused_mapping.rtabmap]: rtabmap (245): Rate=1.00s, Limit=0.700s, Conversion=0.0022s, RTAB-Map=1.9536s, Maps update=0.0332s pub=0.0001s delay=2.2705s (local map=30, WM=50)
+[INFO] [1790641766.710525560] [laksa.fused_mapping.rtabmap]: rtabmap (246): Rate=1.00s, Limit=0.700s, Conversion=0.0027s, RTAB-Map=1.6483s, Maps update=0.0161s pub=0.0001s delay=1.8295s (local map=30, WM=50)
+[INFO] [1790641770.462275192] [laksa.fused_mapping.rtabmap]: rtabmap (247): Rate=1.00s, Limit=0.700s, Conversion=0.0029s, RTAB-Map=2.3444s, Maps update=0.0004s pub=0.0001s delay=2.5544s (local map=30, WM=50)
+[INFO] [1790641773.234889240] [laksa.fused_mapping.rtabmap]: rtabmap (248): Rate=1.00s, Limit=0.700s, Conversion=0.0022s, RTAB-Map=1.9020s, Maps update=0.0193s pub=0.0001s delay=2.1467s (local map=30, WM=49)
+[INFO] [1790641775.060896440] [laksa.fused_mapping.rtabmap]: rtabmap (249): Rate=1.00s, Limit=0.700s, Conversion=0.0040s, RTAB-Map=1.6099s, Maps update=0.0007s pub=0.0001s delay=2.0316s (local map=30, WM=48)
+[INFO] [1790641776.624179224] [laksa.fused_mapping.rtabmap]: rtabmap (250): Rate=1.00s, Limit=0.700s, Conversion=0.0018s, RTAB-Map=1.4428s, Maps update=0.0007s pub=0.0001s delay=1.8077s (local map=30, WM=49)
+[INFO] [1790641778.887878232] [laksa.fused_mapping.rtabmap]: rtabmap (251): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.9073s, Maps update=0.0493s pub=0.0001s delay=2.1344s (local map=30, WM=50)
+[INFO] [1790641780.226748504] [laksa.fused_mapping.rtabmap]: rtabmap (252): Rate=1.00s, Limit=0.700s, Conversion=0.0042s, RTAB-Map=1.2473s, Maps update=0.0006s pub=0.0001s delay=1.5356s (local map=30, WM=49)
+[INFO] [1790641782.670368792] [laksa.fused_mapping.rtabmap]: rtabmap (253): Rate=1.00s, Limit=0.700s, Conversion=0.0017s, RTAB-Map=1.5268s, Maps update=0.0006s pub=0.0001s delay=1.7249s (local map=30, WM=49)
+[INFO] [1790641786.113798008] [laksa.fused_mapping.rtabmap]: rtabmap (254): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=2.0951s, Maps update=0.0004s pub=0.0001s delay=2.3747s (local map=30, WM=50)
+[INFO] [1790641788.076921496] [laksa.fused_mapping.rtabmap]: rtabmap (255): Rate=1.00s, Limit=0.700s, Conversion=0.0029s, RTAB-Map=1.7872s, Maps update=0.0464s pub=0.0001s delay=2.0898s (local map=30, WM=49)
+[INFO] [1790641789.736103640] [laksa.fused_mapping.rtabmap]: rtabmap (256): Rate=1.00s, Limit=0.700s, Conversion=0.0016s, RTAB-Map=1.3724s, Maps update=0.0126s pub=0.0007s delay=1.5752s (local map=30, WM=48)
+[INFO] [1790641792.152331672] [laksa.fused_mapping.rtabmap]: rtabmap (257): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.4594s, Maps update=0.0008s pub=0.0001s delay=1.6648s (local map=30, WM=47)
+[INFO] [1790641794.157186808] [laksa.fused_mapping.rtabmap]: rtabmap (258): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.5911s, Maps update=0.0029s pub=0.0004s delay=1.8069s (local map=30, WM=46)
+[INFO] [1790641795.981171416] [laksa.fused_mapping.rtabmap]: rtabmap (259): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.7284s, Maps update=0.0004s pub=0.0001s delay=1.9226s (local map=30, WM=45)
+[INFO] [1790641798.521267576] [laksa.fused_mapping.rtabmap]: rtabmap (260): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.5731s, Maps update=0.0005s pub=0.0001s delay=1.8315s (local map=30, WM=44)
+[INFO] [1790641801.995392984] [laksa.fused_mapping.rtabmap]: rtabmap (261): Rate=1.00s, Limit=0.700s, Conversion=0.0022s, RTAB-Map=1.4483s, Maps update=0.0398s pub=0.0005s delay=1.6548s (local map=30, WM=43)
+[INFO] [1790641803.549928440] [laksa.fused_mapping.rtabmap]: rtabmap (262): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.4825s, Maps update=0.0005s pub=0.0001s delay=1.8119s (local map=30, WM=43)
+[INFO] [1790641806.027333144] [laksa.fused_mapping.rtabmap]: rtabmap (263): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=2.1429s, Maps update=0.0403s pub=0.0001s delay=2.3550s (local map=30, WM=45)
+[INFO] [1790641807.759258616] [laksa.fused_mapping.rtabmap]: rtabmap (264): Rate=1.00s, Limit=0.700s, Conversion=0.0014s, RTAB-Map=1.5010s, Maps update=0.0122s pub=0.0001s delay=1.6861s (local map=30, WM=47)
+[INFO] [1790641809.904216280] [laksa.fused_mapping.rtabmap]: rtabmap (265): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=2.0870s, Maps update=0.0005s pub=0.0001s delay=2.2830s (local map=30, WM=49)
+[INFO] [1790641811.942899576] [laksa.fused_mapping.rtabmap]: rtabmap (266): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.6952s, Maps update=0.0403s pub=0.0010s delay=1.9148s (local map=30, WM=51)
+[INFO] [1790641813.946248376] [laksa.fused_mapping.rtabmap]: rtabmap (267): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=1.9236s, Maps update=0.0110s pub=0.0001s delay=2.7577s (local map=30, WM=53)
+[INFO] [1790641816.666634296] [laksa.fused_mapping.rtabmap]: rtabmap (268): Rate=1.00s, Limit=0.700s, Conversion=0.0015s, RTAB-Map=2.1542s, Maps update=0.0511s pub=0.0001s delay=2.3769s (local map=30, WM=55)
+[INFO] [1790641819.571075992] [laksa.fused_mapping.rtabmap]: rtabmap (269): Rate=1.00s, Limit=0.700s, Conversion=0.0024s, RTAB-Map=2.4682s, Maps update=0.0128s pub=0.0001s delay=2.6471s (local map=30, WM=57)
+[INFO] [1790641821.614664088] [laksa.fused_mapping.rtabmap]: rtabmap (270): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=1.7976s, Maps update=0.0343s pub=0.0001s delay=2.0560s (local map=30, WM=59)
+[INFO] [1790641823.802468344] [laksa.fused_mapping.rtabmap]: rtabmap (271): Rate=1.00s, Limit=0.700s, Conversion=0.0020s, RTAB-Map=1.5152s, Maps update=0.4468s pub=0.0266s delay=2.1443s (local map=54, WM=58)
+[INFO] [1790641827.501075960] [laksa.fused_mapping.rtabmap]: rtabmap (272): Rate=1.00s, Limit=0.700s, Conversion=0.0051s, RTAB-Map=2.6573s, Maps update=0.6089s pub=0.0505s delay=4.1257s (local map=56, WM=57)
+[INFO] [1790641828.997615320] [laksa.fused_mapping.rtabmap]: rtabmap (273): Rate=1.00s, Limit=0.700s, Conversion=0.0019s, RTAB-Map=1.3034s, Maps update=0.0553s pub=0.0613s delay=1.6066s (local map=58, WM=58)

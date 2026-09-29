@@ -1,0 +1,231 @@
+schema_version: laksa-canonical-mission-v1
+reconstruction_status: CANONICAL_APPROVED
+training_allowed: false
+mission_type: CLOSED_CIRCUIT
+direction: FROM_DRAWING_ARROWS
+competition_window_s: 1200
+objective: MINIMIZE_VALID_COMPLETION_TIME
+coordinate_frame: speed_course_map
+nav2_concept: NavigateThroughPoses / Waypoint Follower
+start_pose:
+  x: 20.62863090812533
+  y: 2.2986877548722693
+  yaw: 0.0
+finish:
+  line_center_m:
+  - 20.62863090812533
+  - 2.2986877548722693
+  crossing_yaw_rad: 0.0
+  requires_all_prior_gates: true
+closed_lap: true
+gates:
+- order: 1
+  gate_id: gate_001
+  pose:
+    x: 24.001230542362737
+    y: 2.2986877548722693
+    yaw: 0.0
+- order: 2
+  gate_id: gate_002
+  pose:
+    x: 27.373830176600144
+    y: 2.298687754872269
+    yaw: 0.0
+- order: 3
+  gate_id: gate_003
+  pose:
+    x: 30.728183266129587
+    y: 2.635829629933239
+    yaw: 0.2003447029022336
+- order: 4
+  gate_id: gate_004
+  pose:
+    x: 33.91084906703645
+    y: 3.6981234363710254
+    yaw: 0.4439510340688384
+- order: 5
+  gate_id: gate_005
+  pose:
+    x: 36.506884579781655
+    y: 5.434857783149863
+    yaw: 0.7352743263005487
+- order: 6
+  gate_id: gate_006
+  pose:
+    x: 37.983757251628916
+    y: 7.249067872100866
+    yaw: 1.0398094278151457
+- order: 7
+  gate_id: gate_007
+  pose:
+    x: 37.21235296494188
+    y: 9.816955124323872
+    yaw: 2.685438505728982
+- order: 8
+  gate_id: gate_008
+  pose:
+    x: 36.52850645021081
+    y: 12.519947573821668
+    yaw: 0.9517471806719344
+- order: 9
+  gate_id: gate_009
+  pose:
+    x: 39.28878623959257
+    y: 12.773852470003456
+    yaw: -0.7682930315893892
+- order: 10
+  gate_id: gate_010
+  pose:
+    x: 40.1554880652834
+    y: 11.199593554014005
+    yaw: -1.3667751261058312
+- order: 11
+  gate_id: gate_011
+  pose:
+    x: 39.71071570703021
+    y: 7.3880872153192225
+    yaw: -2.007150798755788
+- order: 12
+  gate_id: gate_012
+  pose:
+    x: 37.68102305219809
+    y: 4.585126842307378
+    yaw: -2.387910211555495
+- order: 13
+  gate_id: gate_013
+  pose:
+    x: 34.65543176633181
+    y: 2.504048105301207
+    yaw: -2.6902584579361304
+- order: 14
+  gate_id: gate_014
+  pose:
+    x: 31.18080304194777
+    y: 1.3118815195060591
+    yaw: -2.9318864913449243
+- order: 15
+  gate_id: gate_015
+  pose:
+    x: 27.3738297586538
+    y: 0.9112303179892827
+    yaw: 3.141592501657971
+- order: 16
+  gate_id: gate_016
+  pose:
+    x: 20.655743099140587
+    y: 0.9112313386804304
+    yaw: 3.141592501657971
+- order: 17
+  gate_id: gate_017
+  pose:
+    x: 13.962630739476857
+    y: 0.9112323555771873
+    yaw: 3.1415801920599193
+- order: 18
+  gate_id: gate_018
+  pose:
+    x: 10.20446641488787
+    y: 1.3015947471217277
+    yaw: 2.93460643555812
+- order: 19
+  gate_id: gate_019
+  pose:
+    x: 6.5404111642120695
+    y: 2.575496546749452
+    yaw: 2.6793740941055306
+- order: 20
+  gate_id: gate_020
+  pose:
+    x: 3.4918431774805
+    y: 4.733550025230362
+    yaw: 2.3718067154545737
+- order: 21
+  gate_id: gate_021
+  pose:
+    x: 1.4611748119145016
+    y: 7.674387448137943
+    yaw: 1.978438464969857
+- order: 22
+  gate_id: gate_022
+  pose:
+    x: 1.0766905161868126
+    y: 11.269786787751835
+    yaw: 1.3762201754643106
+- order: 23
+  gate_id: gate_023
+  pose:
+    x: 1.7463774263556666
+    y: 12.656360695897108
+    yaw: 0.8654948591264207
+- order: 24
+  gate_id: gate_024
+  pose:
+    x: 4.5769195754394945
+    y: 12.60063097825232
+    yaw: -0.9048671880053238
+- order: 25
+  gate_id: gate_025
+  pose:
+    x: 3.983327181669411
+    y: 9.848664724089094
+    yaw: 3.621574241635839
+- order: 26
+  gate_id: gate_026
+  pose:
+    x: 3.25588551402228
+    y: 7.291848637950455
+    yaw: 5.248830509695071
+- order: 27
+  gate_id: gate_027
+  pose:
+    x: 4.543063096084005
+    y: 5.670695802858968
+    yaw: 5.518077371385909
+- order: 28
+  gate_id: gate_028
+  pose:
+    x: 7.293094873278189
+    y: 3.7539766510362416
+    yaw: 5.830899778608655
+- order: 29
+  gate_id: gate_029
+  pose:
+    x: 10.449007413038869
+    y: 2.668973443523406
+    yaw: 6.073188981438452
+- order: 30
+  gate_id: gate_030
+  pose:
+    x: 13.962630176600143
+    y: 2.2986877548722693
+    yaw: 0.0
+- order: 31
+  gate_id: gate_031
+  pose:
+    x: 17.30811368980005
+    y: 2.2986877548722693
+    yaw: 0.0
+- order: 32
+  gate_id: finish
+  pose:
+    x: 20.62863090812533
+    y: 2.2986877548722693
+    yaw: 0.0
+validity_rules:
+- gate crossings must occur in listed order and forward direction
+- leaving the legal corridor invalidates that attempt; reentry does not advance progress
+- finish counts only after every required gate
+- a gate crossing cannot be substituted by a nearby parallel lane
+unknown_rules:
+  penalties: UNKNOWN
+  retry_limits: UNKNOWN
+  scoring_bonuses: UNKNOWN
+  disqualification: UNKNOWN
+  timing_trigger: UNKNOWN
+approved_by_user: true
+approval_status: CANONICAL_APPROVED
+approval_note: 'User visually validated source/geometry overlay. Remaining red discrepancy
+  samples are accepted as scan-registration/ink residuals and do not represent a material
+  course-geometry error.
+
+  '

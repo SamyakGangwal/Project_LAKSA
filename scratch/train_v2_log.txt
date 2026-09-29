@@ -1,0 +1,75 @@
+[19:39:10] run directory D:\projects\Project_LAKSA\scratch\learned_driver_runs\20260924T193910; 12 workers
+[19:39:43] expert evaluation: 1/108 episodes, ~2% of work, elapsed 33s, ETA 1736s, collisions so far 0
+[19:40:07] expert evaluation: 13/108 episodes, ~24% of work, elapsed 57s, ETA 180s, collisions so far 0
+[19:40:23] expert evaluation: 28/108 episodes, ~52% of work, elapsed 73s, ETA 68s, collisions so far 0
+[19:40:38] expert evaluation: 46/108 episodes, ~69% of work, elapsed 88s, ETA 39s, collisions so far 0
+[19:40:54] expert evaluation: 86/108 episodes, ~93% of work, elapsed 104s, ETA 8s, collisions so far 2
+[19:40:58] expert evaluation: 108/108 episodes, ~100% of work, elapsed 108s, ETA 0s, collisions so far 2
+[19:40:58] expert (108s): {"0.5_clean": {"completion_rate": 1.0, "mean_lap_s": 121.41333333333334, "mean_progress_fraction": 1.0}, "0.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 124.36666666666667, "mean_progress_fraction": 1.0}, "1.5_clean": {"completion_rate": 1.0, "mean_lap_s": 40.653333333333336, "mean_progress_fraction": 1.0}, "1.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 41.97666666666667, "mean_progress_fraction": 1.0}, "3.0_clean": {"completion_rate": 1.0, "mean_lap_s": 20.846666666666668, "mean_progress_fraction": 1.0}, "3.0_randomized": {"completion_rate": 0.9166666666666666, "mean_lap_s": 21.45090909090909, "mean_progress_fraction": 0.9183990760058567}}
+[19:41:17] round 0 collection: 15/40 episodes, ~38% of work, elapsed 19s, ETA 31s, collisions so far 2
+[19:41:32] round 0 collection: 34/40 episodes, ~85% of work, elapsed 34s, ETA 6s, collisions so far 4
+[19:41:35] round 0 collection: 40/40 episodes, ~100% of work, elapsed 36s, ETA 0s, collisions so far 4
+[19:41:35] round 0 (beta=1.000): 32469 samples, outcomes {'COMPLETE': 6, 'COLLISION': 4, 'TIMEOUT': 30}, collection 36s
+[19:42:18] round 0: losses {'train_loss': 0.023940015584230423, 'holdout_loss': 0.023769374936819077}, training 44s
+[19:42:44] round 0 evaluation: 4/108 episodes, ~7% of work, elapsed 26s, ETA 319s, collisions so far 0
+[19:43:02] round 0 evaluation: 13/108 episodes, ~24% of work, elapsed 43s, ETA 136s, collisions so far 0
+[19:43:17] round 0 evaluation: 27/108 episodes, ~50% of work, elapsed 59s, ETA 59s, collisions so far 0
+[19:43:32] round 0 evaluation: 40/108 episodes, ~65% of work, elapsed 74s, ETA 39s, collisions so far 0
+[19:43:48] round 0 evaluation: 61/108 episodes, ~82% of work, elapsed 89s, ETA 19s, collisions so far 0
+[19:44:02] round 0 evaluation: 108/108 episodes, ~100% of work, elapsed 103s, ETA 0s, collisions so far 7
+[19:44:02] round 0 student (103s): {"0.5_clean": {"completion_rate": 1.0, "mean_lap_s": 121.33333333333331, "mean_progress_fraction": 1.0}, "0.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 124.33999999999999, "mean_progress_fraction": 1.0}, "1.5_clean": {"completion_rate": 1.0, "mean_lap_s": 40.66666666666667, "mean_progress_fraction": 1.0}, "1.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 41.95, "mean_progress_fraction": 1.0}, "3.0_clean": {"completion_rate": 1.0, "mean_lap_s": 20.626666666666665, "mean_progress_fraction": 1.0}, "3.0_randomized": {"completion_rate": 0.7083333333333334, "mean_lap_s": 21.341176470588238, "mean_progress_fraction": 0.8232397412453034}}
+[19:44:19] round 1 collection: 14/40 episodes, ~35% of work, elapsed 17s, ETA 32s, collisions so far 1
+[19:44:35] round 1 collection: 27/40 episodes, ~68% of work, elapsed 33s, ETA 16s, collisions so far 1
+[19:44:44] round 1 collection: 40/40 episodes, ~100% of work, elapsed 42s, ETA 0s, collisions so far 1
+[19:44:44] round 1 (beta=0.500): 66176 samples, outcomes {'COMPLETE': 8, 'COLLISION': 1, 'TIMEOUT': 31}, collection 42s
+[19:46:03] round 1: losses {'train_loss': 0.018076544627547264, 'holdout_loss': 0.017946556210517883}, training 79s
+[19:46:28] round 1 evaluation: 4/108 episodes, ~7% of work, elapsed 25s, ETA 313s, collisions so far 0
+[19:46:46] round 1 evaluation: 13/108 episodes, ~24% of work, elapsed 43s, ETA 136s, collisions so far 0
+[19:47:04] round 1 evaluation: 28/108 episodes, ~52% of work, elapsed 61s, ETA 56s, collisions so far 0
+[19:47:19] round 1 evaluation: 44/108 episodes, ~68% of work, elapsed 76s, ETA 36s, collisions so far 0
+[19:47:35] round 1 evaluation: 70/108 episodes, ~87% of work, elapsed 92s, ETA 13s, collisions so far 0
+[19:47:46] round 1 evaluation: 108/108 episodes, ~100% of work, elapsed 103s, ETA 0s, collisions so far 4
+[19:47:46] round 1 student (103s): {"0.5_clean": {"completion_rate": 1.0, "mean_lap_s": 121.29333333333334, "mean_progress_fraction": 1.0}, "0.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 124.31, "mean_progress_fraction": 1.0}, "1.5_clean": {"completion_rate": 1.0, "mean_lap_s": 40.67333333333334, "mean_progress_fraction": 1.0}, "1.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 41.949999999999996, "mean_progress_fraction": 1.0}, "3.0_clean": {"completion_rate": 1.0, "mean_lap_s": 20.626666666666665, "mean_progress_fraction": 1.0}, "3.0_randomized": {"completion_rate": 0.8333333333333334, "mean_lap_s": 21.776000000000003, "mean_progress_fraction": 0.9332182298248787}}
+[19:48:08] round 2 collection: 13/40 episodes, ~32% of work, elapsed 22s, ETA 46s, collisions so far 0
+[19:48:24] round 2 collection: 30/40 episodes, ~75% of work, elapsed 37s, ETA 12s, collisions so far 0
+[19:48:31] round 2 collection: 40/40 episodes, ~100% of work, elapsed 44s, ETA 0s, collisions so far 0
+[19:48:31] round 2 (beta=0.250): 101148 samples, outcomes {'COMPLETE': 6, 'COLLISION': 0, 'TIMEOUT': 34}, collection 45s
+[19:50:31] round 2: losses {'train_loss': 0.02276844158768654, 'holdout_loss': 0.023029491305351257}, training 120s
+[19:50:56] round 2 evaluation: 4/108 episodes, ~7% of work, elapsed 24s, ETA 305s, collisions so far 0
+[19:51:13] round 2 evaluation: 13/108 episodes, ~24% of work, elapsed 42s, ETA 132s, collisions so far 0
+[19:51:28] round 2 evaluation: 26/108 episodes, ~48% of work, elapsed 57s, ETA 61s, collisions so far 0
+[19:51:43] round 2 evaluation: 40/108 episodes, ~65% of work, elapsed 72s, ETA 38s, collisions so far 0
+[19:51:58] round 2 evaluation: 61/108 episodes, ~82% of work, elapsed 87s, ETA 19s, collisions so far 0
+[19:52:13] round 2 evaluation: 108/108 episodes, ~100% of work, elapsed 102s, ETA 0s, collisions so far 1
+[19:52:13] round 2 student (102s): {"0.5_clean": {"completion_rate": 1.0, "mean_lap_s": 121.14, "mean_progress_fraction": 1.0}, "0.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 124.14666666666666, "mean_progress_fraction": 1.0}, "1.5_clean": {"completion_rate": 1.0, "mean_lap_s": 40.64000000000001, "mean_progress_fraction": 1.0}, "1.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 41.92333333333334, "mean_progress_fraction": 1.0}, "3.0_clean": {"completion_rate": 1.0, "mean_lap_s": 20.653333333333336, "mean_progress_fraction": 1.0}, "3.0_randomized": {"completion_rate": 0.9583333333333334, "mean_lap_s": 21.975652173913044, "mean_progress_fraction": 0.9929394277220364}}
+[19:52:32] round 3 collection: 13/40 episodes, ~32% of work, elapsed 19s, ETA 38s, collisions so far 0
+[19:52:47] round 3 collection: 27/40 episodes, ~68% of work, elapsed 34s, ETA 16s, collisions so far 0
+[19:52:55] round 3 collection: 40/40 episodes, ~100% of work, elapsed 42s, ETA 0s, collisions so far 0
+[19:52:55] round 3 (beta=0.125): 134293 samples, outcomes {'COMPLETE': 11, 'COLLISION': 0, 'TIMEOUT': 29}, collection 42s
+[19:54:25] round 3: losses {'train_loss': 0.0209584292024374, 'holdout_loss': 0.02076769806444645}, training 90s
+[19:54:48] round 3 evaluation: 4/108 episodes, ~7% of work, elapsed 24s, ETA 294s, collisions so far 0
+[19:55:05] round 3 evaluation: 13/108 episodes, ~24% of work, elapsed 40s, ETA 126s, collisions so far 0
+[19:55:20] round 3 evaluation: 27/108 episodes, ~50% of work, elapsed 55s, ETA 55s, collisions so far 0
+[19:55:36] round 3 evaluation: 59/108 episodes, ~80% of work, elapsed 71s, ETA 18s, collisions so far 0
+[19:55:51] round 3 evaluation: 82/108 episodes, ~92% of work, elapsed 86s, ETA 8s, collisions so far 0
+[19:56:00] round 3 evaluation: 108/108 episodes, ~100% of work, elapsed 95s, ETA 0s, collisions so far 1
+[19:56:00] round 3 student (95s): {"0.5_clean": {"completion_rate": 1.0, "mean_lap_s": 121.55999999999999, "mean_progress_fraction": 1.0}, "0.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 124.55666666666667, "mean_progress_fraction": 1.0}, "1.5_clean": {"completion_rate": 1.0, "mean_lap_s": 40.65333333333333, "mean_progress_fraction": 1.0}, "1.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 41.93666666666667, "mean_progress_fraction": 1.0}, "3.0_clean": {"completion_rate": 1.0, "mean_lap_s": 20.66666666666667, "mean_progress_fraction": 1.0}, "3.0_randomized": {"completion_rate": 0.9583333333333334, "mean_lap_s": 21.471304347826088, "mean_progress_fraction": 0.9968222855785221}}
+[19:56:15] round 4 collection: 3/40 episodes, ~8% of work, elapsed 15s, ETA 187s, collisions so far 0
+[19:56:34] round 4 collection: 13/40 episodes, ~32% of work, elapsed 34s, ETA 71s, collisions so far 0
+[19:56:54] round 4 collection: 25/40 episodes, ~62% of work, elapsed 54s, ETA 33s, collisions so far 0
+[19:57:08] round 4 collection: 40/40 episodes, ~100% of work, elapsed 68s, ETA 0s, collisions so far 0
+[19:57:08] round 4 (beta=0.062): 168602 samples, outcomes {'COMPLETE': 7, 'COLLISION': 0, 'TIMEOUT': 33}, collection 68s
+[20:00:44] round 4: losses {'train_loss': 0.018141070380806923, 'holdout_loss': 0.018500734120607376}, training 216s
+[20:01:09] round 4 evaluation: 4/108 episodes, ~7% of work, elapsed 25s, ETA 317s, collisions so far 0
+[20:01:35] round 4 evaluation: 13/108 episodes, ~24% of work, elapsed 52s, ETA 162s, collisions so far 0
+[20:01:51] round 4 evaluation: 22/108 episodes, ~41% of work, elapsed 67s, ETA 98s, collisions so far 0
+[20:02:07] round 4 evaluation: 31/108 episodes, ~57% of work, elapsed 83s, ETA 62s, collisions so far 0
+[20:02:23] round 4 evaluation: 43/108 episodes, ~67% of work, elapsed 99s, ETA 48s, collisions so far 0
+[20:02:39] round 4 evaluation: 61/108 episodes, ~82% of work, elapsed 116s, ETA 25s, collisions so far 0
+[20:02:54] round 4 evaluation: 86/108 episodes, ~93% of work, elapsed 131s, ETA 10s, collisions so far 0
+[20:03:01] round 4 evaluation: 108/108 episodes, ~100% of work, elapsed 138s, ETA 0s, collisions so far 0
+[20:03:01] round 4 student (138s): {"0.5_clean": {"completion_rate": 1.0, "mean_lap_s": 121.39999999999998, "mean_progress_fraction": 1.0}, "0.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 124.38333333333333, "mean_progress_fraction": 1.0}, "1.5_clean": {"completion_rate": 1.0, "mean_lap_s": 40.67333333333334, "mean_progress_fraction": 1.0}, "1.5_randomized": {"completion_rate": 1.0, "mean_lap_s": 41.95666666666667, "mean_progress_fraction": 1.0}, "3.0_clean": {"completion_rate": 1.0, "mean_lap_s": 20.633333333333336, "mean_progress_fraction": 1.0}, "3.0_randomized": {"completion_rate": 1.0, "mean_lap_s": 21.526666666666667, "mean_progress_fraction": 1.0}}
+[20:03:06] best round 4 -> D:\projects\Project_LAKSA\scratch\candidate_v2\laksa_tinylidarnet_v2.npz
+[20:03:06] all round checkpoints kept in D:\projects\Project_LAKSA\scratch\learned_driver_runs\20260924T193910
+[20:03:06] TRAINING DONE
+exit 0

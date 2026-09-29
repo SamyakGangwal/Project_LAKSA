@@ -1,0 +1,52 @@
+[19:14:02] 528 episodes on 18 workers
+[19:34:05] finished in 1203s
+[19:34:05] speed_course  cap 0.24 expert  clean     :  1/ 1 complete, lap  456.2 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 0.24 expert  randomized:  3/ 3 complete, lap  461.1 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 0.24 student clean     :  1/ 1 complete, lap  460.3 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 0.24 student randomized:  3/ 3 complete, lap  465.3 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 0.50 expert  clean     :  1/ 1 complete, lap  219.0 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 0.50 expert  randomized:  3/ 3 complete, lap  208.7 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 0.50 student clean     :  1/ 1 complete, lap  221.1 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 0.50 student randomized:  3/ 3 complete, lap  209.9 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.00 expert  clean     :  1/ 1 complete, lap  109.6 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.00 expert  randomized:  3/ 3 complete, lap  116.6 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.00 student clean     :  1/ 1 complete, lap  110.8 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.00 student randomized:  3/ 3 complete, lap  117.7 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.50 expert  clean     :  1/ 1 complete, lap   73.2 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.50 expert  randomized:  3/ 3 complete, lap   70.5 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.50 student clean     :  1/ 1 complete, lap   74.0 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 1.50 student randomized:  3/ 3 complete, lap   71.4 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 2.00 expert  clean     :  1/ 1 complete, lap   55.1 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 2.00 expert  randomized:  3/ 3 complete, lap   56.2 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 2.00 student clean     :  1/ 1 complete, lap   55.7 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 2.00 student randomized:  3/ 3 complete, lap   56.9 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 3.00 expert  clean     :  1/ 1 complete, lap   39.2 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 3.00 expert  randomized:  3/ 3 complete, lap   37.5 s, progress 1.00, collisions 0
+[19:34:05] speed_course  cap 3.00 student clean     :  0/ 1 complete, lap    nan s, progress 0.11, collisions 1
+[19:34:05] speed_course  cap 3.00 student randomized:  0/ 3 complete, lap    nan s, progress 0.10, collisions 3
+[19:34:05] random_tracks cap 0.24 expert  clean     : 10/10 complete, lap  274.1 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 0.24 expert  randomized: 30/30 complete, lap  277.0 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 0.24 student clean     : 10/10 complete, lap  274.8 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 0.24 student randomized: 30/30 complete, lap  277.7 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 0.50 expert  clean     : 10/10 complete, lap  131.6 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 0.50 expert  randomized: 30/30 complete, lap  125.4 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 0.50 student clean     : 10/10 complete, lap  131.9 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 0.50 student randomized: 30/30 complete, lap  125.4 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.00 expert  clean     : 10/10 complete, lap   65.9 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.00 expert  randomized: 30/30 complete, lap   70.0 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.00 student clean     : 10/10 complete, lap   66.1 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.00 student randomized: 30/30 complete, lap   70.2 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.50 expert  clean     : 10/10 complete, lap   44.0 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.50 expert  randomized: 30/30 complete, lap   42.3 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.50 student clean     : 10/10 complete, lap   44.1 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 1.50 student randomized: 30/30 complete, lap   42.5 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 2.00 expert  clean     : 10/10 complete, lap   33.0 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 2.00 expert  randomized: 30/30 complete, lap   33.7 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 2.00 student clean     : 10/10 complete, lap   33.1 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 2.00 student randomized: 30/30 complete, lap   33.8 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 3.00 expert  clean     : 10/10 complete, lap   22.3 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 3.00 expert  randomized: 30/30 complete, lap   21.3 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 3.00 student clean     : 10/10 complete, lap   22.2 s, progress 1.00, collisions 0
+[19:34:05] random_tracks cap 3.00 student randomized: 10/30 complete, lap   20.7 s, progress 0.43, collisions 20
+[19:34:05] wrote D:\projects\Project_LAKSA\firmware\esp32-s3\jetson\laksa_learned_driver\models\laksa_tinylidarnet_v1.evaluation.json
+exit 0

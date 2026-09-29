@@ -1,0 +1,184 @@
+{
+  "method": "DART + DAgger imitation of privileged raceline/pure-pursuit expert",
+  "architecture": "TinyLidarNet-1D",
+  "scan_contract": {
+    "fov_rad": 3.141592653589793,
+    "bins": 120,
+    "max_range_m": 10.0,
+    "min_range_m": 0.05
+  },
+  "output_contract": {
+    "steering_left_max_rad": 0.523,
+    "steering_right_max_rad": 0.288,
+    "speed_cap_norm_mps": 3.0,
+    "wheelbase_m": 0.324
+  },
+  "vehicle": {
+    "CONTROL_PERIOD_S": 0.08,
+    "FOOTPRINT_FRONT_M": 0.419,
+    "FOOTPRINT_HALF_WIDTH_M": 0.148,
+    "FOOTPRINT_PADDING_M": 0.02,
+    "FOOTPRINT_REAR_M": 0.149,
+    "LF_M": 0.162,
+    "LIDAR_DIST_FROM_COG_M": 0.15341999999999997,
+    "LIDAR_X_FROM_BASE_M": 0.31542,
+    "LR_M": 0.162,
+    "MASS_KG": 3.75,
+    "PHYSICS_DT_S": 0.01,
+    "STEER_LEFT_MAX_RAD": 0.523,
+    "STEER_RIGHT_MAX_RAD": 0.288,
+    "WHEELBASE_M": 0.324
+  },
+  "args": {
+    "output": "D:\\projects\\Project_LAKSA\\firmware\\esp32-s3\\jetson\\laksa_learned_driver\\models\\laksa_tinylidarnet_v1.npz",
+    "rounds": 5,
+    "episodes": 40,
+    "steps": 900,
+    "epochs": 12,
+    "eval_tracks": 12,
+    "cap_min": 0.25,
+    "cap_max": 3.0,
+    "seed": 2026
+  },
+  "expert_evaluation": {
+    "0.5": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 112.56000000000002,
+      "mean_progress_fraction": 1.0
+    },
+    "1.5": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 37.71333333333333,
+      "mean_progress_fraction": 1.0
+    },
+    "3.0": {
+      "completion_rate": 1.0,
+      "mean_lap_s": 19.493333333333332,
+      "mean_progress_fraction": 1.0
+    }
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "samples": 34861,
+      "train_loss": 0.021396905183792114,
+      "holdout_loss": 0.0222463458776474,
+      "evaluation": {
+        "0.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 112.56,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 37.76,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 19.166666666666668,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\firmware\\esp32-s3\\jetson\\laksa_learned_driver\\models\\laksa_tinylidarnet_v1_round0.npz"
+    },
+    {
+      "round": 1,
+      "samples": 69817,
+      "train_loss": 0.026184415444731712,
+      "holdout_loss": 0.02537856437265873,
+      "evaluation": {
+        "0.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 112.59333333333335,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 37.77333333333333,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 19.166666666666668,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\firmware\\esp32-s3\\jetson\\laksa_learned_driver\\models\\laksa_tinylidarnet_v1_round1.npz"
+    },
+    {
+      "round": 2,
+      "samples": 103776,
+      "train_loss": 0.027071397751569748,
+      "holdout_loss": 0.028037576004862785,
+      "evaluation": {
+        "0.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 112.56000000000002,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 37.76,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 19.180000000000003,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\firmware\\esp32-s3\\jetson\\laksa_learned_driver\\models\\laksa_tinylidarnet_v1_round2.npz"
+    },
+    {
+      "round": 3,
+      "samples": 137639,
+      "train_loss": 0.027682580053806305,
+      "holdout_loss": 0.02798926830291748,
+      "evaluation": {
+        "0.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 112.61999999999999,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 37.733333333333334,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 19.173333333333336,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\firmware\\esp32-s3\\jetson\\laksa_learned_driver\\models\\laksa_tinylidarnet_v1_round3.npz"
+    },
+    {
+      "round": 4,
+      "samples": 171580,
+      "train_loss": 0.020108772441744804,
+      "holdout_loss": 0.021623561158776283,
+      "evaluation": {
+        "0.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 112.56666666666668,
+          "mean_progress_fraction": 1.0
+        },
+        "1.5": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 37.71333333333333,
+          "mean_progress_fraction": 1.0
+        },
+        "3.0": {
+          "completion_rate": 1.0,
+          "mean_lap_s": 19.166666666666668,
+          "mean_progress_fraction": 1.0
+        }
+      },
+      "path": "D:\\projects\\Project_LAKSA\\firmware\\esp32-s3\\jetson\\laksa_learned_driver\\models\\laksa_tinylidarnet_v1_round4.npz"
+    }
+  ],
+  "best_round": 0,
+  "competition_course_used_for_training": false
+}

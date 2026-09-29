@@ -1,0 +1,47 @@
+[INFO] [1790640945.607986520] [drive_supervisor]: MANUAL mode: left stick drives and right stick steers, hold A 3 s for forward-priority LiDAR cruise, X returns to manual, B latches the emergency stop, Y rearms
+[WARN] [1790640945.611384152] [drive_supervisor]: ESP32 state timeout
+[WARN] [1790640945.648619288] [drive_supervisor]: Xbox controller timeout
+[ERROR] [1790640965.311627896] [drive_supervisor]: Rejected odometry discontinuity (0.42 m, 0.11 rad in 0.133 s)
+[INFO] [1790641009.149086232] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641010.201804856] [drive_supervisor]: Xbox controller timeout
+[INFO] [1790641026.455276824] [drive_supervisor]: A hold started
+[INFO] [1790641026.501685848] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641029.462198456] [drive_supervisor]: Mode -> FORWARD-PRIORITY LIDAR CRUISE: Xbox A held for 3 seconds
+[WARN] [1790641029.502841336] [drive_supervisor]: Waiting for a fresh LiDAR cruise command
+[ERROR] [1790641086.545697848] [drive_supervisor]: Autonomy aborted: explorer reported BLOCKED
+[INFO] [1790641086.548909144] [drive_supervisor]: Manual throttle neutral interlock released
+[INFO] [1790641102.582277080] [drive_supervisor]: A hold started
+[WARN] [1790641105.607108312] [drive_supervisor]: Mode -> FORWARD-PRIORITY LIDAR CRUISE: Xbox A held for 3 seconds
+[WARN] [1790641105.648404888] [drive_supervisor]: Waiting for a fresh LiDAR cruise command
+[ERROR] [1790641120.742495960] [drive_supervisor]: Autonomy aborted: explorer reported BLOCKED
+[INFO] [1790641120.764782680] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641142.409363928] [drive_supervisor]: Xbox controller timeout
+[INFO] [1790641186.612482808] [drive_supervisor]: A hold started
+[INFO] [1790641186.696918328] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641187.250210424] [drive_supervisor]: Xbox controller timeout
+[INFO] [1790641187.751282808] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641188.461011992] [drive_supervisor]: Xbox controller timeout
+[INFO] [1790641189.501448632] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641189.615944632] [drive_supervisor]: Mode -> FORWARD-PRIORITY LIDAR CRUISE: Xbox A held for 3 seconds
+[WARN] [1790641189.656423000] [drive_supervisor]: Waiting for a fresh LiDAR cruise command
+[ERROR] [1790641227.054697848] [drive_supervisor]: Autonomy aborted: Xbox controller timeout
+[WARN] [1790641227.057234456] [drive_supervisor]: Autonomy aborted: Xbox controller timeout
+[WARN] [1790641227.098150200] [drive_supervisor]: Xbox controller timeout
+[INFO] [1790641455.006256280] [drive_supervisor]: A hold started
+[INFO] [1790641455.051319960] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641458.056856344] [drive_supervisor]: Mode -> FORWARD-PRIORITY LIDAR CRUISE: Xbox A held for 3 seconds
+[WARN] [1790641458.111856792] [drive_supervisor]: Waiting for a fresh LiDAR cruise command
+[ERROR] [1790641544.798923992] [drive_supervisor]: Autonomy aborted: Xbox controller timeout
+[WARN] [1790641544.802290776] [drive_supervisor]: Autonomy aborted: Xbox controller timeout
+[WARN] [1790641544.810987096] [drive_supervisor]: Xbox controller timeout
+[INFO] [1790641548.411337112] [drive_supervisor]: A hold started
+[INFO] [1790641548.450614136] [drive_supervisor]: Manual throttle neutral interlock released
+[WARN] [1790641549.048385912] [drive_supervisor]: Xbox controller timeout
+[ERROR] [1790641579.615728216] [drive_supervisor]: Rejected odometry discontinuity (0.33 m, 0.09 rad in 0.100 s)
+[ERROR] [1790641659.578090552] [drive_supervisor]: Rejected odometry discontinuity (0.25 m, 0.12 rad in 0.057 s)
+[ERROR] [1790641670.658002520] [drive_supervisor]: Rejected odometry discontinuity (0.54 m, 0.05 rad in 0.207 s)
+[ERROR] [1790641678.978644312] [drive_supervisor]: Rejected odometry discontinuity (0.30 m, 0.03 rad in 0.098 s)
+[ERROR] [1790641697.679677304] [drive_supervisor]: Rejected odometry discontinuity (0.42 m, 0.04 rad in 0.133 s)
+[ERROR] [1790641704.290412632] [drive_supervisor]: Rejected odometry discontinuity (0.65 m, 0.00 rad in 0.139 s)
+[ERROR] [1790641707.746005272] [drive_supervisor]: Rejected odometry discontinuity (0.92 m, 0.00 rad in 0.133 s)
+[ERROR] [1790641721.995091192] [drive_supervisor]: Rejected odometry discontinuity (0.76 m, 0.02 rad in 0.076 s)
