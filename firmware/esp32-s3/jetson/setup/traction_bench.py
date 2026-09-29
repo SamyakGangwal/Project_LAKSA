@@ -18,6 +18,9 @@ clear rotation, and wheel spin-down time after braking.  Reverse steps also
 show where reverse is refused (requested vs active eRPM vs motor current).
 Every sample is written to --csv.
 
+--hold SECONDS (with --steps only) lengthens each speed step; the default is
+3 s, the same as without it, and it is capped at 10 s.
+
 Run with drive_supervisor stopped.
 """
 
@@ -42,6 +45,8 @@ MIN_START_BATTERY_V = 14.6         # 4S pack: 3.65 V per cell
 MIN_BATTERY_V = 14.4               # 3.6 V per cell
 STATE_TIMEOUT_S = 0.6
 RATE_HZ = 20.0
+STEP_HOLD_S = 3.0                  # seconds per --steps speed step (override with --hold)
+MAX_STEP_HOLD_S = 10.0
 SEQUENCE = (                       # (speed m/s, brake, seconds)
     # 0.10 m/s (414 eRPM) stalls repeatedly: sensorless start is unreliable
     # below ~900 eRPM (bench 2026-09-28), so the ladder starts at 0.20 m/s.
@@ -104,6 +109,16 @@ class TractionBench(Node):
         return None
 
 
+def build_sequence(steps: str, hold: float = STEP_HOLD_S):
+    """The full ladder, or for --steps: brake 1 s, then each speed for `hold` s followed by 2 s of brake."""
+    if not steps:
+        return SEQUENCE
+    sequence = ((0.0, True, 1.0),)
+    for value in steps.split(","):
+        sequence += ((float(value), False, hold), (0.0, True, 2.0))
+    return sequence
+
+
 def spin_for(node, seconds):
     end = time.monotonic() + seconds
     while time.monotonic() < end:
@@ -119,12 +134,15 @@ def main() -> int:
     parser.add_argument("--csv", default="", help="write every sample to this CSV file")
     parser.add_argument("--steps", default="",
                         help="comma-separated speeds (m/s) to run instead of the full ladder, e.g. 0.25,-0.25")
+    parser.add_argument("--hold", type=float, default=None,
+                        help=f"seconds per --steps speed step (default {STEP_HOLD_S:.0f}, max {MAX_STEP_HOLD_S:.0f})")
     args = parser.parse_args()
-    sequence = SEQUENCE
-    if args.steps:
-        sequence = ((0.0, True, 1.0),)
-        for value in args.steps.split(","):
-            sequence += ((float(value), False, 3.0), (0.0, True, 2.0))
+    if args.hold is not None:
+        if not args.steps:
+            parser.error("--hold only applies with --steps")
+        if not (math.isfinite(args.hold) and 1.0 <= args.hold <= MAX_STEP_HOLD_S):
+            parser.error(f"--hold must be between 1 and {MAX_STEP_HOLD_S:.0f} seconds")
+    sequence = build_sequence(args.steps, STEP_HOLD_S if args.hold is None else args.hold)
     rclpy.init()
     node = TractionBench()
     exit_code = 0
