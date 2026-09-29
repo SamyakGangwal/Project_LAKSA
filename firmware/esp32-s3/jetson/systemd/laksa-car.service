@@ -1,0 +1,22 @@
+[Unit]
+Description=LAKSA car stack (sensors, ZED perception, mapping, supervisor, learned driver, console)
+After=network-online.target NetworkManager.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=samyak
+Group=samyak
+Environment=HOME=/home/samyak
+# Give the USB devices, the ESP32 micro-ROS agent and the network time to settle.
+ExecStartPre=/bin/sleep 25
+# trial = actuation enabled, cruise capped at ~0.15 m/s.  The car stays braked
+# until an operator starts driving from the console (or laksa_operator).
+ExecStart=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh trial
+ExecStop=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh stop
+TimeoutStartSec=240
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=LAKSA network watcher (hotspot away from home, console binding)
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/laksa_network_watch.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
