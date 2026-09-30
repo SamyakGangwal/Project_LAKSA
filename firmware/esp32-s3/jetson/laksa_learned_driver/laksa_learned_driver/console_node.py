@@ -47,6 +47,7 @@ from nav2_msgs.action import ComputePathToPose, NavigateToPose
 from std_msgs.msg import Bool, Empty, String
 from tf2_ros import Buffer, TransformException, TransformListener
 
+from .hold_latch import HoldLatch
 from .scan_adapter import LidarMount, scan_to_vehicle_beams
 
 PAGE = Path(__file__).with_name("console_page.html")
@@ -83,6 +84,10 @@ class Console(Node):
         self._goal_pub = self.create_publisher(PoseStamped, "/laksa/console/goal", latched)
         self._nav_enabled_pub = self.create_publisher(Bool, "/laksa/dashboard_navigation_enabled", latched)
         self._race_pub = self.create_publisher(String, "/laksa/race/command", 10)
+        self._profile_pub = self.create_publisher(String, "/laksa/drive_profile", latched)
+        self.create_subscription(String, "/laksa/drive_profile/active",
+                                 lambda m: self._json_status("profile", m), latched)
+        self.create_subscription(String, "/laksa/driver/telemetry", lambda m: self._json_status("telemetry", m), 10)
         self.create_subscription(String, "/laksa/race/state", self._race_cb, latched)
         self._planner = ActionClient(self, ComputePathToPose, "/compute_path_to_pose")
         self._navigator = ActionClient(self, NavigateToPose, "/navigate_to_pose")
@@ -99,6 +104,8 @@ class Console(Node):
                         "person": {}, "pose_frame": None}
         self._map_png = None
         self._map_info = None
+        self._map_grid = None          # latest OccupancyGrid values (rows from the bottom)
+        self._last_save = None
         self._map_revision = 0
         self._pose = None
         self._trail: list[tuple[float, float]] = []
@@ -110,6 +117,8 @@ class Console(Node):
         self._goal = None
         self._last_heartbeat = 0.0
         self._hold_started = 0.0
+        self._hold_latch = HoldLatch()    # heartbeat lost mid-hold -> release and press again (KarSha, 995ace9)
+        self._ignored_press_logged = False
         self._pulse = None
         # Route state: planning and navigation run on the ROS thread (_route_tick);
         # the web thread only sets these requests.
@@ -199,6 +208,43 @@ class Console(Node):
                 "chosen": read(Path.home() / ".config" / "laksa" / "car_mode") or "trial",
                 "restarting": (run / "restart_request").is_file()}
 
+    def _save_map(self) -> None:
+        """Save the live map and the driven path for training (field maps)."""
+        with self._lock:
+            grid, info, trail = self._map_grid, dict(self._map_info or {}), list(self._trail)
+            frame = self._status.get("pose_frame")
+        if grid is None or not info:
+            self._last_save = {"ok": False, "detail": "no map yet (is mapping running?)"}
+            return
+        if frame != "map" or len(trail) < 20:
+            self._last_save = {"ok": False, "detail": "no driven path on the map yet: drive first, with the page open"}
+            return
+        folder = Path.home() / "laksa_maps" / time.strftime("%Y%m%dT%H%M%S")
+        folder.mkdir(parents=True, exist_ok=True)
+        image = np.full(grid.shape, 128, dtype=np.uint8)              # unknown
+        image[(grid >= 0) & (grid < 50)] = 255                         # free
+        image[grid >= 50] = 0                                          # occupied
+        cv2.imwrite(str(folder / "map.png"), np.flipud(image))
+        (folder / "map.yaml").write_text(
+            f"image: map.png\nresolution: {info['resolution']}\n"
+            f"origin: [{info['origin_x']}, {info['origin_y']}, 0.0]\nnegate: 0\n"
+            "occupied_thresh: 0.65\nfree_thresh: 0.196\n", encoding="utf-8", newline="\n")
+        with open(folder / "trail.csv", "w", encoding="utf-8", newline="\n") as handle:
+            handle.write("x_m,y_m\n")
+            handle.writelines(f"{x:.3f},{y:.3f}\n" for x, y in trail)
+        xy = np.array(trail)
+        length = float(np.sum(np.hypot(*np.diff(xy, axis=0).T)))
+        gap = float(np.hypot(*(xy[-1] - xy[0])))
+        closed = gap <= 1.5 and length >= 8.0
+        (folder / "info.json").write_text(json.dumps({
+            "saved_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "trail_length_m": round(length, 2),
+            "start_end_gap_m": round(gap, 2), "loop": closed}, indent=2) + "\n", encoding="utf-8", newline="\n")
+        detail = (f"saved {folder.name}: {length:.1f} m driven" + ("" if closed else
+                  f" — not a loop yet (ends {gap:.1f} m from the start); training needs a loop, so drive back"
+                  " near the start and save again"))
+        self._last_save = {"ok": True, "loop": closed, "detail": detail, "folder": str(folder)}
+        self.get_logger().warn(f"Map saved to {folder} ({length:.1f} m, loop={closed})")
+
     def _set_car_mode(self, mode: str) -> None:
         if mode not in ("trial", "race"):
             return
@@ -209,6 +255,12 @@ class Console(Node):
         run.mkdir(parents=True, exist_ok=True)
         (run / "restart_request").write_text(mode + "\n", encoding="utf-8")
         self.get_logger().warn(f"Car mode set to {mode}; the stack restarts within ~15 s")
+
+    def _json_status(self, key: str, message) -> None:
+        try:
+            self._status[key] = json.loads(message.data)
+        except ValueError:
+            pass
 
     def _race_cb(self, message):
         try:
@@ -231,6 +283,7 @@ class Console(Node):
         if not ok:
             return
         with self._lock:
+            self._map_grid = grid
             self._map_png = base64.b64encode(png.tobytes()).decode("ascii")
             self._map_info = {"width": info.width, "height": info.height, "resolution": info.resolution,
                               "origin_x": info.origin.position.x, "origin_y": info.origin.position.y,
@@ -253,7 +306,7 @@ class Console(Node):
             self._status["pose_frame"] = frame
             if not self._trail or math.hypot(pose[0] - self._trail[-1][0], pose[1] - self._trail[-1][1]) > 0.05:
                 self._trail.append((round(pose[0], 3), round(pose[1], 3)))
-                self._trail = self._trail[-2000:]
+                self._trail = self._trail[-20000:]      # ~1 km at 5 cm spacing
 
     def _scan_cb(self, message: LaserScan):
         ranges, angles = scan_to_vehicle_beams(message.ranges, float(message.angle_min),
@@ -285,6 +338,10 @@ class Console(Node):
             pulse = self._pulse if self._pulse and now < self._pulse[1] else None
             alive = now - self._last_heartbeat <= self._timeout
             engaging = alive and now - self._hold_started < self._engage
+            lost = self._hold_latch.lapse(now, self._last_heartbeat, self._timeout)
+        if lost:
+            self.get_logger().warn("Heartbeat lost while HOLD/GO was held: ignoring HOLD/GO until it is "
+                                   "released and pressed again")
         if pulse:
             self._joy((pulse[0],))
         elif alive:
@@ -434,6 +491,7 @@ class Console(Node):
                 "type": "state",
                 "status": dict(self._status),
                 "holding": time.monotonic() - self._last_heartbeat <= self._timeout,
+                "rearm_needed": self._hold_latch.awaiting_release,
                 "pose": self._pose,
                 "trail": self._trail[-600:],
                 "lidar": self._lidar_xy,
@@ -442,6 +500,7 @@ class Console(Node):
                 "goal": self._goal,
                 "route": dict(self._route),
                 "car_mode": self._car_mode(),
+                "last_save": self._last_save,
                 "map_revision": self._map_revision,
             }
             if self._map_png and self._map_revision != map_revision_seen:
@@ -493,8 +552,13 @@ class Console(Node):
                         continue
                     now = time.monotonic()
                     kind = data.get("cmd")
+                    ignored = False
                     with self._lock:
-                        if kind in ("hold", "go"):
+                        if kind in ("hold", "go") and not self._hold_latch.press(
+                                now, self._last_heartbeat, self._timeout):
+                            ignored = not self._ignored_press_logged
+                            self._ignored_press_logged = True
+                        elif kind in ("hold", "go"):
                             if now - self._last_heartbeat > self._timeout:
                                 self._hold_started = now
                                 self._nav_hold = kind == "go"
@@ -505,22 +569,32 @@ class Console(Node):
                         elif kind == "release":
                             self._last_heartbeat = 0.0
                             self._go_latched = False
+                            self._hold_latch.release()
+                            self._ignored_press_logged = False
                         elif kind == "stop":
                             self._last_heartbeat = 0.0
+                            self._hold_latch.stop()
                             self._pulse = (B_BUTTON, now + 0.6)
                         elif kind == "rearm":
                             self._pulse = (Y_BUTTON, now + 0.6)
                         elif kind == "plan":
                             self._plan_requested = True
+                    if ignored:
+                        self.get_logger().warn(f"Ignoring '{kind}' after heartbeat loss: release and press again")
+                    if kind == "profile" and self._car_mode().get("active") == "trial":
+                        # Trial & explore settings apply live; race settings travel with ARM.
+                        profile = data.get("profile") if isinstance(data.get("profile"), dict) else {}
+                        self._profile_pub.publish(String(data=json.dumps({**profile, "mode": "explore"})))
+                    if kind == "save_map":
+                        self._save_map()
                     if kind == "car_mode":
                         self._set_car_mode(str(data.get("mode", "")))
                     if kind in ("race_arm", "race_disarm", "race_start"):
                         command = {"cmd": kind.replace("race_", "")}
                         if kind == "race_arm":
                             command["mode"] = "obstacle" if data.get("mode") == "obstacle" else "speed"
-                            speed = data.get("speed")
-                            if isinstance(speed, (int, float)) and math.isfinite(speed):
-                                command["speed"] = float(speed)
+                            if isinstance(data.get("profile"), dict):
+                                command["profile"] = data["profile"]     # clamped by the race manager
                         self._race_pub.publish(String(data=json.dumps(command)))
                     if kind in ("start", "goal"):
                         x, y = float(data["x"]), float(data["y"])

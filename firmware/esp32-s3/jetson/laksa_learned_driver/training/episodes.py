@@ -21,7 +21,8 @@ import numpy as np  # noqa: E402
 
 from expert import Expert, ExpertConfig, smooth_raceline  # noqa: E402
 from sim_env import Domain, LaksaSim, Progress  # noqa: E402
-from tracks import generate_course_track, generate_track, load_map_track, load_obstacle_course  # noqa: E402
+from tracks import (field_map_dirs, generate_course_track, generate_track, load_field_map, load_map_track,
+                    load_obstacle_course)  # noqa: E402
 import vehicle as V  # noqa: E402
 from laksa_learned_driver.policy import LearnedDriverPolicy, OutputContract  # noqa: E402
 from laksa_learned_driver.scan_features import ScanContract, normalize  # noqa: E402
@@ -118,6 +119,10 @@ def _track(spec: tuple):
         if spec[0] == "random":
             _, seed, prefix = spec
             track = generate_track(np.random.default_rng(seed), out, f"{prefix}_{seed}")
+        elif spec[0] == "field_map":
+            _, seed, prefix = spec
+            track = _drivable(lambda rng, attempt: load_field_map(
+                FIELD_MAPS[seed % len(FIELD_MAPS)], rng, out, f"{prefix}_fm_{seed}_{attempt}"), seed)
         elif spec[0] == "obstacle_course":
             _, seed, prefix = spec
             track = _drivable_obstacle_course(seed, out, prefix)
@@ -139,6 +144,24 @@ def _track(spec: tuple):
         config = ExpertConfig(lookahead_base_m=0.25, lookahead_min_m=0.3) if spec[0] == "obstacle_course" else None
         cache[spec] = (track, Expert(track, smooth_raceline(track), config))
     return cache[spec]
+
+
+FIELD_MAPS = field_map_dirs()
+
+
+def _drivable(build, seed: int, attempts: int = 6):
+    """A layout the expert can lap cleanly at 0.5 m/s (redrawn otherwise)."""
+    sim = _STATE["sim"]
+    for attempt in range(attempts):
+        track = build(np.random.default_rng(seed * 101 + attempt), attempt)
+        expert = Expert(track, smooth_raceline(track), ExpertConfig(lookahead_base_m=0.25, lookahead_min_m=0.3))
+        sim.load(track, Domain())
+        steps = int(1.3 * track.center.shape[0] * track.spacing / (0.3 * 0.5) / V.CONTROL_PERIOD_S)
+        _, stats = run_episode(sim, track, expert, 0.5, steps, np.random.default_rng(0), randomize_start=False,
+                               record=False)
+        if stats["result"] == "COMPLETE":
+            return track
+    return track
 
 
 def _drivable_obstacle_course(seed: int, out: Path, prefix: str, attempts: int = 12):

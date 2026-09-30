@@ -117,6 +117,9 @@ def main() -> None:
                         help="share of training tracks in the 2026 course style (widths, open areas, buckets)")
     parser.add_argument("--replica-fraction", type=float, default=0.25,
                         help="share of training episodes on the 2026 Obstacle Course replica")
+    parser.add_argument("--field-fraction", type=float, default=0.15,
+                        help="share of training episodes on maps the real car explored (training/field_maps); "
+                             "ignored when there are none")
     parser.add_argument("--eval-replica-tracks", type=int, default=4,
                         help="replica layouts per evaluation (its 76 m laps dominate evaluation time)")
     parser.add_argument("--rounds", type=int, default=5, help="DART round + DAgger rounds")
@@ -130,6 +133,9 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=default_workers())
     parser.add_argument("--seed", type=int, default=2026)
     args = parser.parse_args()
+    from tracks import field_map_dirs
+    if not field_map_dirs():
+        args.field_fraction = 0.0
 
     torch.manual_seed(args.seed)
     torch.set_num_threads(max(1, args.workers))
@@ -139,7 +145,8 @@ def main() -> None:
     log(f"run directory {run_dir}; {args.workers} workers")
     eval_seeds = [args.seed + 10_000 + i for i in range(args.eval_tracks)]
     eval_caps = (0.5, 1.5, 3.0)
-    eval_kinds = ("random",) + (("obstacles",) if args.obstacle_fraction > 0 else ())         + (("course_style",) if args.course_fraction > 0 else ())         + (("obstacle_course",) if args.replica_fraction > 0 else ())
+    eval_kinds = ("random",) + (("obstacles",) if args.obstacle_fraction > 0 else ())         + (("course_style",) if args.course_fraction > 0 else ())         + (("obstacle_course",) if args.replica_fraction > 0 else ()) \
+        + (("field_map",) if args.field_fraction > 0 else ())
 
     with make_pool(args.workers, args.seed) as pool:
         started = time.time()
@@ -162,7 +169,10 @@ def main() -> None:
             for _ in range(args.episodes):
                 job_seed = int(rng.integers(2**31))
                 draw = rng.random()
-                kind = ("obstacle_course" if draw < args.replica_fraction else
+                if rng.random() < args.field_fraction:
+                    draw = 2.0                                  # field map (checked below)
+                kind = ("field_map" if draw == 2.0 else
+                        "obstacle_course" if draw < args.replica_fraction else
                         "course_style" if draw < args.replica_fraction + args.course_fraction else
                         "obstacles" if draw < args.replica_fraction + args.course_fraction + args.obstacle_fraction
                         else "random")
@@ -216,6 +226,7 @@ def main() -> None:
         "obstacle_fraction": args.obstacle_fraction,
         "course_fraction": args.course_fraction,
         "replica_fraction": args.replica_fraction,
+        "field_fraction": args.field_fraction,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(best[1].read_bytes())

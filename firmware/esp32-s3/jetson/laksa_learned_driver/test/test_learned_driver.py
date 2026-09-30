@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 
 from laksa_learned_driver.policy import LearnedDriverPolicy, OutputContract
+from laksa_learned_driver.profiles import DEFAULTS, make_profile
 from laksa_learned_driver.race import MAX_SPEED_MPS, RaceManager
 from laksa_learned_driver.signals import Debounce, SignalConfig, read_signals
 from laksa_learned_driver.perception import (Detection, PerceptionConfig, box_footprint_points,
@@ -195,7 +196,7 @@ class SignalTest(unittest.TestCase):
 class RaceTest(unittest.TestCase):
     def test_green_starts_and_red_stops(self):
         race = RaceManager(min_run_s=3.0)
-        self.assertEqual(race.arm("speed", None).speed_cap, 2.5)
+        self.assertEqual(race.arm("speed", None).profile["speed_mps"], DEFAULTS["speed"].speed_mps)
         self.assertIsNone(race.on_signals(0.0, False, False).autonomy)
         self.assertTrue(race.on_signals(1.0, True, False).autonomy)
         self.assertEqual(race.status.state, "RUNNING")
@@ -205,8 +206,28 @@ class RaceTest(unittest.TestCase):
 
     def test_speed_is_clamped_to_the_trained_range(self):
         race = RaceManager()
-        self.assertEqual(race.arm("obstacle", 9.0).speed_cap, MAX_SPEED_MPS)
-        self.assertEqual(RaceManager().arm("obstacle", None).speed_cap, 2.0)
+        self.assertEqual(race.arm("obstacle", {"speed_mps": 9.0}).profile["speed_mps"], MAX_SPEED_MPS)
+        self.assertEqual(RaceManager().arm("obstacle", None).profile["speed_mps"], 2.0)
+
+    def test_explore_is_not_a_race_mode(self):
+        with self.assertRaises(ValueError):
+            RaceManager().arm("explore", None)
+
+
+class ProfileTest(unittest.TestCase):
+    def test_mode_defaults(self):
+        self.assertTrue(DEFAULTS["obstacle"].avoid and DEFAULTS["obstacle"].camera)
+        self.assertFalse(DEFAULTS["speed"].reverse)
+        self.assertEqual(DEFAULTS["speed"].speed_mps, MAX_SPEED_MPS)
+
+    def test_overrides_are_clamped_and_typed(self):
+        p = make_profile({"mode": "obstacle", "speed_mps": "fast", "horizon_m": 99, "camera": "yes"})
+        self.assertEqual(p.speed_mps, DEFAULTS["obstacle"].speed_mps)      # not a number: default
+        self.assertEqual(p.horizon_m, 12.0)                                  # clamped
+        self.assertTrue(p.camera)                                            # non-bool ignored: default
+
+    def test_unknown_mode_falls_back_to_explore(self):
+        self.assertEqual(make_profile({"mode": "warp"}).mode, "explore")
 
     def test_nothing_starts_unless_armed(self):
         race = RaceManager()

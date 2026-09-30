@@ -1,9 +1,8 @@
 """Race sequencing: arm -> green signal -> drive -> stop signal (pure logic, testable).
 
-Two modes share the learned driver and differ in speed:
-
-  speed     the Speed Course (default 2.5 m/s)
-  obstacle  the Obstacle Course (default 2.0 m/s)
+Two race modes share the learned driver and differ in their drive profile
+(see profiles.py): ``obstacle`` (fast, avoids obstacles) and ``speed`` (as
+fast as the model allows).
 
 The manager never commands the motor: it asks drive_supervisor to enter
 LIDAR_CRUISE (the learned driver's slot) and to leave it again, and every
@@ -14,16 +13,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-MODES = {"speed": 2.5, "obstacle": 2.0}
-MAX_SPEED_MPS = 3.0            # the learned model's trained maximum
-MIN_SPEED_MPS = 0.2            # the drive does not run reliably below ~0.2 m/s
+from .profiles import DEFAULTS, MAX_SPEED_MPS, RACE_MODES, make_profile  # noqa: F401  (re-exported)
 
 
 @dataclass
 class RaceStatus:
     state: str = "IDLE"
     mode: str = "speed"
-    speed_mps: float = MODES["speed"]
+    speed_mps: float = DEFAULTS["speed"].speed_mps
     detail: str = ""
     started_at: float | None = None
     finished_at: float | None = None
@@ -31,7 +28,7 @@ class RaceStatus:
 
 @dataclass
 class Actions:
-    speed_cap: float | None = None     # publish to the driver
+    profile: dict | None = None        # publish to the driver
     autonomy: bool | None = None       # True = start LIDAR_CRUISE, False = stop
     events: list[str] = field(default_factory=list)
 
@@ -45,15 +42,15 @@ class RaceManager:
     def _set(self, state: str, detail: str = "") -> None:
         self.status.state, self.status.detail = state, detail
 
-    def arm(self, mode: str, speed_mps: float | None) -> Actions:
-        if mode not in MODES:
-            raise ValueError(f"unknown mode {mode!r}")
+    def arm(self, mode: str, overrides: dict | None = None) -> Actions:
+        if mode not in RACE_MODES:
+            raise ValueError(f"unknown race mode {mode!r}")
         if self.status.state == "RUNNING":
             return Actions(events=["already running"])
-        speed = MODES[mode] if speed_mps is None else float(speed_mps)
-        speed = min(MAX_SPEED_MPS, max(MIN_SPEED_MPS, speed))
-        self.status = RaceStatus(state="ARMED", mode=mode, speed_mps=speed, detail="waiting for the green signal")
-        return Actions(speed_cap=speed, events=[f"armed {mode} at {speed:.2f} m/s"])
+        profile = make_profile({**(overrides or {}), "mode": mode})
+        self.status = RaceStatus(state="ARMED", mode=mode, speed_mps=profile.speed_mps,
+                                 detail="waiting for the green signal")
+        return Actions(profile=profile.to_dict(), events=[f"armed {mode} at {profile.speed_mps:.2f} m/s"])
 
     def disarm(self, reason: str = "disarmed") -> Actions:
         was_running = self.status.state == "RUNNING"

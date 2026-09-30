@@ -1,13 +1,13 @@
 """ROS 2 node: race manager (camera start/stop signals + mode and speed).
 
 Subscribes
-  /laksa/race/command          String JSON {"cmd": "arm", "mode": "speed"|"obstacle", "speed": 2.5}
+  /laksa/race/command          String JSON {"cmd": "arm", "mode": "speed"|"obstacle", "profile": {...}}
                                | {"cmd": "disarm"} | {"cmd": "start"} (manual start, for testing)
   ZED compressed RGB image     decoded only while ARMED or RUNNING
   /laksa/mission_state, /laksa/autonomy_health   from drive_supervisor
 Publishes
   /laksa/race/state            String JSON {state, mode, speed_mps, detail, green, red} (latched)
-  /laksa/race/speed_cap        Float32, the learned driver's speed cap (latched)
+  /laksa/drive_profile         String JSON, the learned driver's profile (latched)
   /laksa/dashboard_exploration_enabled   Bool: start/stop drive_supervisor's LIDAR_CRUISE
 """
 
@@ -22,7 +22,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 from sensor_msgs.msg import CompressedImage
-from std_msgs.msg import Bool, Float32, String
+from std_msgs.msg import Bool, String
 
 from .race import RaceManager
 from .signals import Debounce, SignalConfig, read_signals
@@ -47,7 +47,7 @@ class RaceNode(Node):
         latched = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
                              durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self._state_pub = self.create_publisher(String, "/laksa/race/state", latched)
-        self._cap_pub = self.create_publisher(Float32, "/laksa/race/speed_cap", latched)
+        self._profile_pub = self.create_publisher(String, "/laksa/drive_profile", latched)
         self._autonomy_pub = self.create_publisher(Bool, "/laksa/dashboard_exploration_enabled", latched)
         self.create_subscription(String, "/laksa/race/command", self._command_cb, 10)
         self.create_subscription(String, "/laksa/mission_state", self._mission_cb, latched)
@@ -59,13 +59,13 @@ class RaceNode(Node):
         self.get_logger().info("Race manager ready: ARM from the console, then show the green signal")
 
     def _apply(self, actions) -> None:
-        if actions.speed_cap is not None:
-            self._cap_pub.publish(Float32(data=float(actions.speed_cap)))
+        if actions.profile is not None:
+            self._profile_pub.publish(String(data=json.dumps(actions.profile)))
         if actions.autonomy is not None:
             self._autonomy_pub.publish(Bool(data=bool(actions.autonomy)))
         for event in actions.events:
             self.get_logger().warn(f"Race: {event}")
-        if actions.speed_cap is not None or actions.autonomy is not None or actions.events:
+        if actions.profile is not None or actions.autonomy is not None or actions.events:
             self._publish_state()
 
     def _tick(self) -> None:
@@ -89,7 +89,8 @@ class RaceNode(Node):
             if cmd == "arm":
                 self._green.reset()
                 self._red.reset()
-                self._apply(self._manager.arm(str(data.get("mode", "speed")), data.get("speed")))
+                profile = data.get("profile") if isinstance(data.get("profile"), dict) else {}
+                self._apply(self._manager.arm(str(data.get("mode", "speed")), profile))
             elif cmd == "disarm":
                 self._apply(self._manager.disarm("disarmed from the console"))
             elif cmd == "start":

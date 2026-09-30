@@ -367,18 +367,7 @@ def load_obstacle_course(rng: np.random.Generator, out_dir: Path, name: str,
     track = load_map_track(name, course_dir / "map.yaml", center, out_dir)
     track.width_limits_speed = True
     track.no_start = (tuple(features["no_start_center"]), float(features["no_start_radius_m"]))
-    # Asymmetric raceline limits from the real reach on each side (capped in open areas).
-    heading = track.headings()
-    normal = np.column_stack([-np.sin(heading), np.cos(heading)])
-    offsets = np.arange(0.0, 1.5, track.resolution * 0.5)
-    reach = {}
-    for side in (1.0, -1.0):
-        probe = track.center[:, None, :] + side * offsets[None, :, None] * normal[:, None, :]
-        ok = track.is_free(probe.reshape(-1, 2)).reshape(center.shape[0], offsets.size)
-        reach[side] = np.where(ok.all(axis=1), offsets[-1], offsets[np.argmin(ok, axis=1)])
-    margin = V.FOOTPRINT_HALF_WIDTH_M + V.FOOTPRINT_PADDING_M + 0.12
-    track.offset_hi = np.maximum(reach[1.0] - margin, 0.0)
-    track.offset_lo = -np.maximum(reach[-1.0] - margin, 0.0)
+    set_side_limits(track)
     # Buckets: 2-9 in the bucket box, a way around and between them.
     box = np.array(features["bucket_box"])
     inside = cv2.pointPolygonTest
@@ -390,6 +379,69 @@ def load_obstacle_course(rng: np.random.Generator, out_dir: Path, name: str,
                   natural_fraction=0.5)
     for a, b in features["hoop_lines"] if hoops else []:
         add_hoop(track, rng, np.array(a), np.array(b), float(features["hoop_inner_width_m"]))
+    return track
+
+
+def set_side_limits(track: Track, cap_m: float = 1.5) -> None:
+    """Raceline limits from the real reach to the wall on each side (capped in open areas)."""
+    heading = track.headings()
+    normal = np.column_stack([-np.sin(heading), np.cos(heading)])
+    offsets = np.arange(0.0, cap_m, track.resolution * 0.5)
+    reach = {}
+    for side in (1.0, -1.0):
+        probe = track.center[:, None, :] + side * offsets[None, :, None] * normal[:, None, :]
+        ok = track.is_free(probe.reshape(-1, 2)).reshape(track.center.shape[0], offsets.size)
+        reach[side] = np.where(ok.all(axis=1), offsets[-1], offsets[np.argmin(ok, axis=1)])
+    margin = V.FOOTPRINT_HALF_WIDTH_M + V.FOOTPRINT_PADDING_M + 0.12
+    track.offset_hi = np.maximum(reach[1.0] - margin, 0.0)
+    track.offset_lo = -np.maximum(reach[-1.0] - margin, 0.0)
+
+
+FIELD_MAPS_DIR = Path(__file__).resolve().parent / "field_maps"
+
+
+def field_map_dirs(root: Path = FIELD_MAPS_DIR) -> list[Path]:
+    """Saved console maps usable for training (a map, a trail, and the trail is a loop)."""
+    import json
+    usable = []
+    for folder in sorted(root.glob("*")) if root.is_dir() else []:
+        info = folder / "info.json"
+        if (folder / "map.yaml").is_file() and (folder / "trail.csv").is_file() and info.is_file() \
+                and json.loads(info.read_text(encoding="utf-8")).get("loop"):
+            usable.append(folder)
+    return usable
+
+
+def trail_centerline(trail_xy: np.ndarray, spacing: float = 0.05) -> np.ndarray:
+    """A driven path, closed and smoothed into a uniformly spaced loop."""
+    from scipy.interpolate import splev, splprep
+    keep = [0]
+    for i in range(1, len(trail_xy)):                          # drop stationary jitter
+        if np.hypot(*(trail_xy[i] - trail_xy[keep[-1]])) >= 0.15:
+            keep.append(i)
+    pts = trail_xy[keep]
+    if np.hypot(*(pts[-1] - pts[0])) < 0.15:
+        pts = pts[:-1]
+    tck, _ = splprep([pts[:, 0], pts[:, 1]], s=len(pts) * 0.004, per=True)
+    dense = np.column_stack(splev(np.linspace(0, 1, 8 * len(pts), endpoint=False), tck))
+    return resample_closed(dense, spacing)
+
+
+def load_field_map(folder: Path, rng: np.random.Generator, out_dir: Path, name: str) -> Track:
+    """A place the real car explored: its saved map, the driven loop as the route,
+    a random direction and a few random boxes.  Unknown map cells count as walls."""
+    import csv
+    with open(folder / "trail.csv", newline="", encoding="utf-8") as handle:
+        trail = np.array([(float(r["x_m"]), float(r["y_m"])) for r in csv.DictReader(handle)])
+    center = trail_centerline(trail)
+    if rng.random() < 0.5:
+        center = center[::-1].copy()
+    track = load_map_track(name, folder / "map.yaml", center, out_dir)
+    track.width_limits_speed = True
+    set_side_limits(track)
+    wide = track.half_width >= 0.45
+    if wide.any() and rng.random() < 0.7:
+        add_obstacles(track, rng, int(rng.integers(1, 5)), min_separation_m=2.0, eligible=wide)
     return track
 
 

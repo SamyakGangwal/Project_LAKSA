@@ -12,6 +12,7 @@ it stop and report ``CONTROL_ERROR`` so the supervisor aborts autonomy.
 from __future__ import annotations
 
 import csv
+import dataclasses
 import json
 import math
 import time
@@ -26,9 +27,10 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan, PointCloud2
 from sensor_msgs_py import point_cloud2
-from std_msgs.msg import Bool, Float32, String
+from std_msgs.msg import Bool, String
 
 from .policy import LearnedDriverPolicy
+from .profiles import make_profile
 from .recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_free_distance
 from .perception import lidar_ground_mask
 from .safety import AvoidConfig, GovernorConfig, choose_steering, govern, path_free_distance, scan_points_base
@@ -109,10 +111,14 @@ class LearnedDriver(Node):
         self.create_subscription(Bool, str(self.get_parameter("enabled_topic").value), self._enabled_cb, latched)
         self.create_subscription(LaserScan, str(self.get_parameter("scan_topic").value), self._scan_cb,
                                  qos_profile_sensor_data)
-        # Race mode sets the speed per course (Speed run / Obstacle).
-        self.create_subscription(Float32, "/laksa/race/speed_cap", self._speed_cap_cb, latched)
+        # Mode profile (obstacle / speed / explore) from the console or race manager.
+        self.create_subscription(String, "/laksa/drive_profile", self._profile_cb, latched)
+        self._profile_pub = self.create_publisher(String, "/laksa/drive_profile/active", latched)
         self.create_timer(0.10, self._watchdog)
         self.create_timer(1.0, self._diagnostics)
+        self._telemetry_pub = self.create_publisher(String, "/laksa/driver/telemetry", 10)
+        self.create_timer(0.2, self._telemetry)
+        self._last_source = "none"
 
         self._enabled = False
         self._last_scan_ns = 0
@@ -139,10 +145,10 @@ class LearnedDriver(Node):
         self._smoother = SteeringSmoother(float(self.get_parameter("steering_alpha").value),
                                           float(self.get_parameter("steering_rate_limit_radps").value))
         self._last_step_time = time.monotonic()
-        if self._use_camera:
-            self.create_subscription(PointCloud2, "/laksa/perception/obstacles", self._camera_cb, 10)
-            self.create_subscription(String, "/laksa/perception/person", self._person_cb, 10)
-            self.create_subscription(String, "/laksa/perception/ground", self._ground_cb, 10)
+        # Always subscribed; a profile can switch the camera layer on and off live.
+        self.create_subscription(PointCloud2, "/laksa/perception/obstacles", self._camera_cb, 10)
+        self.create_subscription(String, "/laksa/perception/person", self._person_cb, 10)
+        self.create_subscription(String, "/laksa/perception/ground", self._ground_cb, 10)
         self._log_writer = None
         log_path = str(self.get_parameter("decision_log").value)
         if log_path:
@@ -153,8 +159,9 @@ class LearnedDriver(Node):
                                        "block_source", "lidar_free_m", "camera_free_m", "slope_deg",
                                        "person_factor", "lidar_pts", "camera_pts", "ground_filtered",
                                        "target_steer"])
+        self._reverse_speed = float(self.get_parameter("reverse_speed_mps").value)
         self._recovery = ReverseRecovery(RecoveryConfig(
-            reverse_speed_mps=min(float(self.get_parameter("reverse_speed_mps").value), self._cap),
+            reverse_speed_mps=min(self._reverse_speed, self._cap),
             reverse_time_s=float(self.get_parameter("reverse_time_sec").value),
             rear_clearance_m=float(self.get_parameter("rear_clearance_m").value),
             max_recoveries=int(self.get_parameter("max_recoveries").value),
@@ -188,13 +195,27 @@ class LearnedDriver(Node):
             return False
         return True
 
-    def _speed_cap_cb(self, message: Float32) -> None:
-        cap = float(message.data)
-        top = self._policy.output.speed_cap_norm_mps
-        if not math.isfinite(cap) or cap <= 0.0:
+    def _profile_cb(self, message: String) -> None:
+        try:
+            profile = make_profile(json.loads(message.data))
+        except (ValueError, TypeError, AttributeError) as error:
+            self.get_logger().error(f"Ignoring bad drive profile {message.data!r}: {error}")
             return
-        self._cap = min(cap, top)
-        self.get_logger().warn(f"Speed cap set to {self._cap:.2f} m/s (trained maximum {top:.1f} m/s)")
+        self._cap = min(profile.speed_mps, self._policy.output.speed_cap_norm_mps)
+        self._use_camera = profile.camera
+        self._reverse_enabled = profile.reverse
+        self._governor = dataclasses.replace(self._governor, horizon_m=profile.horizon_m)
+        self._avoid = AvoidConfig(
+            steer_left_max_rad=self._policy.output.steering_left_max_rad,
+            steer_right_max_rad=self._policy.output.steering_right_max_rad,
+            clearance_m=profile.avoid_clearance_m,
+        ) if profile.avoid else None
+        self._avoid_target = None
+        self._recovery.cfg = dataclasses.replace(self._recovery.cfg,
+                                                 reverse_speed_mps=min(self._reverse_speed, self._cap))
+        self._profile_pub.publish(String(data=json.dumps(profile.to_dict())))
+        self.get_logger().warn(f"Drive profile {profile.mode}: {profile.speed_mps:.2f} m/s, avoid={profile.avoid}, "
+                               f"camera={profile.camera}, horizon={profile.horizon_m:.1f} m, reverse={profile.reverse}")
 
     def _camera_cb(self, message: PointCloud2) -> None:
         points = np.asarray(point_cloud2.read_points(message, field_names=("x", "y"), skip_nans=True))
@@ -299,6 +320,7 @@ class LearnedDriver(Node):
         camera_free = path_free_distance(camera_points, steering, self._governor) if camera_points.size \
             else self._governor.horizon_m
         source = "none" if not governed.blocked else ("camera" if camera_free < lidar_free else "lidar")
+        self._last_source = source
         if self._reverse_enabled:
             speed, steering, status = self._recovery.step(
                 time.monotonic(), forward_blocked,
@@ -346,6 +368,16 @@ class LearnedDriver(Node):
     def _watchdog(self) -> None:
         if self._enabled and (self._last_scan_ns == 0 or self._now_ns() - self._last_scan_ns > self._timeout_ns):
             self._stop("SCAN_TIMEOUT")
+
+    def _telemetry(self) -> None:
+        """Small live summary for the console (5 Hz)."""
+        free = self._free_distance
+        self._telemetry_pub.publish(String(data=json.dumps({
+            "status": self._last_status, "speed_cmd": round(self._last_command[1], 3),
+            "steer_cmd": round(self._last_command[0], 3),
+            "free_m": None if not math.isfinite(free) else round(free, 2), "blocked_by": self._last_source,
+            "cap": round(self._cap, 2), "inference_ms": round(self._inference_ms, 2),
+        })))
 
     def _diagnostics(self) -> None:
         status = DiagnosticStatus(

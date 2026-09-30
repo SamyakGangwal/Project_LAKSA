@@ -6,13 +6,14 @@
 <title>LAKSA Console</title>
 <style>
   :root { --bg:#0f1115; --panel:#181b22; --line:#2a2f3a; --text:#e6e8ec; --muted:#8a92a3;
-          --green:#2fbf4f; --red:#d33a3a; --amber:#e0a030; --blue:#3a8dde; }
+          --green:#2fbf4f; --red:#d33a3a; --amber:#e0a030; --blue:#3a8dde; --field:#222733; }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, sans-serif; }
   header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); }
   header h1 { font-size:16px; margin:0; }
   #conn { font-size:12px; color:var(--muted); }
-  main { display:grid; grid-template-columns: minmax(0,1fr) 340px; gap:12px; padding:12px 16px; }
+  #modeBadge { margin-left:auto; font-size:12px; padding:3px 8px; border-radius:6px; background:var(--field); }
+  main { display:grid; grid-template-columns: minmax(0,1fr) 360px; gap:12px; padding:12px 16px; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; }
   #mapwrap { position:relative; height: calc(100vh - 90px); min-height:360px; padding:0; overflow:hidden; }
@@ -22,39 +23,53 @@
   #maptools button.active { border-color:var(--blue); color:#fff; background:#1d3553; }
   #mapnote { position:absolute; bottom:10px; left:10px; color:var(--muted); font-size:12px; background:#0f1115cc; padding:4px 8px; border-radius:6px; }
   aside { display:flex; flex-direction:column; gap:12px; }
-  #hold { width:100%; height:110px; font-size:22px; font-weight:600; border:0; border-radius:12px;
-          background:#1f5f2f; color:#fff; touch-action:none; user-select:none; }
-  #hold.on { background:var(--green); }
-  #explore { width:100%; height:64px; margin-top:8px; font-size:18px; font-weight:600; border:0; border-radius:12px;
-             background:#1d3553; color:#fff; }
-  #explore.on { background:var(--blue); }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; }
+  button { cursor:pointer; }
   .row { display:flex; gap:8px; margin-top:8px; }
-  .row button { flex:1; height:52px; border:0; border-radius:10px; font-size:16px; font-weight:600; color:#fff; }
-  #stop { background:var(--red); } #rearm { background:#4a5160; }
-  #plan { width:100%; height:48px; font-size:15px; font-weight:600; border:0; border-radius:10px;
-          background:#4a5160; color:#fff; }
-  #go { width:100%; height:80px; margin-top:8px; font-size:19px; font-weight:600; border:0; border-radius:12px;
-        background:#1d3553; color:#fff; touch-action:none; user-select:none; }
-  #go.on { background:var(--blue); }
-  #routeinfo { font-size:12px; color:var(--muted); margin-top:6px; }
-  #raceMode, #raceSpeed { background:#222733; color:var(--text); border:1px solid var(--line); border-radius:8px;
-                          height:40px; padding:0 8px; font-size:15px; }
-  #raceMode { flex:2; } #raceSpeed { flex:1; width:80px; }
+  .row button { flex:1; height:48px; border:0; border-radius:10px; font-size:15px; font-weight:600; color:#fff; background:#4a5160; }
+  .big { width:100%; border:0; border-radius:12px; font-weight:600; color:#fff; touch-action:none; user-select:none; }
+  /* always-visible stop */
+  #stopbar { position:sticky; top:0; z-index:5; display:flex; gap:8px; }
+  #stop { flex:3; height:56px; font-size:20px; background:var(--red); }
+  #rearm { flex:1; height:56px; font-size:15px; background:#4a5160; }
+  /* mode tabs */
+  #tabs { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; }
+  #tabs button { height:58px; border:1px solid var(--line); border-radius:10px; background:var(--field); color:var(--text);
+                 font-size:13px; font-weight:600; line-height:1.2; }
+  #tabs button small { display:block; font-weight:400; color:var(--muted); font-size:11px; }
+  #tabs button.sel { border-color:var(--blue); background:#1d3553; }
+  #tabs button.live::after { content:" ●"; color:var(--green); }
+  #switchbox { margin-top:8px; font-size:13px; }
+  #switch { background:var(--amber); color:#000; }
+  /* settings */
+  .setting { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .setting label { flex:1; }
+  .setting input[type=range] { flex:2; }
+  .setting output { width:64px; text-align:right; font-variant-numeric: tabular-nums; }
+  .setting input[type=checkbox] { width:20px; height:20px; }
+  #apply { background:var(--blue); }
+  .hint { font-size:12px; color:var(--muted); margin-top:6px; }
+  /* run controls */
+  #hold { height:96px; font-size:22px; background:#1f5f2f; }
+  #hold.on { background:var(--green); }
+  #explore { height:58px; margin-top:8px; font-size:17px; background:#1d3553; }
+  #explore.on { background:var(--blue); }
   #arm { background:var(--green); } #disarm { background:#4a5160; } #raceGo { background:#1d3553; }
-  #raceinfo { font-size:13px; margin-top:6px; }
-  #modeTrial, #modeRace { background:#4a5160; } #modeTrial.cur, #modeRace.cur { background:var(--blue); }
-  #modeTrial.confirm, #modeRace.confirm { background:var(--amber); color:#000; }
-  #modeinfo { font-size:13px; margin-top:6px; }
+  #savemap { background:#5b4a86; }
+  #go { height:64px; margin-top:8px; font-size:17px; background:#1d3553; }
+  #go.on { background:var(--blue); }
+  #plan { background:#4a5160; }
+  .info { font-size:13px; margin-top:6px; }
   dl { display:grid; grid-template-columns: auto 1fr; gap:4px 10px; margin:0; }
   dt { color:var(--muted); } dd { margin:0; font-variant-numeric: tabular-nums; }
   .ok { color:var(--green); } .warn { color:var(--amber); } .bad { color:var(--red); }
   #camera { width:100%; border-radius:8px; background:#000; min-height:120px; }
   #dets { font-size:12px; color:var(--muted); margin-top:6px; }
-  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; }
+  .hidden { display:none !important; }
 </style>
 </head>
 <body>
-<header><h1>LAKSA Console</h1><span id="conn">connecting…</span></header>
+<header><h1>LAKSA Console</h1><span id="conn">connecting…</span><span id="modeBadge">mode –</span></header>
 <main>
   <section class="panel" id="mapwrap">
     <canvas id="map"></canvas>
@@ -68,46 +83,67 @@
     <div id="mapnote">waiting for data</div>
   </section>
   <aside>
+    <div id="stopbar"><button id="stop" class="big">STOP</button><button id="rearm" class="big">REARM</button></div>
+
     <div class="panel">
-      <h2>Drive (learned driver)</h2>
-      <button id="hold">HOLD TO RUN</button>
-      <button id="explore">EXPLORE (2 min, slow)</button>
-      <div class="row"><button id="stop">STOP</button><button id="rearm">REARM</button></div>
-    </div>
-    <div class="panel">
-      <h2>Car mode</h2>
-      <div class="row"><button id="modeTrial">TRIAL</button><button id="modeRace">RACE</button></div>
-      <div id="modeinfo">–</div>
-    </div>
-    <div class="panel">
-      <h2>Race (starts on green, stops on red)</h2>
-      <div class="row">
-        <select id="raceMode"><option value="speed">Speed run</option><option value="obstacle">Obstacle course</option></select>
-        <input id="raceSpeed" type="number" min="0.2" max="3.0" step="0.1" value="2.5" title="speed, m/s">
+      <h2>Mode</h2>
+      <div id="tabs">
+        <button data-mode="obstacle">Obstacle course<small>fast · avoids obstacles</small></button>
+        <button data-mode="speed">Speed course<small>as fast as possible</small></button>
+        <button data-mode="explore">Trial &amp; explore<small>map · learn</small></button>
       </div>
+      <div id="switchbox" class="hidden">
+        <div id="switchtext"></div>
+        <div class="row"><button id="switch">SWITCH (restarts the car software)</button></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 id="settingsTitle">Settings</h2>
+      <div class="setting"><label for="speed">Speed</label>
+        <input id="speed" type="range" min="0.2" max="3.0" step="0.1"><output id="speedOut"></output></div>
+      <div class="setting"><label for="avoid">Steer around obstacles</label><input id="avoid" type="checkbox"></div>
+      <div class="setting"><label for="cameraLayer">Camera obstacles &amp; people</label><input id="cameraLayer" type="checkbox"></div>
+      <div class="setting"><label for="reverse">Back away when boxed in</label><input id="reverse" type="checkbox"></div>
+      <div class="setting"><label for="horizon">Look-ahead</label>
+        <input id="horizon" type="range" min="2" max="12" step="0.5"><output id="horizonOut"></output></div>
+      <div class="row" id="applyRow"><button id="apply">APPLY SETTINGS</button></div>
+      <div class="hint" id="settingsHint"></div>
+    </div>
+
+    <div class="panel" id="racePanel">
+      <h2>Race run (starts on green, stops on red)</h2>
       <div class="row"><button id="arm">ARM</button><button id="disarm">DISARM</button><button id="raceGo">START NOW</button></div>
-      <div id="raceinfo">Race: –</div>
+      <div class="info" id="raceinfo">–</div>
     </div>
-    <div class="panel">
-      <h2>Route to END (Nav2)</h2>
-      <button id="plan">PLAN ROUTE</button>
-      <button id="go">HOLD TO GO</button>
-      <div id="routeinfo">Set END on the map, then PLAN ROUTE.</div>
+
+    <div class="panel" id="explorePanel">
+      <h2>Explore (hold to drive)</h2>
+      <button id="hold" class="big">HOLD TO RUN</button>
+      <button id="explore" class="big">EXPLORE (2 min)</button>
+      <div class="row"><button id="savemap">SAVE MAP FOR TRAINING</button></div>
+      <div class="info" id="saveinfo">Drive a loop with this page open, come back near the start, then save.</div>
+      <div class="row"><button id="plan">PLAN ROUTE TO END</button></div>
+      <button id="go" class="big">HOLD TO GO</button>
+      <div class="info" id="routeinfo">Set END on the map, then PLAN ROUTE.</div>
     </div>
+
     <div class="panel">
-      <h2>Status</h2>
+      <h2>Live</h2>
       <dl>
-        <dt>Mode</dt><dd id="mission">–</dd>
+        <dt>Supervisor</dt><dd id="mission">–</dd>
         <dt>Autonomy</dt><dd id="health">–</dd>
         <dt>E-stop</dt><dd id="estop">–</dd>
         <dt>Driver</dt><dd id="driver">–</dd>
-        <dt>Speed</dt><dd id="speed">–</dd>
+        <dt>Profile</dt><dd id="profile">–</dd>
+        <dt>Speed</dt><dd id="speedLive">–</dd>
+        <dt>Command</dt><dd id="command">–</dd>
+        <dt>Free ahead</dt><dd id="free">–</dd>
         <dt>Battery</dt><dd id="battery">–</dd>
         <dt>Person</dt><dd id="person">–</dd>
-        <dt>Start</dt><dd id="startpt">not set</dd>
-        <dt>End</dt><dd id="goalpt">not set</dd>
       </dl>
     </div>
+
     <div class="panel">
       <h2>Camera (ZED)</h2>
       <img id="camera" alt="camera">
@@ -136,7 +172,61 @@ function connect() {
 connect();
 const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 
-// ---------- controls
+// ---------- modes and settings (defaults mirror laksa_learned_driver/profiles.py)
+const DEFAULTS = {
+  obstacle: {speed_mps: 2.0, avoid: true, camera: true, reverse: true, horizon_m: 8.0, max: 3.0},
+  speed:    {speed_mps: 3.0, avoid: true, camera: false, reverse: false, horizon_m: 10.0, max: 3.0},
+  explore:  {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 4.0, max: 1.0},
+};
+const FAMILY = {obstacle: 'race', speed: 'race', explore: 'trial'};
+let selected = localStorage.getItem('laksa.mode') || 'explore';
+const saved = JSON.parse(localStorage.getItem('laksa.settings') || '{}');
+const settings = {};
+for (const m in DEFAULTS) settings[m] = {...DEFAULTS[m], ...(saved[m] || {})};
+
+function showSettings() {
+  const s = settings[selected];
+  $('speed').max = DEFAULTS[selected].max;
+  $('speed').value = Math.min(s.speed_mps, DEFAULTS[selected].max);
+  $('avoid').checked = s.avoid; $('cameraLayer').checked = s.camera; $('reverse').checked = s.reverse;
+  $('horizon').value = s.horizon_m;
+  $('speedOut').textContent = (+$('speed').value).toFixed(1) + ' m/s';
+  $('horizonOut').textContent = (+$('horizon').value).toFixed(1) + ' m';
+  $('settingsTitle').textContent = 'Settings · ' + {obstacle: 'Obstacle course', speed: 'Speed course', explore: 'Trial & explore'}[selected];
+  const race = FAMILY[selected] === 'race';
+  $('applyRow').classList.toggle('hidden', race);
+  $('settingsHint').textContent = race ? 'These settings are sent when you press ARM.'
+    : 'Press APPLY to use them now (explore speed is capped at 1.0 m/s).';
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('sel', b.dataset.mode === selected));
+  $('racePanel').classList.toggle('hidden', !race);
+  $('explorePanel').classList.toggle('hidden', race);
+}
+function readSettings() {
+  const s = settings[selected];
+  s.speed_mps = +$('speed').value; s.avoid = $('avoid').checked; s.camera = $('cameraLayer').checked;
+  s.reverse = $('reverse').checked; s.horizon_m = +$('horizon').value;
+  try { localStorage.setItem('laksa.settings', JSON.stringify(settings)); } catch (e) {}
+  $('speedOut').textContent = s.speed_mps.toFixed(1) + ' m/s';
+  $('horizonOut').textContent = s.horizon_m.toFixed(1) + ' m';
+}
+['speed', 'avoid', 'cameraLayer', 'reverse', 'horizon'].forEach(id => $(id).addEventListener('input', readSettings));
+const profile = () => { const s = settings[selected];
+  return {mode: selected, speed_mps: s.speed_mps, avoid: s.avoid, camera: s.camera, reverse: s.reverse, horizon_m: s.horizon_m}; };
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  selected = b.dataset.mode; try { localStorage.setItem('laksa.mode', selected); } catch (e) {}
+  showSettings(); updateStatus();
+});
+$('apply').onclick = () => send({cmd: 'profile', profile: profile()});
+let switchArmed = null;
+$('switch').onclick = () => {
+  const family = FAMILY[selected];
+  if (switchArmed !== family) { switchArmed = family; $('switch').textContent = 'TAP AGAIN TO RESTART INTO ' + family.toUpperCase();
+    setTimeout(() => { switchArmed = null; $('switch').textContent = 'SWITCH (restarts the car software)'; }, 4000); return; }
+  switchArmed = null; send({cmd: 'car_mode', mode: family});
+};
+showSettings();
+
+// ---------- run controls
 let holdTimer = null;
 function startHold(e) { e.preventDefault(); $('hold').classList.add('on'); send({cmd:'hold'});
   clearInterval(holdTimer); holdTimer = setInterval(() => send({cmd:'hold'}), 50); }
@@ -151,7 +241,7 @@ function endGo(e) { if (e) e.preventDefault(); $('go').classList.remove('on');
 // HOLD TO RUN while this page is open and visible, for at most 2 minutes.
 const EXPLORE_S = 120; let exploreTimer = null, exploreEnd = 0;
 function stopExplore() { if (!exploreTimer) return; clearInterval(exploreTimer); exploreTimer = null;
-  send({cmd:'release'}); $('explore').classList.remove('on'); $('explore').textContent = 'EXPLORE (2 min, slow)'; }
+  send({cmd:'release'}); $('explore').classList.remove('on'); $('explore').textContent = 'EXPLORE (2 min)'; }
 $('explore').onclick = () => {
   if (exploreTimer) { stopExplore(); return; }
   exploreEnd = Date.now() + EXPLORE_S * 1000; $('explore').classList.add('on'); send({cmd:'hold'});
@@ -162,34 +252,17 @@ $('explore').onclick = () => {
   }, 50);
 };
 $('hold').addEventListener('pointerdown', startHold);
+['pointerup','pointercancel','pointerleave'].forEach(t => $('hold').addEventListener(t, endHold));
 $('go').addEventListener('pointerdown', startGo);
 ['pointerup','pointercancel','pointerleave'].forEach(t => $('go').addEventListener(t, endGo));
 $('plan').onclick = () => send({cmd:'plan'});
-$('raceMode').onchange = () => { $('raceSpeed').value = $('raceMode').value === 'obstacle' ? '2.0' : '2.5'; };
-$('arm').onclick = () => send({cmd:'race_arm', mode:$('raceMode').value, speed:parseFloat($('raceSpeed').value)});
+$('savemap').onclick = () => send({cmd:'save_map'});
+$('arm').onclick = () => send({cmd:'race_arm', mode: selected, profile: profile()});
 $('disarm').onclick = () => send({cmd:'race_disarm'});
 $('raceGo').onclick = () => send({cmd:'race_start'});
-// Car mode: tap once to select, tap again within 4 s to confirm (restarts the car's software).
-let pendingMode = null, pendingTimer = null;
-function pickMode(mode) {
-  const btn = $(mode === 'race' ? 'modeRace' : 'modeTrial');
-  if (pendingMode === mode) {
-    clearTimeout(pendingTimer); pendingMode = null; btn.classList.remove('confirm');
-    send({cmd:'car_mode', mode}); return;
-  }
-  ['modeTrial', 'modeRace'].forEach(id => $(id).classList.remove('confirm'));
-  pendingMode = mode; btn.classList.add('confirm');
-  btn.textContent = 'TAP AGAIN: ' + mode.toUpperCase();
-  clearTimeout(pendingTimer);
-  pendingTimer = setTimeout(() => { pendingMode = null; btn.classList.remove('confirm'); resetModeLabels(); }, 4000);
-}
-function resetModeLabels() { $('modeTrial').textContent = 'TRIAL'; $('modeRace').textContent = 'RACE'; }
-$('modeTrial').onclick = () => pickMode('trial');
-$('modeRace').onclick = () => pickMode('race');
-['pointerup','pointercancel','pointerleave'].forEach(t => $('hold').addEventListener(t, endHold));
 document.addEventListener('visibilitychange', () => { if (document.hidden) endHold(); });
 window.addEventListener('blur', () => endHold());
-$('stop').onclick = () => { endHold(); send({cmd:'stop'}); };
+$('stop').onclick = () => { endHold(); send({cmd:'stop'}); send({cmd:'race_disarm'}); };
 $('rearm').onclick = () => send({cmd:'rearm'});
 function setMode(m) { mode = m; ['View','Start','Goal'].forEach(k => $('mode'+k).classList.toggle('active', m === k.toLowerCase())); }
 $('modeView').onclick = () => setMode('view'); $('modeStart').onclick = () => setMode('start'); $('modeGoal').onclick = () => setMode('goal');
@@ -274,39 +347,58 @@ function render() {
 }
 
 function cls(el, c) { el.className = c; }
+const fmt = (v, digits, unit) => v == null ? '–' : (+v).toFixed(digits) + unit;
 function updateStatus() {
+  if (!state) return;
   const s = state.status;
-  $('mission').textContent = s.mission; cls($('mission'), ['LIDAR_CRUISE', 'NAVIGATING'].includes(s.mission) ? 'ok' : (s.mission === 'EMERGENCY_STOP' ? 'bad' : ''));
+  // mode family on the car vs the selected tab
+  const m = state.car_mode || {};
+  const active = m.active;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('live', FAMILY[b.dataset.mode] === active));
+  $('modeBadge').textContent = m.restarting ? `restarting → ${m.chosen}…` : `car: ${active === 'race' ? 'RACE (no operator)' : (active === 'trial' ? 'TRIAL (hold to drive)' : active || '–')}`;
+  const need = FAMILY[selected];
+  const mismatch = active && active !== 'unknown' && need !== active && !m.restarting;
+  $('switchbox').classList.toggle('hidden', !mismatch);
+  if (mismatch) $('switchtext').textContent = need === 'race'
+    ? 'The car is in TRIAL. Obstacle and Speed runs need RACE mode (no operator; starts on the green signal).'
+    : 'The car is in RACE. Trial & explore needs TRIAL mode (an operator holds a button).';
+  for (const id of ['arm', 'raceGo', 'hold', 'explore', 'go', 'plan', 'apply']) $(id).disabled = mismatch || m.restarting;
+  // race
+  const race = s.race;
+  if (race) {
+    const sig = `green ${(race.green * 100).toFixed(2)}% · red ${(race.red * 100).toFixed(2)}%`;
+    const t = race.elapsed_s != null ? ` · ${race.elapsed_s} s` : '';
+    $('raceinfo').textContent = `${race.state} — ${race.mode} @ ${race.speed_mps} m/s${t} · ${race.detail || ''} · camera ${sig}`;
+    cls($('raceinfo'), 'info ' + (race.state === 'RUNNING' || race.state === 'FINISHED' ? 'ok' : (race.state === 'ABORTED' ? 'bad' : (race.state === 'ARMED' ? 'warn' : ''))));
+  } else if (active === 'race') { $('raceinfo').textContent = 'race manager not reporting yet'; }
+  // explore
+  const save = state.last_save;
+  if (save) { $('saveinfo').textContent = save.detail; cls($('saveinfo'), 'info ' + (save.ok ? (save.loop ? 'ok' : 'warn') : 'bad')); }
   const r = state.route || {};
   const routeText = {IDLE: 'Set END on the map, then PLAN ROUTE.', PLANNING: 'planning…',
     PLANNED: `route ${r.length_m} m — hold GO to drive it`, NAVIGATING: 'driving the route — release GO to stop',
     ARRIVED: 'arrived at END', STOPPED: 'stopped' + (r.detail ? ': ' + r.detail : ''),
     FAILED: 'no route' + (r.detail ? ': ' + r.detail : '')};
   $('routeinfo').textContent = routeText[r.state] || r.state || '';
-  const m = state.car_mode || {};
-  if (!pendingMode) resetModeLabels();
-  $('modeTrial').classList.toggle('cur', m.active === 'trial');
-  $('modeRace').classList.toggle('cur', m.active === 'race');
-  $('modeinfo').textContent = m.restarting ? `switching to ${m.chosen} — restarting (~1-2 min)…`
-    : (m.active === 'race' ? 'RACE: ARM below, the car starts on the green signal — no operator needed'
-      : (m.active === 'trial' ? 'TRIAL: hold-to-run / EXPLORE, an operator must hold a button' : `active: ${m.active}`));
-  const race = s.race;
-  if (race) {
-    const sig = `green ${(race.green * 100).toFixed(2)}% · red ${(race.red * 100).toFixed(2)}%`;
-    const t = race.elapsed_s != null ? ` · ${race.elapsed_s} s` : '';
-    $('raceinfo').textContent = `${race.state} — ${race.mode} @ ${race.speed_mps} m/s${t} · ${race.detail || ''} · camera ${sig}`;
-    cls($('raceinfo'), race.state === 'RUNNING' || race.state === 'FINISHED' ? 'ok' : (race.state === 'ABORTED' ? 'bad' : (race.state === 'ARMED' ? 'warn' : '')));
-  }
-  cls($('routeinfo'), r.state === 'FAILED' ? 'bad' : (r.state === 'ARRIVED' || r.state === 'PLANNED' ? 'ok' : ''));
+  cls($('routeinfo'), 'info ' + (r.state === 'FAILED' ? 'bad' : (r.state === 'ARRIVED' || r.state === 'PLANNED' ? 'ok' : '')));
+  // live
+  $('mission').textContent = s.mission; cls($('mission'), ['LIDAR_CRUISE', 'NAVIGATING'].includes(s.mission) ? 'ok' : (s.mission === 'EMERGENCY_STOP' ? 'bad' : ''));
   $('health').textContent = s.health; cls($('health'), s.health === 'READY' ? 'ok' : 'warn');
   $('estop').textContent = s.estop === null ? '–' : (s.estop ? 'LATCHED ' + (s.estop_reason || '') : 'clear'); cls($('estop'), s.estop ? 'bad' : 'ok');
-  $('driver').textContent = s.driver + (state.holding ? ' · holding' : '');
-  $('speed').textContent = s.speed_mps === null ? '–' : s.speed_mps.toFixed(2) + ' m/s';
-  $('battery').textContent = s.battery_v === null ? '–' : s.battery_v.toFixed(1) + ' V' + (s.vesc_fault ? ' · VESC fault ' + s.vesc_fault : '');
-  const p = s.person || {};
-  $('person').textContent = p.nearest_m == null ? 'none ahead' : (p.stop ? 'STOP ' : (p.factor < 1 ? 'slow ' : '')) + p.nearest_m.toFixed(2) + ' m';
-  $('startpt').textContent = state.start ? state.start.map(v => v.toFixed(2)).join(', ') : 'not set';
-  $('goalpt').textContent = state.goal ? state.goal.map(v => v.toFixed(2)).join(', ') : 'not set';
+  $('driver').textContent = s.driver + (state.holding ? ' · holding' : '')
+    + (state.rearm_needed ? ' · connection lost: release and press again' : '');
+  cls($('driver'), state.rearm_needed ? 'bad' : '');
+  const p = s.profile;
+  $('profile').textContent = p ? `${p.mode} · ${p.speed_mps} m/s · avoid ${p.avoid ? 'on' : 'off'} · camera ${p.camera ? 'on' : 'off'}` : 'driver default';
+  $('speedLive').textContent = fmt(s.speed_mps, 2, ' m/s');
+  const t = s.telemetry || {};
+  $('command').textContent = t.speed_cmd == null ? '–' : `${(+t.speed_cmd).toFixed(2)} m/s · steer ${(t.steer_cmd * 57.3).toFixed(0)}°`;
+  $('free').textContent = t.free_m == null ? '–' : `${(+t.free_m).toFixed(2)} m` + (t.blocked_by && t.blocked_by !== 'none' ? ` (blocked by ${t.blocked_by})` : '');
+  cls($('free'), t.blocked_by && t.blocked_by !== 'none' ? 'warn' : '');
+  $('battery').textContent = s.battery_v == null ? '–' : s.battery_v.toFixed(1) + ' V' + (s.vesc_fault ? ' · VESC fault ' + s.vesc_fault : '');
+  cls($('battery'), s.battery_v != null && s.battery_v < 14.4 ? 'bad' : '');
+  const pe = s.person || {};
+  $('person').textContent = pe.nearest_m == null ? 'none ahead' : (pe.stop ? 'STOP ' : (pe.factor < 1 ? 'slow ' : '')) + pe.nearest_m.toFixed(2) + ' m';
   const d = state.detections || [];
   $('dets').textContent = d.length ? d.map(x => `${x.label} ${Math.round(x.confidence)}% @ ${Math.hypot(x.x, x.y).toFixed(1)} m`).join(' · ') : 'no detections';
 }
