@@ -124,7 +124,7 @@ if [[ "${MODE}" == "trial" ]]; then
     # Trial & explore: an operator holds the run.  The drive stalls below ~0.2 m/s
     # (bench 2026-09-28), so explore runs at 0.6 m/s by default (console slider) with a
     # 1.0 m/s ceiling, and Nav2 routes at 0.22 m/s (KarSha's measured reliable start).
-    ACTUATION=true; CRUISE_ERPM=4200.0; DRIVER_CAP=0.6; NAV_ERPM=1000
+    ACTUATION=true; CRUISE_ERPM=4200.0; DRIVER_CAP=0.6; NAV_ERPM=1000.0
 fi
 if [[ "${MODE}" == "race" ]]; then
     # No speed cap below the model's trained 3 m/s (12,430 eRPM at 4,142 eRPM per m/s);
@@ -133,7 +133,7 @@ if [[ "${MODE}" == "race" ]]; then
     ACTUATION=true; CRUISE_ERPM=12500.0; DRIVER_CAP=2.5
     SUPERVISOR_EXTRA=(-p require_operator:=false -p max_odom_linear_speed_mps:=4.0)
     DRIVER_EXTRA=(-p governor_horizon_m:=8.0)
-    NAV_ERPM=1000
+    NAV_ERPM=1000.0
 fi
 CRUISE_ERPM="${LAKSA_CRUISE_ERPM:-${CRUISE_ERPM}}"
 DRIVER_CAP="${LAKSA_DRIVER_CAP:-${DRIVER_CAP}}"
@@ -166,6 +166,10 @@ check_overrides() {
 case "${MODE}" in
 start|trial|race)
     check_overrides
+    # The supervisor declares these as doubles: a bare "1000" is an integer and
+    # makes it exit with InvalidParameterTypeException.
+    [[ "${CRUISE_ERPM}" == *.* ]] || CRUISE_ERPM="${CRUISE_ERPM}.0"
+    [[ -z "${NAV_ERPM}" || "${NAV_ERPM}" == *.* ]] || NAV_ERPM="${NAV_ERPM}.0"
     SUPERVISOR_ARGS=(--params-file "${SUPERVISOR_CONFIG}" -p actuation_enabled:=${ACTUATION} -p autonomy_enabled:=true
         -p exploration_max_erpm:=${CRUISE_ERPM} "${SUPERVISOR_EXTRA[@]}")
     [[ -n "${NAV_ERPM}" ]] && SUPERVISOR_ARGS+=(-p navigation_max_erpm:=${NAV_ERPM})
