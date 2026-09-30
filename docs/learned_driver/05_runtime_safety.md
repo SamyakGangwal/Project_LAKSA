@@ -114,7 +114,13 @@ Published on `/laksa/exploration_status` and shown in the console:
 - The ESP32 state is fresh, VESC telemetry is fresh (sequence counter and age), and there is no VESC fault.
 - LiDAR, fused odometry and the ZED point cloud are fresh. Odometry jumps are rejected.
 - The driver hasn't reported `BLOCKED`.
-- The command is within the speed cap `exploration_max_erpm`: **620 eRPM (about 0.15 m/s) in trial mode**, 1000 eRPM (about 0.24 m/s) in dry-run. The driver applies its own cap too (`speed_cap_mps`: 0.15 in trial, 0.24 in dry-run).
+- The command is within the speed cap `exploration_max_erpm`:
+  - trial mode: **4,200 eRPM (about 1.0 m/s)**; until 29 Sep it was 620 eRPM, about 0.15 m/s;
+  - dry-run: 1,000 eRPM (about 0.24 m/s);
+  - race mode: 12,500 eRPM.
+
+  The driver applies its own cap too (`speed_cap_mps`: 0.6 in trial, 0.24 in dry-run). The console's drive profile changes it live, clamped to 0.2–1.0 m/s in Trial & explore and to 3.0 m/s in race modes.
+- Nav2 route following runs at 0.22 m/s (navigation cap 1,000 eRPM), just above the drive's stall speed.
 - In dry-run mode (`actuation_enabled:=false`), every command is replaced by brake, but the would-be command is still published for inspection.
 
 ## Race mode gates

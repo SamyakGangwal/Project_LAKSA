@@ -28,12 +28,14 @@ The goal was a model that is **fast at run time** and **needs little training**.
 | Steering smoothing | Deployed after the field test showed stutter |
 | Reverse-away recovery | Logic works. Reverse works at the motor on the bench; **starting from standstill is unreliable** (VESC start-up, open issue) |
 | Console (map, camera, HOLD TO RUN, EXPLORE, STOP) | Done |
+| Console drive modes (Obstacle course, Speed course, Trial & explore), live settings, SAVE MAP | Built and checked in a browser against a mocked car; not yet on the car |
+| Training on maps the car explored (`field_map` tracks) | Built; no real map saved yet |
 | A-to-B routes (PLAN ROUTE, HOLD TO GO, Nav2) | Built and wired end to end; not yet planned or driven in a large enough area |
 | Boot services, hotspot, fixed console link | Done. The live home-to-hotspot switch still needs a field re-test |
 | Session recording | Done: a folder per start with logs, a bag and the map database |
 | Jetson load | Reduced; see [Performance](09_performance_optimization.md) |
 
-Speed is deliberately capped at **0.15 m/s** in trial mode (0.24 m/s in dry-run).
+In trial mode the explore speed is **0.6 m/s** by default, and 1.0 m/s at most (the console slider). It was 0.15 m/s until 29 Sep, but the drive stalls below about 0.2 m/s. Dry-run stays at 0.24 m/s. Race mode, which is not deployed, goes up to the model's 3.0 m/s.
 
 ## How the pieces fit
 
@@ -64,12 +66,14 @@ Dates are local time (CDT).
 | 28 Sep | Read-only check of the ESP32 link; steering bench and wheels-up traction bench; TF tree fixed; ZED wrapper built; terminal operator; **first autonomous run on the floor**; reverse recovery; camera perception with ZED object detection; console; hotspot and fixed link; boot services. |
 | 28 Sep (evening) | **Field test outdoors**. Found steering stutter, phantom camera obstacles in the dark, slope treated as a wall, visual-odometry jumps and an overloaded Jetson. All addressed the same night. |
 | 28 Sep (late) | CPU optimisation pass and this documentation. |
+| 29 Sep | Models v3–v5 trained on obstacle, 2026 course-style and Obstacle Course replica tracks. **v5 is the default** (held-out comparison: v5 84%, v4 70%, v2 42%). KarSha's bench work reviewed and merged in part. Console redesigned around three drive modes; trial speed 0.6 m/s; SAVE MAP and field-map training. |
 
 ## What is not done
 
 See [Known issues and next steps](11_known_issues_and_next_steps.md). The main ones:
 
 - reverse does not move the car;
-- start and end points don't plan a route yet;
+- routes from START to END are built but not yet planned or driven in a large enough area;
+- the car still runs model v2 until the launcher override on the bench Jetson is removed (see [Known issues](11_known_issues_and_next_steps.md#work-by-karsha-on-the-bench-jetson));
 - the model fails at 3 m/s with randomised conditions on the competition course;
 - slope handling and the live network switch still need field confirmation.

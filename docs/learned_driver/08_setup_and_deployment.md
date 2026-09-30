@@ -29,14 +29,16 @@ Differences from the original car:
 | Command | Effect |
 |---|---|
 | `dryrun_bringup.sh start` | everything, supervisor actuation **disabled** (brake only); cap 1000 eRPM / 0.24 m/s |
-| `dryrun_bringup.sh trial` | everything, actuation **enabled**; cap **620 eRPM / 0.15 m/s** |
+| `dryrun_bringup.sh trial` | everything, actuation **enabled**; supervisor cap **4,200 eRPM (about 1.0 m/s)**, driver 0.6 m/s by default (console slider up to 1.0), Nav2 at 0.22 m/s. Was 620 eRPM / 0.15 m/s until 29 Sep |
 | `dryrun_bringup.sh race` | actuation enabled, **no operator needed**; ARM in the console, the car starts on a green signal and stops on red; up to 3.0 m/s |
 | `dryrun_bringup.sh auto` | trial or race, whichever was chosen on the console (default trial); used by `laksa-car.service` |
 | `dryrun_bringup.sh console` | restart only the console, bound to the current network |
 | `dryrun_bringup.sh stop` | stop every process it started |
 | `dryrun_bringup.sh status` | show what's running |
 
-In either mode the car stays braked until an operator starts driving.
+In start and trial modes the car stays braked until an operator starts driving. In race mode it stays braked until a race is armed and started.
+
+**Launcher overrides** (from KarSha's route tooling, validated before start by `check_overrides`): `LAKSA_NAV_ERPM`, `LAKSA_CRUISE_ERPM`, `LAKSA_DRIVER_CAP`, `LAKSA_BT_XML`, `LAKSA_NAV_EXTRA`, `LAKSA_NAV_CMD_TOPIC`. Unset means the per-mode defaults above. See the header of `dryrun_bringup.sh`.
 
 The launcher also starts Nav2: `controller_server`, `planner_server`, `behavior_server`, `bt_navigator` and the lifecycle manager. They use `laksa_bringup/config/nav2_ackermann.yaml` plus `laksa_learned_driver/config/nav2_field_overrides.yaml`. The override switches route following to **Regulated Pure Pursuit** with reversing, on **Reeds-Shepp** plans (three-point turns). In an isolated simulation of an 8 x 6 m room it reached 4/4 goals with no collisions, where the production MPPI follower dithered (0/4) and forward-only planning could not turn the car around. Controller and BackUp output go to `/laksa/nav_cmd_vel`, the supervisor's navigation input. `LAKSA_NAV=0` skips Nav2. Stopping the whole stack takes 60–90 s.
 

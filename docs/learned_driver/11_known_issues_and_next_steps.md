@@ -34,11 +34,11 @@ The console now has **PLAN ROUTE** and **HOLD TO GO**, and the launcher runs Nav
 Remaining checks for route driving:
 - **CPU budget.** Nav2 adds load; see [Performance](09_performance_optimization.md).
 - **Earlier planner forensics.** In this repo, SmacPlannerHybrid returned invalid paths in 3 of 5 test cases.
-- **Speed cap vs. what the motor can do.** MPPI's `vx_max` and the supervisor's navigation cap (620 eRPM) are about 0.15 m/s. But the bench shows the motor runs reliably only from about 0.20 m/s (850 eRPM), which matches MPPI's 0.217 m/s deadband. Route following needs the navigation cap raised to about 0.22 m/s, together with a reliable start, before it can move the car smoothly.
+- **Speed cap vs. what the motor can do.** Resolved on 29 Sep: the motor runs reliably only from about 0.20 m/s (850 eRPM), so route following now runs Regulated Pure Pursuit at 0.22 m/s under a 1,000 eRPM navigation cap. These are the values from KarSha's measurements. A reliable start from standstill is still needed.
 
 ## Race mode
 
-- **Not deployed yet.** Deploying operator-free driving to the car was held for the owner's explicit approval (the permission system blocked it as weakening a safety control).
+- **Not deployed yet.** Deploying operator-free driving to the car is held for the owner's explicit approval (the permission system blocked it as weakening a safety control). This includes the new console's Obstacle and Speed tabs, which need the car in RACE.
 - **No physical e-stop yet.** Wire one to `/laksa/estop_hw`, or pair a gamepad, before unattended runs.
 - **Braking at 2–3 m/s is unmeasured.** The clearance governor assumes 1.0 m/s² and 0.25 s latency; measure the real stopping distance before relying on it.
 - **Signal colours are assumptions** (green = go, red = stop). Check them against the real start and stop signals, lighting included, using the live readings on the Race panel.
@@ -52,7 +52,23 @@ Remaining checks for route driving:
 | Never learned to stop or reverse; that's the rule layers' job | fine, by design |
 | Sim-only data | use the session bags plus the expert labels offline to fine-tune on real scans |
 | Obstacle Course replica: the expert fails about 3 of 8 layouts at hoop 3 on the right loop | the right-steering limit (0.288 rad, 1.09 m radius, against 0.523 rad left) makes some legal hoop positions undrivable; more right steering travel on the car would fix it. In training, either keep hoop 3 near the natural line or give the expert a tracking controller that doesn't cut corners |
-| v3/v4 not deployed | evaluate on the held-out Speed Course with `evaluate.py`, then deploy |
+| v5 is the default in the repo, but the car still runs v2 | remove the `model_path` override on the bench Jetson ([below](#work-by-karsha-on-the-bench-jetson)) |
+| v5 is weaker than v4 on obstacle tracks (58/72 vs 68/72), and completes the Obstacle Course replica on 27/48 | more replica and obstacle rounds; real field maps ([Training on maps the car explored](04_training_pipeline.md#training-on-maps-the-car-explored)) |
+
+## Work by KarSha on the bench Jetson
+
+KarSha, the other account on the bench Jetson, commits directly in its `~/src/Project_LAKSA` checkout, on branch `tonight/route-0929-full`. Their work was reviewed on 29 Sep and **judged good**:
+
+| Their change | Verdict | Where it is now |
+|---|---|---|
+| `HoldLatch`: after a heartbeat loss mid-hold, HOLD/GO must be released and pressed again (commit `995ace9`) | good; a real safety fix | merged into this branch's console, with their tests (`test/test_hold_latch.py`) |
+| `LAKSA_*` launcher overrides with validation before start | good | merged into `dryrun_bringup.sh` |
+| Nav2 at 0.22 m/s (their measured reliable start) | good | used in `config/nav2_field_overrides.yaml` |
+| Listen-only bench and route tools in `setup/tonight/` (they don't publish commands) | good | only in their checkout |
+
+Open items:
+- **Their console files were overwritten.** A tar deploy of this branch on 29 Sep overwrote KarSha's `console_node.py` and `console_page.html` in that working tree. Their commit `995ace9` is intact. KarSha or the owner should restore both files from it (`git checkout HEAD -- <the two files>` in their checkout). Before any future deploy, check `git status` and `git log` there read-only, and don't copy over files they have changed.
+- **The car still runs model v2.** KarSha's launcher passes `model_path` explicitly, which overrides the new v5 default.
 
 ## Awaiting real-world confirmation
 

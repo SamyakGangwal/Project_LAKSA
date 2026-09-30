@@ -6,7 +6,7 @@
 
 | Model | Kind | Where it runs | What it decides |
 |---|---|---|---|
-| **LAKSA TinyLidarNet v2** (ours) | 1-D CNN, 94,746 parameters, imitation-learned | Jetson CPU, NumPy, about 2 ms per scan | Steering angle and target speed from one LiDAR scan |
+| **LAKSA TinyLidarNet v5** (ours; v2 is the previous default) | 1-D CNN, 94,746 parameters, imitation-learned | Jetson CPU, NumPy, about 2 ms per scan | Steering angle and target speed from one LiDAR scan |
 | ZED **NEURAL_LIGHT** depth | Stereo depth network (ZED SDK 5.5) | Jetson GPU | Depth map and point cloud for camera obstacles and mapping |
 | ZED **MULTI_CLASS_BOX_FAST** | Object detector with 3-D boxes and tracking (ZED SDK) | Jetson GPU | People, vehicles, bags, animals, electronics and similar, as 3-D boxes |
 | ZED **GEN_3 positional tracking** | Visual-inertial odometry (ZED SDK) | Jetson GPU/CPU | Camera pose, the main odometry source |
@@ -71,8 +71,10 @@ The driver node converts steering and speed into a `Twist`: `angular.z = v·tan(
 
 | File | Content |
 |---|---|
-| `laksa_tinylidarnet_v2.npz` | All weights plus a JSON metadata block (format `laksa-learned-driver-v1`, scan and output contracts, training summary). SHA-256 `2940c8d0122e928aac9de3cc2fd102c5bbf6377005e370c4d8376708c5472ad3` |
-| `laksa_tinylidarnet_v2.report.json` | Full training report: per-round data size, losses and evaluation, expert baseline, arguments |
+| `laksa_tinylidarnet_v5.npz` | **The default** (driver, launch file, probe and tests). All weights plus a JSON metadata block (format `laksa-learned-driver-v1`, scan and output contracts, training summary). SHA-256 `3e7ff9ec1148c794c6ffe0c4fcd507b0cbf56c24d844a5a640e9bcdaf47a7cf4` |
+| `laksa_tinylidarnet_v2.npz` | The first shipped model (plain corridors only). SHA-256 `2940c8d0122e928aac9de3cc2fd102c5bbf6377005e370c4d8376708c5472ad3` |
+| `laksa_tinylidarnet_v3.npz`, `v4.npz` | Intermediate obstacle- and course-trained models |
+| `*.report.json` | Full training report per model: per-round data size, losses and evaluation, expert baseline, arguments |
 
 The policy loader rejects any file whose format tag or first-layer shape doesn't match.
 
@@ -85,4 +87,4 @@ The policy loader rejects any file whose format tag or first-layer shape doesn't
 | | Slowing or stopping for people (camera person rule) |
 | | Smoothing its steering (low-pass filter and rate limit) |
 
-The network was trained only on **forward driving in obstacle-free corridors** 0.9–2.2 m wide. It never learned to stop, reverse or react to people. That is why the rule-based layer exists and always has the last word.
+v2 was trained only on **forward driving in obstacle-free corridors** 0.9–2.2 m wide; v5 adds boxes, buckets, 2026 course-style sections and the Obstacle Course replica ([Training](04_training_pipeline.md#obstacles-and-the-2026-courses-in-progress)). Neither was trained to stop, reverse or react to people. That is why the rule-based layer exists and always has the last word.

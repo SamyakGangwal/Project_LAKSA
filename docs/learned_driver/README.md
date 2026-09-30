@@ -19,6 +19,9 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 | retrain the network | [Training: how to retrain](04_training_pipeline.md#how-to-retrain) |
 | know why the car stopped | [Safety: decision log](05_runtime_safety.md#decision-log) and [Ways the car stops](05_runtime_safety.md#ways-the-car-stops) |
 | drive the car at the field | [Console: field checklist](07_console_and_operation.md#field-checklist) |
+| pick a drive mode (Obstacle, Speed, Trial & explore) | [Console: drive modes](07_console_and_operation.md#drive-modes) |
+| train on a place the car explored | [Console: saving a map](07_console_and_operation.md#saving-a-map-for-training), then [Training: maps the car explored](04_training_pipeline.md#training-on-maps-the-car-explored) |
+| know what KarSha changed on the bench Jetson | [Known issues: work by KarSha](11_known_issues_and_next_steps.md#work-by-karsha-on-the-bench-jetson) |
 | set up a Jetson from scratch | [Setup: one-time setup](08_setup_and_deployment.md#one-time-setup) |
 | deploy a code change safely | [Setup: deploying code changes](08_setup_and_deployment.md#deploying-code-changes) |
 | see what's broken or next | [Known issues and next steps](11_known_issues_and_next_steps.md) |
@@ -60,6 +63,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Parallel workers](04_training_pipeline.md#parallel-workers)
 - [Results](04_training_pipeline.md#results)
 - [Obstacles and the 2026 courses (in progress)](04_training_pipeline.md#obstacles-and-the-2026-courses-in-progress)
+- [Training on maps the car explored](04_training_pipeline.md#training-on-maps-the-car-explored)
 - [How to retrain](04_training_pipeline.md#how-to-retrain)
 
 ### 5. [Runtime driving and safety](05_runtime_safety.md)
@@ -86,6 +90,8 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 
 ### 7. [Console and operation](07_console_and_operation.md)
 - [LAKSA Console](07_console_and_operation.md#laksa-console)
+- [Drive modes](07_console_and_operation.md#drive-modes)
+- [Saving a map for training](07_console_and_operation.md#saving-a-map-for-training)
 - [Terminal operator](07_console_and_operation.md#terminal-operator)
 - [Networking at the field](07_console_and_operation.md#networking-at-the-field)
 - [Field checklist](07_console_and_operation.md#field-checklist)
@@ -121,6 +127,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Unreliable start from standstill (and reverse on the floor)](11_known_issues_and_next_steps.md#unreliable-start-from-standstill-and-reverse-on-the-floor)
 - [Motor breakaway current](11_known_issues_and_next_steps.md#motor-breakaway-current)
 - [Route planning from the console](11_known_issues_and_next_steps.md#route-planning-from-the-console)
+- [Work by KarSha on the bench Jetson](11_known_issues_and_next_steps.md#work-by-karsha-on-the-bench-jetson)
 - [Model limits](11_known_issues_and_next_steps.md#model-limits)
 - [Awaiting real-world confirmation](11_known_issues_and_next_steps.md#awaiting-real-world-confirmation)
 - [Calibration and interfaces](11_known_issues_and_next_steps.md#calibration-and-interfaces)
@@ -142,6 +149,8 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 |---|---|
 | Learned driver package | `firmware/esp32-s3/jetson/laksa_learned_driver/` |
 | Training code | `firmware/esp32-s3/jetson/laksa_learned_driver/training/` |
-| Shipped model | `firmware/esp32-s3/jetson/laksa_learned_driver/models/laksa_tinylidarnet_v2.npz` |
+| Default model | `firmware/esp32-s3/jetson/laksa_learned_driver/models/laksa_tinylidarnet_v5.npz` |
+| Drive profiles (mode defaults) | `firmware/esp32-s3/jetson/laksa_learned_driver/laksa_learned_driver/profiles.py` |
+| Saved field maps for training | `firmware/esp32-s3/jetson/laksa_learned_driver/training/field_maps/` (copied from `~/laksa_maps/` on the Jetson) |
 | Launcher, setup, bench tools | `firmware/esp32-s3/jetson/setup/` |
 | Boot services | `firmware/esp32-s3/jetson/systemd/laksa-car.service`, `laksa-network-watch.service` |

@@ -19,7 +19,14 @@ driving and the network copies it from LiDAR alone:
 Training takes minutes on a laptop CPU. Sim-to-real randomization covers friction, LiDAR
 noise and dropouts, steering bias, speed gain and one extra control step of latency.
 
-## Results (simulation, `models/laksa_tinylidarnet_v2.npz`)
+## Models
+
+The default is `models/laksa_tinylidarnet_v5.npz`: trained with obstacles, 2026 course-style
+sections and the Obstacle Course replica. On identical held-out episodes (0.5-3.0 m/s) it
+completes 84% overall, against 70% for v4 and 42% for v2, and it completes the Speed Course
+12/12. The full table is in `docs/learned_driver/04_training_pipeline.md`.
+
+## Results of the first model (simulation, `models/laksa_tinylidarnet_v2.npz`)
 
 Trained in ~24 min on a laptop CPU (5 rounds, 168k samples, 12 workers). Held-out evaluation,
 2 laps per episode; "randomized" varies friction, LiDAR noise/dropout, latency, steering bias and
@@ -30,8 +37,8 @@ speed gain, and starts from random poses on the random tracks.
 | 0.24-2.0 m/s | 4/4 at every cap, lap time within ~1% of the expert | 40/40 at every cap |
 | 3.0 m/s | clean lap 37.2 s (expert 39.2 s); **randomized 0/3**, crashes ~10% into the lap | 40/40 |
 
-The 3 m/s randomized competition-course failure is a known gap. It is far above the car's current
-limits (0.24 m/s supervisor cap, ~0.7 m/s firmware limit).
+The 3 m/s randomized competition-course failure was v2's known gap. v5 completes the Speed
+Course at every cap up to 3 m/s.
 
 ## Contracts
 
@@ -56,9 +63,13 @@ Requirements: Python 3.10+, `numpy scipy opencv-python torch pyyaml` and F1TENTH
 ```bash
 cd firmware/esp32-s3/jetson/laksa_learned_driver/training
 python smoke_test.py      # expert drives three random tracks
-python train.py           # writes ../models/laksa_tinylidarnet_v2.npz and .report.json
-python evaluate.py        # competition course + fresh tracks, expert vs student
+python train.py --output ../models/laksa_tinylidarnet_v6.npz   # new name: the default is v5's file
+python evaluate.py --models v5=../models/laksa_tinylidarnet_v5.npz v6=../models/laksa_tinylidarnet_v6.npz
 ```
+
+To train on places the real car explored, save a map from the console (Trial & explore,
+SAVE MAP), copy `~/laksa_maps/<timestamp>/` from the Jetson into `training/field_maps/`,
+and pass `--field-fraction 0.2` to `train.py`. Only saved loops are used.
 
 ## Run on the Jetson
 

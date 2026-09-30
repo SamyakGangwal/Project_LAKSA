@@ -65,7 +65,7 @@ Episodes are plain dicts sent to a `ProcessPoolExecutor` (`episodes.py`). Each w
 
 ## Results
 
-Shipped model: `models/laksa_tinylidarnet_v2.npz`, round 4 (the best), 168,602 samples, hold-out loss 0.0185, about 24 min on a laptop CPU.
+First shipped model, **v2** (plain corridors; the default is now v5, see [below](#obstacles-and-the-2026-courses-in-progress)): `models/laksa_tinylidarnet_v2.npz`, round 4 (the best), 168,602 samples, hold-out loss 0.0185, about 24 min on a laptop CPU.
 
 **Completion rate on held-out procedural tracks, by round (randomised, 3 m/s cap).** Every round completed 100% of clean runs at all caps and of randomised runs at 0.5 and 1.5 m/s.
 
@@ -84,7 +84,7 @@ Shipped model: `models/laksa_tinylidarnet_v2.npz`, round 4 (the best), 168,602 s
 | 0.24–2.0 m/s | 4/4 at every cap; lap times within about 1% of the expert | 40/40 at every cap |
 | 3.0 m/s | clean lap 37.2 s (expert 39.2 s); **randomised 0/3**, crashes about 10% into the lap | 40/40 |
 
-The 3 m/s randomised failure on the competition course is the one known gap. It is far above what the car does today (0.15–0.24 m/s caps).
+The 3 m/s randomised failure on the competition course was v2's one known gap. At the time the car ran at 0.15–0.24 m/s caps; the trial default is now 0.6 m/s.
 
 ## Obstacles and the 2026 courses (in progress)
 
@@ -113,7 +113,20 @@ Student results so far (completion on held-out tracks, clean conditions, 0.5 / 1
 | v3 | 60% obstacles, 5 rounds | 83% / 100% | — | 100% / 100% |
 | v4 | 40% course-style, 60% obstacles, 8 rounds | 92% / 100% | 83% / 92% | 100% / 100% |
 
-v3 and v4 are in `models/`. **The car still runs v2**; neither has been evaluated on the held-out Speed Course or deployed yet.
+v5 (10 rounds; 25% replica, 35% course-style, 30% obstacles, 10% plain) was trained next, with the Obstacle Course replica in the mix.
+
+**Held-out comparison** (`evaluate.py --models`, identical episodes for every model, caps 0.5 / 1.5 / 2.5 / 3.0 m/s, clean and randomised; results in `scratch/compare_v2_v4_v5.json`):
+
+| Suite | Expert | v2 | v4 | v5 |
+|---|---|---|---|---|
+| Speed Course | 12/12 | 10/12 | 12/12 | **12/12** |
+| Obstacle Course replica | 38/48 | 0/48 | 0/48 | **27/48** |
+| Course-style tracks | 58/72 | 25/72 | 42/72 | **63/72** |
+| Obstacle tracks | 54/72 | 10/72 | **68/72** | 58/72 |
+| Plain tracks | 72/72 | 72/72 | 72/72 | 72/72 |
+| **Overall** | | 42% | 70% | **84%** |
+
+**v5 is the default** (`models/laksa_tinylidarnet_v5.npz`) and isn't worse than v2 on any suite. v4 is better on the obstacle tracks. v5 is not yet on the car: the bench Jetson's launcher still passes v2 (see [Known issues](11_known_issues_and_next_steps.md#work-by-karsha-on-the-bench-jetson)).
 
 ### Obstacle Course replica
 
@@ -124,7 +137,31 @@ v3 and v4 are in `models/`. **The car still runs v2**; neither has been evaluate
 - **Per episode:** a random direction, 2–9 buckets in the bucket box, and the three hoops (posts 0.55 m apart) on their dashed lines.
 - Each layout is checked with an expert lap at 0.5 m/s and redrawn up to 12 times if the expert can't complete it.
 
-**Status: not yet in the training mix.** The expert completes the replica on about 5 of 8 layouts. The failures are all at **hoop 3 on the right-hand loop**: with this car's right-steering limit (1.09 m radius), some legal hoop positions there can't be driven. See [Known issues](11_known_issues_and_next_steps.md#model-limits).
+**Status: in v5's training mix** (25% of episodes). Hoop 3 is kept within 0.35 m of the natural line. Before that fix, the expert completed only about 5 of 8 layouts. The failures are all at **hoop 3 on the right-hand loop**: with this car's right-steering limit (1.09 m radius), some legal hoop positions there can't be driven. See [Known issues](11_known_issues_and_next_steps.md#model-limits).
+
+## Training on maps the car explored
+
+The `field_map` track kind trains on places the real car has driven. It uses maps saved with **SAVE MAP FOR TRAINING** in the console's Trial & explore mode (see [Saving a map for training](07_console_and_operation.md#saving-a-map-for-training)).
+
+1. **Explore and save.** In Trial & explore, drive a loop with the console open, come back within 1.5 m of the start (at least 8 m driven), and tap SAVE MAP. The Jetson writes `~/laksa_maps/<timestamp>/` with `map.png`, `map.yaml`, `trail.csv` and `info.json`.
+2. **Copy the folder** into the training tree, keeping the folder name:
+   ```bash
+   scp -r samyak@<jetson-address>:laksa_maps/<timestamp> firmware/esp32-s3/jetson/laksa_learned_driver/training/field_maps/
+   ```
+   Only folders whose `info.json` says `"loop": true` are used; the rest are skipped.
+3. **Train** with a share of field-map episodes (default 0.15, ignored when there are no usable maps). Write to a new file so the default model isn't overwritten:
+   ```bash
+   python train.py --field-fraction 0.2 --output ../models/laksa_tinylidarnet_v6.npz
+   ```
+4. **Compare** the new model with the default on identical episodes before switching: `python evaluate.py --models v5=../models/laksa_tinylidarnet_v5.npz v6=../models/laksa_tinylidarnet_v6.npz`.
+
+How a saved map becomes a training track (`tracks.load_field_map`):
+- The driven trail is thinned to 0.15 m steps, closed and smoothed into a loop. That loop is the route.
+- The occupancy grid becomes the walls. **Unknown cells count as walls**, so only mapped space is drivable.
+- Each episode picks a random direction. On 70% of episodes it adds 1–4 boxes where the corridor is at least 0.9 m wide.
+- The expert's line is limited to the drivable width on each side, and it slows where the space is narrow.
+
+Field maps are real rooms and yards, so they cover what the procedural corridors don't: clutter, irregular walls and open areas. Keep the share modest (0.1–0.25); one or two small maps repeated too often would overfit.
 
 ## How to retrain
 
@@ -145,10 +182,11 @@ python evaluate.py
 ```
 
 - `smoke_test.py`: the expert drives three random tracks, as a sanity check.
-- `train.py`: writes `../models/laksa_tinylidarnet_v2.npz` and its `.report.json`.
+- `train.py`: writes `../models/laksa_tinylidarnet_v5.npz` and its `.report.json` by default. **Pass `--output` with a new name** so a retrain doesn't overwrite the shipped default. Mix options: `--obstacle-fraction`, `--course-fraction`, `--replica-fraction`, `--field-fraction`.
+- `evaluate.py --models NAME=PATH ...`: compares several models on identical episodes (`--no-expert` skips the expert).
 - `evaluate.py`: runs the competition course and fresh tracks, expert against student.
 
 Notes:
 - The first import takes about 80 s while numba compiles the simulator physics; later runs reuse the cache.
 - Generated maps go to `scratch/learned_driver_maps/`. The maps from the shipped training run are committed there for reference.
-- Before shipping a new model, run `python -m pytest test` in the package. The tests load the model and check its contracts.
+- Before shipping a new model, run the package tests from `test/`: `PYTHONPATH=.. python -m unittest test_hold_latch test_learned_driver` (62 tests; pytest works too if installed). The tests load the model and check its contracts.

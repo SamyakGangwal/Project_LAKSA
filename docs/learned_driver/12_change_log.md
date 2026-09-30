@@ -19,21 +19,25 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `laksa_learned_driver/perception.py` | Camera obstacle logic: cloud filtering, detection footprints, person rule, RANSAC ground plane |
 | `laksa_learned_driver/driver_node.py` | The `learned_driver` ROS node that combines all of the above; decision log |
 | `laksa_learned_driver/zed_perception_node.py` | The `zed_perception` ROS node |
-| `laksa_learned_driver/race.py`, `race_node.py`, `signals.py` | Race mode: arm, green start, red stop, Speed run / Obstacle modes |
+| `laksa_learned_driver/race.py`, `race_node.py`, `signals.py` | Race mode: arm (with the chosen profile), green start, red stop, Speed course / Obstacle course |
+| `laksa_learned_driver/profiles.py` | Drive profile per mode (Obstacle, Speed, Trial & explore), clamped; applied live on `/laksa/drive_profile` |
+| `laksa_learned_driver/hold_latch.py` | KarSha's deadman re-arm rule for HOLD/GO after a heartbeat loss |
 | `laksa_learned_driver/operator_cli.py` | `laksa_operator` terminal deadman (run, stop, rearm, status) |
-| `laksa_learned_driver/console_node.py`, `console_page.html` | LAKSA Console web app, including PLAN ROUTE and HOLD TO GO through Nav2 |
+| `laksa_learned_driver/console_node.py`, `console_page.html` | LAKSA Console web app: drive-mode tabs with live settings, race and explore panels, telemetry, SAVE MAP, PLAN ROUTE and HOLD TO GO through Nav2; phone layout with STOP/REARM pinned |
 | `laksa_learned_driver/policy_probe.py` | Read-only probe: prints what the policy would command on live scans; publishes nothing |
 | `config/learned_driver.yaml` | Driver parameters: caps, mount, governor, recovery |
 | `config/zed_perception.yaml` | ZED profile: 15 fps, NEURAL_LIGHT, object detection |
 | `config/ekf_field.yaml` | Field EKF: ZED base pose + VESC speed, with VIO-jump rejection |
 | `config/rtabmap_field_overrides.yaml` | Lighter RTAB-Map for the Orin Nano |
-| `config/nav2_field_overrides.yaml` | Nav2 on top of the production config: Regulated Pure Pursuit with reversing on Reeds-Shepp plans |
+| `config/nav2_field_overrides.yaml` | Nav2 on top of the production config: Regulated Pure Pursuit at 0.22 m/s with reversing on Reeds-Shepp plans |
 | `launch/learned_cruise.launch.py` | Launch the driver alone, next to the production manual-control stack |
-| `models/laksa_tinylidarnet_v2.npz`, `.report.json` | The shipped model and its training report |
-| `models/laksa_tinylidarnet_v3.npz`, `v4.npz` + reports | Obstacle- and course-trained candidates (not deployed) |
-| `training/*.py` | Simulator wrapper, tracks (plain, obstacles, 2026 course-style, Obstacle Course replica), expert, DAgger training, evaluation, smoke test |
+| `models/laksa_tinylidarnet_v5.npz`, `.report.json` | The default model (replica-, course- and obstacle-trained) and its training report |
+| `models/laksa_tinylidarnet_v2.npz`, `v3.npz`, `v4.npz` + reports | The first shipped model and the intermediate candidates |
+| `training/*.py` | Simulator wrapper, tracks (plain, obstacles, 2026 course-style, Obstacle Course replica, field maps), expert, DAgger training, multi-model evaluation, smoke test |
+| `training/field_maps/` | Maps saved from the console for training (not created until the first map is copied in) |
 | `training/courses/` | Obstacle Course replica builder (from the PDF) and its map, route and features |
-| `test/test_learned_driver.py` | 38 tests: features, adapter, governor, obstacle avoidance, recovery, perception, smoothing, model contracts, topic authority |
+| `test/test_learned_driver.py` | 54 tests: features, adapter, governor, obstacle avoidance, recovery, perception, smoothing, profiles, race manager, signals, model contracts, topic authority |
+| `test/test_hold_latch.py` | KarSha's 8 tests for the hold re-arm rule |
 | `README.md`, `package.xml`, `setup.py`, `setup.cfg`, `resource/` | Package metadata |
 
 ## Changes to existing packages
@@ -55,7 +59,7 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 |---|---|
 | `jetson/setup/01_system_setup.sh` | One-time system install (sudo): ROS 2 Humble and dependencies |
 | `jetson/setup/02_build_workspaces.sh` | Build the third-party and LAKSA workspaces (no sudo) |
-| `jetson/setup/dryrun_bringup.sh` | Launcher: start, trial, console, stop, status; session folders; console token |
+| `jetson/setup/dryrun_bringup.sh` | Launcher: start, trial, race, auto, console, stop, status; session folders; console token; KarSha's `LAKSA_*` overrides |
 | `jetson/setup/laksa_network_watch.sh` | Hotspot and home Wi-Fi switching; console rebinding |
 | `jetson/setup/steering_bench.py`, `traction_bench.py` | Wheels-up bench tests that talk to the ESP32 directly |
 | `jetson/systemd/laksa-car.service` | Start the stack at boot (trial mode, braked until an operator acts) |
