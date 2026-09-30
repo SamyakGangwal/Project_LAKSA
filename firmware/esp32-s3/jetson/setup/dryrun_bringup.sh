@@ -8,7 +8,7 @@
 # console or laksa_operator: without an operator the supervisor holds brake.
 #
 #   dryrun_bringup.sh start    everything, supervisor actuation DISABLED
-#   dryrun_bringup.sh trial    everything, actuation ENABLED, cruise ~0.15 m/s
+#   dryrun_bringup.sh trial    everything, actuation ENABLED, explore 0.6 m/s (console, up to 1.0)
 #   dryrun_bringup.sh race     actuation ENABLED, no operator needed: ARM a mode in the
 #                              console, the car starts on a green signal and stops on red
 #                              (speed per mode, up to the model's 3 m/s)

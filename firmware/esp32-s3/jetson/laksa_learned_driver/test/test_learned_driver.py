@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 
 from laksa_learned_driver.policy import LearnedDriverPolicy, OutputContract
-from laksa_learned_driver.profiles import DEFAULTS, make_profile
+from laksa_learned_driver.profiles import DEFAULTS, EXPLORE_MAX_SPEED_MPS, make_profile
 from laksa_learned_driver.race import MAX_SPEED_MPS, RaceManager
 from laksa_learned_driver.signals import Debounce, SignalConfig, read_signals
 from laksa_learned_driver.perception import (Detection, PerceptionConfig, box_footprint_points,
@@ -225,6 +225,10 @@ class ProfileTest(unittest.TestCase):
         self.assertEqual(p.speed_mps, DEFAULTS["obstacle"].speed_mps)      # not a number: default
         self.assertEqual(p.horizon_m, 12.0)                                  # clamped
         self.assertTrue(p.camera)                                            # non-bool ignored: default
+
+    def test_explore_speed_has_its_own_ceiling(self):
+        self.assertEqual(make_profile({"mode": "explore", "speed_mps": 2.5}).speed_mps, EXPLORE_MAX_SPEED_MPS)
+        self.assertEqual(make_profile({"mode": "obstacle", "speed_mps": 2.5}).speed_mps, 2.5)
 
     def test_unknown_mode_falls_back_to_explore(self):
         self.assertEqual(make_profile({"mode": "warp"}).mode, "explore")

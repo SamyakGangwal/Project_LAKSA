@@ -17,7 +17,7 @@
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; }
   #mapwrap { position:relative; height: calc(100vh - 90px); min-height:360px; padding:0; overflow:hidden; }
-  canvas { width:100%; height:100%; display:block; cursor:crosshair; }
+  canvas { width:100%; height:100%; display:block; cursor:crosshair; touch-action:none; }
   #maptools { position:absolute; top:10px; left:10px; display:flex; gap:6px; flex-wrap:wrap; }
   #maptools button { background:#222733cc; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 10px; }
   #maptools button.active { border-color:var(--blue); color:#fff; background:#1d3553; }
@@ -32,6 +32,13 @@
   #stopbar { position:sticky; top:0; z-index:5; display:flex; gap:8px; }
   #stop { flex:3; height:56px; font-size:20px; background:var(--red); }
   #rearm { flex:1; height:56px; font-size:15px; background:#4a5160; }
+  /* phones: shorter map, STOP and REARM pinned to the bottom of the screen */
+  @media (max-width: 900px) {
+    #mapwrap { height:45vh; min-height:260px; }
+    #stopbar { position:fixed; top:auto; left:0; right:0; bottom:0; padding:8px 16px calc(8px + env(safe-area-inset-bottom));
+               background:var(--bg); border-top:1px solid var(--line); }
+    body { padding-bottom:84px; }
+  }
   /* mode tabs */
   #tabs { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; }
   #tabs button { height:58px; border:1px solid var(--line); border-radius:10px; background:var(--field); color:var(--text);
@@ -79,6 +86,8 @@
       <button id="modeGoal">Set end</button>
       <button id="follow">Follow car: on</button>
       <button id="clearTrail">Clear track</button>
+      <button id="zoomIn" aria-label="Zoom in">+</button>
+      <button id="zoomOut" aria-label="Zoom out">−</button>
     </div>
     <div id="mapnote">waiting for data</div>
   </section>
@@ -187,7 +196,8 @@ for (const m in DEFAULTS) settings[m] = {...DEFAULTS[m], ...(saved[m] || {})};
 function showSettings() {
   const s = settings[selected];
   $('speed').max = DEFAULTS[selected].max;
-  $('speed').value = Math.min(s.speed_mps, DEFAULTS[selected].max);
+  s.speed_mps = Math.min(s.speed_mps, DEFAULTS[selected].max);   // stale saved values above the ceiling
+  $('speed').value = s.speed_mps;
   $('avoid').checked = s.avoid; $('cameraLayer').checked = s.camera; $('reverse').checked = s.reverse;
   $('horizon').value = s.horizon_m;
   $('speedOut').textContent = (+$('speed').value).toFixed(1) + ' m/s';
@@ -211,7 +221,7 @@ function readSettings() {
 }
 ['speed', 'avoid', 'cameraLayer', 'reverse', 'horizon'].forEach(id => $(id).addEventListener('input', readSettings));
 const profile = () => { const s = settings[selected];
-  return {mode: selected, speed_mps: s.speed_mps, avoid: s.avoid, camera: s.camera, reverse: s.reverse, horizon_m: s.horizon_m}; };
+  return {mode: selected, speed_mps: Math.min(s.speed_mps, DEFAULTS[selected].max), avoid: s.avoid, camera: s.camera, reverse: s.reverse, horizon_m: s.horizon_m}; };
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
   selected = b.dataset.mode; try { localStorage.setItem('laksa.mode', selected); } catch (e) {}
   showSettings(); updateStatus();
@@ -274,8 +284,9 @@ function resize() { const r = canvas.getBoundingClientRect(); canvas.width = r.w
 window.addEventListener('resize', resize); setTimeout(resize, 0);
 const toScreen = (x, y) => [canvas.width / 2 + (x - view.cx) * view.scale, canvas.height / 2 - (y - view.cy) * view.scale];
 const toWorld = (px, py) => [view.cx + (px - canvas.width / 2) / view.scale, view.cy - (py - canvas.height / 2) / view.scale];
-canvas.addEventListener('wheel', e => { e.preventDefault(); view.scale *= e.deltaY < 0 ? 1.15 : 1 / 1.15;
-  view.scale = Math.max(5, Math.min(400, view.scale)); render(); }, { passive: false });
+const zoom = f => { view.scale = Math.max(5, Math.min(400, view.scale * f)); render(); };
+canvas.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
+$('zoomIn').onclick = () => zoom(1.4); $('zoomOut').onclick = () => zoom(1 / 1.4);
 let drag = null;
 canvas.addEventListener('pointerdown', e => {
   const px = e.offsetX * devicePixelRatio, py = e.offsetY * devicePixelRatio;
@@ -343,7 +354,7 @@ function render() {
   }
   marker(state.start, '#2fbf4f', 'START'); marker(state.goal, '#d33a3a', 'END');
   $('mapnote').textContent = (mapInfo ? `map ${mapInfo.width}×${mapInfo.height} @ ${mapInfo.resolution} m` : 'no map yet (mapping not running)')
-    + ` · pose frame: ${state.status.pose_frame || '–'} · scroll to zoom, drag to pan`;
+    + ` · pose frame: ${state.status.pose_frame || '–'} · scroll or +/− to zoom, drag to pan`;
 }
 
 function cls(el, c) { el.className = c; }

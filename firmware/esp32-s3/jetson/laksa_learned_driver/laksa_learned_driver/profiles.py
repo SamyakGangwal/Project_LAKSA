@@ -15,6 +15,7 @@ from dataclasses import asdict, dataclass, replace
 
 MAX_SPEED_MPS = 3.0            # the learned model's trained maximum
 MIN_SPEED_MPS = 0.2            # the drive does not run reliably below ~0.2 m/s
+EXPLORE_MAX_SPEED_MPS = 1.0    # trial & explore ceiling (an operator holds the run)
 
 
 @dataclass(frozen=True)
@@ -59,10 +60,11 @@ def make_profile(data: dict) -> DriveProfile:
     """Start from the mode's defaults and apply the given overrides, clamped."""
     mode = data.get("mode") if data.get("mode") in DEFAULTS else "explore"
     base = DEFAULTS[mode]
+    top = EXPLORE_MAX_SPEED_MPS if mode == "explore" else MAX_SPEED_MPS
     flag = lambda key: bool(data[key]) if isinstance(data.get(key), bool) else getattr(base, key)
     return replace(
         base,
-        speed_mps=_clamp(data.get("speed_mps", base.speed_mps), MIN_SPEED_MPS, MAX_SPEED_MPS, base.speed_mps),
+        speed_mps=_clamp(data.get("speed_mps", base.speed_mps), MIN_SPEED_MPS, top, base.speed_mps),
         avoid=flag("avoid"),
         avoid_clearance_m=_clamp(data.get("avoid_clearance_m", base.avoid_clearance_m), 0.3, 2.0,
                                  base.avoid_clearance_m),
