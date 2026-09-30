@@ -159,7 +159,12 @@ How a saved map becomes a training track (`tracks.load_field_map`):
 - The driven trail is thinned to 0.15 m steps, closed and smoothed into a loop. That loop is the route.
 - The occupancy grid becomes the walls. **Unknown cells count as walls**, so only mapped space is drivable.
 - Each episode picks a random direction. On 70% of episodes it adds 1–4 boxes where the corridor is at least 0.9 m wide.
-- The expert's line is limited to the drivable width on each side, and it slows where the space is narrow.
+- The expert's line keeps the car's margin (half width + 0.14 m) from the **nearest wall in any direction**, using a distance transform of the map (`tracks.set_clearance_limits`). Where a passage is narrower than that, the line is pinned to its middle. The expert slows where the space is narrow.
+- Each layout is checked with an expert lap at 0.5 m/s and redrawn (up to 6 times) if the expert can't complete it.
+
+Why 2-D clearance: the other track kinds measure the corridor only along each centreline point's normal. That misses a wall end or corner diagonally beside the path. A driven trail, smoothed, cuts hairpins toward such wall ends, and in a stand-in test the expert then clipped one on every lap.
+
+The stand-in test used the Obstacle Course replica saved as a field map, with a noisy trail. With the fix, the expert laps it 12/12 without boxes (0/12 before). With random boxes it laps 8/12; the other 4 are boxes that force a turn tighter than the car can make, and the redraw rejects those.
 
 Field maps are real rooms and yards, so they cover what the procedural corridors don't: clutter, irregular walls and open areas. Keep the share modest (0.1–0.25); one or two small maps repeated too often would overfit.
 

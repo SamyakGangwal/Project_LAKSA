@@ -50,6 +50,7 @@ class Track:
     offset_hi: np.ndarray | None = None
     width_limits_speed: bool = False                     # expert slows in narrow sections
     no_start: tuple | None = None                        # ((x, y), radius): never start episodes here
+    clearance_limits: bool = False                       # offset_lo/hi come from 2-D wall clearance
 
     @property
     def spacing(self) -> float:
@@ -397,6 +398,55 @@ def set_side_limits(track: Track, cap_m: float = 1.5) -> None:
     track.offset_lo = -np.maximum(reach[-1.0] - margin, 0.0)
 
 
+def set_clearance_limits(track: Track, cap_m: float = 1.5, margin_m: float = 0.12) -> None:
+    """Raceline limits from 2-D wall clearance (field maps).
+
+    ``set_side_limits`` and ``half_width`` probe only along each point's
+    normal, so a wall end or corner diagonally beside the path is invisible to
+    them.  A driven trail that cuts a hairpin toward a wall end then lets the
+    raceline clip it (the expert crashed there on a replica-derived map).
+    Here every allowed offset keeps the car's margin from the nearest wall in
+    any direction; where the path is narrower than that, the raceline is
+    pinned to the point of most clearance.
+    """
+    need = V.FOOTPRINT_HALF_WIDTH_M + V.FOOTPRINT_PADDING_M + margin_m
+    dist = cv2.distanceTransform(track.free.astype(np.uint8), cv2.DIST_L2, 5) * track.resolution
+    heading = track.headings()
+    normal = np.column_stack([-np.sin(heading), np.cos(heading)])
+    offsets = np.arange(-cap_m, cap_m + 1e-9, track.resolution * 0.5)
+    zero = int(np.argmin(np.abs(offsets)))
+    probe = (track.center[:, None, :] + offsets[None, :, None] * normal[:, None, :]).reshape(-1, 2)
+    cols = np.floor((probe[:, 0] - track.origin[0]) / track.resolution).astype(np.int64)
+    rows = dist.shape[0] - 1 - np.floor((probe[:, 1] - track.origin[1]) / track.resolution).astype(np.int64)
+    inside = (cols >= 0) & (cols < dist.shape[1]) & (rows >= 0) & (rows < dist.shape[0])
+    clear = np.zeros(probe.shape[0])
+    clear[inside] = dist[rows[inside], cols[inside]]
+    clear = clear.reshape(track.center.shape[0], offsets.size)
+    lo = np.empty(track.center.shape[0])
+    hi = np.empty(track.center.shape[0])
+    for i, row in enumerate(clear):
+        # Only the free stretch around the centreline counts, never space beyond a wall.
+        first = last = zero
+        while first > 0 and row[first - 1] > 0.0:
+            first -= 1
+        while last < offsets.size - 1 and row[last + 1] > 0.0:
+            last += 1
+        ok = np.zeros(offsets.size, dtype=bool)
+        ok[first:last + 1] = row[first:last + 1] >= need
+        if not ok.any():
+            lo[i] = hi[i] = offsets[first + int(np.argmax(row[first:last + 1]))]
+            continue
+        good = np.flatnonzero(ok)
+        a = b = int(good[np.argmin(np.abs(good - zero))])      # the clear stretch nearest the centreline
+        while a > 0 and ok[a - 1]:
+            a -= 1
+        while b < offsets.size - 1 and ok[b + 1]:
+            b += 1
+        lo[i], hi[i] = offsets[a], offsets[b]
+    track.offset_lo, track.offset_hi = lo, hi
+    track.clearance_limits = True
+
+
 FIELD_MAPS_DIR = Path(__file__).resolve().parent / "field_maps"
 
 
@@ -438,7 +488,7 @@ def load_field_map(folder: Path, rng: np.random.Generator, out_dir: Path, name: 
         center = center[::-1].copy()
     track = load_map_track(name, folder / "map.yaml", center, out_dir)
     track.width_limits_speed = True
-    set_side_limits(track)
+    set_clearance_limits(track)
     wide = track.half_width >= 0.45
     if wide.any() and rng.random() < 0.7:
         add_obstacles(track, rng, int(rng.integers(1, 5)), min_separation_m=2.0, eligible=wide)

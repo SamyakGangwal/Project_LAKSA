@@ -28,7 +28,12 @@ def smooth_raceline(track: Track, margin_m: float = 0.12, iterations: int = 400)
     normal = np.column_stack([-np.sin(heading), np.cos(heading)])
     bound = np.maximum(track.half_width - (V.FOOTPRINT_HALF_WIDTH_M + V.FOOTPRINT_PADDING_M + margin_m), 0.0)
     lo, hi = -bound, bound
-    if track.obstacles and track.offset_lo is not None:
+    if getattr(track, "clearance_limits", False):
+        # 2-D clearance limits (field maps) replace the normal-only half width.
+        lo, hi = track.offset_lo, track.offset_hi
+        if track.obstacles:
+            iterations = max(iterations, 4000)
+    elif track.obstacles and track.offset_lo is not None:
         lo, hi = np.maximum(lo, track.offset_lo), np.minimum(hi, track.offset_hi)
         iterations = max(iterations, 4000)
     offset = np.clip(np.zeros(center.shape[0]), lo, hi)

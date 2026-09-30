@@ -35,6 +35,7 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `models/laksa_tinylidarnet_v2.npz`, `v3.npz`, `v4.npz` + reports | The first shipped model and the intermediate candidates |
 | `training/*.py` | Simulator wrapper, tracks (plain, obstacles, 2026 course-style, Obstacle Course replica, field maps), expert, DAgger training, multi-model evaluation, smoke test |
 | `training/field_maps/` | Maps saved from the console for training (not created until the first map is copied in) |
+| `training/test_tracks.py` | Track geometry tests: 2-D clearance limits for field maps (`python -m unittest test_tracks` in `training/`) |
 | `training/courses/` | Obstacle Course replica builder (from the PDF) and its map, route and features |
 | `test/test_learned_driver.py` | 54 tests: features, adapter, governor, obstacle avoidance, recovery, perception, smoothing, profiles, race manager, signals, model contracts, topic authority |
 | `test/test_hold_latch.py` | KarSha's 8 tests for the hold re-arm rule |
