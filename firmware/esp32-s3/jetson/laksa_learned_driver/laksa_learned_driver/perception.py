@@ -28,7 +28,10 @@ import numpy as np
 @dataclass(frozen=True)
 class PerceptionConfig:
     min_height_m: float = 0.05
-    near_field_min_x_m: float = 0.55     # bumper (0.419) + 0.13 m
+    # bumper (0.419) + 0.20 m.  At +0.13 m (until 2026-10-01) ZED depth at its closest
+    # range showed floor as obstacles ~0.15 m ahead, stopping the car again and again;
+    # +0.20 m is still inside the 0.30 m stop distance, so low obstacles stay covered.
+    near_field_min_x_m: float = 0.62
     ground_min_range_m: float = 0.5
     ground_max_range_m: float = 3.0
     ground_max_abs_z_m: float = 0.30

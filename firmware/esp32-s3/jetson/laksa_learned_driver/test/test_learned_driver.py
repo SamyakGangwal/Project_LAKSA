@@ -417,10 +417,15 @@ class SlopeAndSmoothingTest(unittest.TestCase):
         self.assertFalse(np.any(lidar_ground_mask(np.array([[hit_distance, 0.0]]), None)))
 
     def test_near_field_camera_points_ignored(self):
-        near = np.array([[0.45, 0.0, 0.10], [0.60, 0.0, 0.10]])
+        edge = self.cfg.near_field_min_x_m
+        near = np.array([[edge - 0.05, 0.0, 0.10], [edge + 0.05, 0.0, 0.10]])
         xy = filter_cloud(near, self.cfg)
         self.assertEqual(xy.shape[0], 1)
-        self.assertGreater(xy[0, 0], 0.55)
+        self.assertGreater(xy[0, 0], edge)
+
+    def test_camera_still_covers_the_stop_distance(self):
+        # Camera-only (low) obstacles must stay visible up to the 0.30 m stop line.
+        self.assertLess(self.cfg.near_field_min_x_m - 0.419, 0.30)
 
     def test_steering_smoother_limits_rate_and_filters(self):
         smoother = SteeringSmoother(alpha=0.4, max_rate_radps=1.0)

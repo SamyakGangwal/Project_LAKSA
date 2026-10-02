@@ -102,6 +102,8 @@ On 1 Oct `rgbd_sync` (colour + depth pairing for RTAB-Map) received 3 frames and
 
 In the 1 Oct second session the camera's free distance sat at exactly 0.154 m for seconds at a time while the LiDAR read 0.26–0.56 m, which kept the reverse recovery running until it gave up. A constant value suggests something fixed in view (the car's own body or the near-field cutoff edge), not an obstacle. Check the camera obstacle points at that moment.
 
+**Update (1 Oct, late):** in the next session the camera caused most stops: in 166 of 315 blocked moments it saw something ≥ 0.2 m closer than the LiDAR, mostly 0.15–0.16 m ahead, which is the near edge of its range. The camera's near-field cutoff moved from 0.13 m to **0.20 m ahead of the bumper** (`near_field_min_x_m` 0.62), still inside the 0.30 m stop distance. The floor also reads as tilted 5–8° on flat tile, which points at the camera's pitch in the URDF; worth measuring. Until confirmed, unticking "Camera obstacles & people" drives on LiDAR only.
+
 ## Clock and networking
 
 - **No RTC battery.** The Jetson boots at the same saved clock time every time and only corrects it when it reaches the internet, which never happens at the field. Session folders now carry the boot id, but log timestamps can still be hours off. Fit a coin cell for the RTC, or accept it.
