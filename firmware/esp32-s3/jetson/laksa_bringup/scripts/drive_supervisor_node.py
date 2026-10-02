@@ -330,6 +330,10 @@ class DriveSupervisor(Node):
             self._set_armed_callback,
         )
         self._hardware_estop_enabled = bool(self.get_parameter("hardware_estop_enabled").value)
+        # The bridge publishes STOP from its start until the Tx link has read RUN
+        # five times, so every boot latched "hardware emergency stop". Arm only
+        # after the first RUN; from then on any STOP (press or lost Tx) latches.
+        self._hardware_estop_armed = False
         if not self._hardware_estop_enabled:
             self.get_logger().warn(
                 "Hardware e-stop input "
@@ -592,7 +596,12 @@ class DriveSupervisor(Node):
     def _hardware_estop_callback(self, message: Bool) -> None:
         if not self._hardware_estop_enabled:
             return
-        if message.data:
+        if not message.data:
+            if not self._hardware_estop_armed:
+                self._hardware_estop_armed = True
+                self.get_logger().info("Hardware e-stop armed (first RUN from the bridge)")
+            return
+        if self._hardware_estop_armed:
             self._latch_estop("hardware emergency stop")
 
     def _latch_estop(self, reason: str) -> None:
