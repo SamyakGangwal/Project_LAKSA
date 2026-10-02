@@ -84,9 +84,9 @@
       <button id="modeView" class="active">View</button>
       <button id="modeStart">Set start</button>
       <button id="modeGoal">Set end</button>
-      <button id="clearMarkers">Clear start/end</button>
+      <button id="clearMarkers" title="Remove START, END and the orange planned route">Clear start/end &amp; route</button>
       <button id="follow">Follow car: on</button>
-      <button id="clearTrail">Clear track</button>
+      <button id="clearTrail" title="Erase the blue line the car has driven">Clear driven track</button>
       <button id="zoomIn" aria-label="Zoom in">+</button>
       <button id="zoomOut" aria-label="Zoom out">−</button>
     </div>
@@ -350,9 +350,11 @@ function render() {
     ctx.fillText(label, sx + 10 * devicePixelRatio, sy + 4 * devicePixelRatio); };
   const route = (state.route || {}).path;
   if (route && route.length > 1) {
-    ctx.strokeStyle = '#3a8dde'; ctx.lineWidth = 3 * devicePixelRatio; ctx.beginPath();
+    // Planned route: dashed orange, so it is not mistaken for the blue driven track.
+    ctx.strokeStyle = '#f0a030'; ctx.lineWidth = 3 * devicePixelRatio; ctx.setLineDash([8 * devicePixelRatio, 6 * devicePixelRatio]);
+    ctx.beginPath();
     route.forEach(([x, y], i) => { const [sx, sy] = toScreen(x, y); i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); });
-    ctx.stroke();
+    ctx.stroke(); ctx.setLineDash([]);
   }
   marker(state.start, '#2fbf4f', 'START'); marker(state.goal, '#d33a3a', 'END');
   $('mapnote').textContent = (mapInfo ? `map ${mapInfo.width}×${mapInfo.height} @ ${mapInfo.resolution} m` : 'no map yet (mapping not running)')

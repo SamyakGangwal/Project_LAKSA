@@ -10,7 +10,7 @@ There is no Xbox controller on the bench car. Two operator tools replace it. Bot
 
 | Panel | Content |
 |---|---|
-| Map | RTAB-Map occupancy grid, the car's pose and driven track, live LiDAR points, detections, START and END markers, the planned route. Drag to pan; scroll or **+ / −** to zoom |
+| Map | RTAB-Map occupancy grid, the car's pose and driven track, live LiDAR points, detections, START and END markers, the planned route (dashed orange; the driven track is solid blue, cleared with **Clear driven track**). Drag to pan; scroll or **+ / −** to zoom |
 | STOP / REARM | Always visible: at the top of the side panel on a laptop, pinned to the bottom of the screen on a phone |
 | Mode | Three tabs: **Obstacle course**, **Speed course**, **Trial & explore** (see [Drive modes](#drive-modes)). A green dot marks the modes the car's software is currently running |
 | Settings | Per-mode speed, steer around obstacles, camera layer, back away when boxed in, look-ahead |
@@ -54,7 +54,7 @@ After SWITCH, the car software restarts in the other mode. That takes about 1–
 | STOP | Presses B: latches the emergency stop. Also disarms a race run |
 | REARM | Presses Y: clears the emergency stop |
 | Set START / Set END | Publishes `/laksa/console/start` and `/laksa/console/goal` |
-| Clear start/end | Removes both markers and the planned route. A route being driven ends (the car brakes); a plan still in progress is discarded |
+| Clear start/end & route | Removes both markers and the planned route (dashed orange). A route being driven ends (the car brakes); a plan still in progress is discarded |
 | PLAN ROUTE | Asks Nav2's planner for a route from the car to END and draws it on the map. **Planning only; nothing moves.** If Nav2 is still starting (about 15 s after the stack starts), the page shows "Nav2 is still starting" and plans as soon as the planner answers, for up to 30 s. Until 1 Oct it failed at once with "Nav2 planner is not running". |
 | HOLD TO GO | A second deadman hold that **doesn't** press A. After 0.5 s of heartbeat it asks the supervisor for `NAVIGATING` mode and sends END to Nav2's navigator. Releasing it cancels the goal, and the supervisor brakes. You must release it before starting another route. |
 
