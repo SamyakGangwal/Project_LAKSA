@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
 
 MAX_SPEED_MPS = 3.0            # the learned model's trained maximum
-MIN_SPEED_MPS = 0.2            # the drive does not run reliably below ~0.2 m/s
+MIN_SPEED_MPS = 0.3            # the drive stalls below ~0.2 m/s; matches min_drive_speed_mps
 EXPLORE_MAX_SPEED_MPS = 1.0    # trial & explore ceiling (an operator holds the run)
 
 
@@ -33,7 +33,9 @@ class DriveProfile:
 
 
 DEFAULTS = {
-    "explore": DriveProfile(mode="explore", speed_mps=0.6, avoid=True, avoid_clearance_m=0.6, camera=True,
+    # Explore starts steering around an obstacle 1 m ahead, so it rarely has to slow
+    # down or stop for it; it stops only at 0.30 m (see the driver's governor).
+    "explore": DriveProfile(mode="explore", speed_mps=0.6, avoid=True, avoid_clearance_m=1.0, camera=True,
                             horizon_m=4.0, reverse=True),
     "obstacle": DriveProfile(mode="obstacle", speed_mps=2.0, avoid=True, avoid_clearance_m=0.9, camera=True,
                              horizon_m=8.0, reverse=True),

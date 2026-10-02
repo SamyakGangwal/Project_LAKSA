@@ -176,7 +176,10 @@ start|trial|race)
     NAV_EXTRA_ARGS=()
     [[ -n "${NAV_EXTRA}" ]] && NAV_EXTRA_ARGS=(--params-file "${NAV_EXTRA}")
     mkdir -p "${RUN_DIR}"
-    SESSION="${SESSIONS_DIR}/$(date +%Y%m%dT%H%M%S)"
+    # The Jetson has no RTC battery: every boot starts at the same saved clock time
+    # until NTP syncs (and never syncs in the field), so a timestamp alone reused one
+    # folder across boots and overwrote its logs.  The boot id keeps boots apart.
+    SESSION="${SESSIONS_DIR}/$(date +%Y%m%dT%H%M%S)_boot$(cut -c1-6 /proc/sys/kernel/random/boot_id 2>/dev/null)"
     mkdir -p "${SESSION}"
     ln -sfn "${SESSION}" "${RUN_DIR}/latest"
     LOG_DIR="${SESSION}"

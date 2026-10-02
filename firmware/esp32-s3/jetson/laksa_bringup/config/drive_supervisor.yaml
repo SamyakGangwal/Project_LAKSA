@@ -23,7 +23,9 @@ drive_supervisor:
     b_button: 1
     x_button: 2
     y_button: 3
-    auto_hold_sec: 3.0
+    # Hold A (or the console's HOLD TO RUN) this long before exploration starts.
+    # 3 s made every explore start feel slow; 1 s still rules out a brushed button.
+    auto_hold_sec: 1.0
     manual_speed_presets_erpm: [900, 1300, 1500, 2000, 3000]
     default_manual_speed_erpm: 900
     exploration_max_erpm: 1000.0

@@ -110,7 +110,7 @@
     <div class="panel">
       <h2 id="settingsTitle">Settings</h2>
       <div class="setting"><label for="speed">Speed</label>
-        <input id="speed" type="range" min="0.2" max="3.0" step="0.1"><output id="speedOut"></output></div>
+        <input id="speed" type="range" min="0.3" max="3.0" step="0.1"><output id="speedOut"></output></div>
       <div class="setting"><label for="avoid">Steer around obstacles</label><input id="avoid" type="checkbox"></div>
       <div class="setting"><label for="cameraLayer">Camera obstacles &amp; people</label><input id="cameraLayer" type="checkbox"></div>
       <div class="setting"><label for="reverse">Back away when boxed in</label><input id="reverse" type="checkbox"></div>
@@ -387,6 +387,7 @@ function updateStatus() {
   if (save) { $('saveinfo').textContent = save.detail; cls($('saveinfo'), 'info ' + (save.ok ? (save.loop ? 'ok' : 'warn') : 'bad')); }
   const r = state.route || {};
   const routeText = {IDLE: 'Set END on the map, then PLAN ROUTE.', PLANNING: 'planning…',
+    WAITING_NAV2: 'Nav2 is still starting — the route is planned as soon as it is ready…',
     PLANNED: `route ${r.length_m} m — hold GO to drive it`, NAVIGATING: 'driving the route — release GO to stop',
     ARRIVED: 'arrived at END', STOPPED: 'stopped' + (r.detail ? ': ' + r.detail : ''),
     FAILED: 'no route' + (r.detail ? ': ' + r.detail : '')};

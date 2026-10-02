@@ -377,7 +377,7 @@ class DriveSupervisor(Node):
         self._publish_mode()
         self.get_logger().info(
             "MANUAL mode: left stick drives and right stick steers, "
-            "hold A 3 s for forward-priority LiDAR cruise, "
+            f"hold A {self._auto_hold_ns / 1e9:.1f} s for forward-priority LiDAR cruise, "
             "X returns to manual, B latches the emergency stop, Y rearms"
         )
         if not self._actuation_enabled:

@@ -53,6 +53,7 @@ from .scan_adapter import LidarMount, scan_to_vehicle_beams
 PAGE = Path(__file__).with_name("console_page.html")
 A_BUTTON, B_BUTTON, Y_BUTTON = 0, 1, 3
 NAV_ENGAGE_SEC = 0.5          # heartbeat before requesting NAVIGATING
+PLAN_WAIT_SEC = 30.0          # PLAN ROUTE waits this long for a (re)starting Nav2 planner
 NAV_ACCEPT_SEC = 2.0          # time for the supervisor to enter NAVIGATING
 
 
@@ -66,7 +67,8 @@ class Console(Node):
         self.declare_parameter("host", "127.0.0.1")
         self.declare_parameter("port", 8095)
         self.declare_parameter("heartbeat_timeout_sec", 0.3)
-        self.declare_parameter("engage_hold_sec", 3.5)
+        # Presses A this long: must exceed the supervisor's auto_hold_sec (1.0 s).
+        self.declare_parameter("engage_hold_sec", 1.5)
         self.declare_parameter("token_file", "")
         self._host = str(self.get_parameter("host").value)
         self._port = int(self.get_parameter("port").value)
@@ -124,6 +126,7 @@ class Console(Node):
         # the web thread only sets these requests.
         self._route = {"state": "IDLE", "detail": "", "path": None, "length_m": None}
         self._plan_requested = False
+        self._plan_wait_until = 0.0       # monotonic deadline while waiting for the planner
         self._go_requested = False
         self._nav_hold = False
         self._nav_goal_handle = None
@@ -394,7 +397,16 @@ class Console(Node):
             mission = self._status.get("mission")
             health = self._status.get("health")
         if plan:
+            self._plan_wait_until = 0.0
             self._start_plan()
+        elif self._plan_wait_until:
+            if self._planner.server_is_ready():
+                self._plan_wait_until = 0.0
+                self._start_plan()
+            elif now > self._plan_wait_until:
+                self._plan_wait_until = 0.0
+                self._set_route("FAILED", f"Nav2 planner did not answer within {PLAN_WAIT_SEC:.0f} s "
+                                          "(see nav_planner.log and nav_lifecycle.log in the session)")
         active = self._nav_goal_handle is not None or self._nav_enabled_at != 0.0
         if go and not active and held >= NAV_ENGAGE_SEC:
             self._start_navigation()
@@ -410,7 +422,10 @@ class Console(Node):
             self._set_route("FAILED", reason)
             return
         if not self._planner.server_is_ready():
-            self._set_route("FAILED", "Nav2 planner is not running")
+            # Nav2 needs ~15 s after a (re)start before the planner answers; wait
+            # for it instead of failing the first PLAN ROUTE press.
+            self._plan_wait_until = time.monotonic() + PLAN_WAIT_SEC
+            self._set_route("WAITING_NAV2", "")
             return
         request = ComputePathToPose.Goal()
         request.goal, request.planner_id, request.use_start = goal, "GridBased", False

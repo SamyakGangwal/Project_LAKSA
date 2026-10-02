@@ -14,7 +14,11 @@ learned_driver:
     scan_timeout_sec: 0.5
     # Clearance governor, independent of the network: always able to stop this far
     # in front of the bumper, assuming this deceleration and end-to-end latency.
-    stop_margin_m: 0.25
+    stop_margin_m: 0.18
+    # Forward commands are at least this or zero (the drive stalls below ~0.2 m/s).
+    # Together with stop_margin_m the car keeps moving until an obstacle is 0.30 m
+    # (1 ft) ahead of the bumper, then stops and backs away.
+    min_drive_speed_mps: 0.30
     lateral_margin_m: 0.10
     brake_decel_mps2: 1.0
     latency_sec: 0.25
@@ -25,7 +29,7 @@ learned_driver:
     # Reverse-away recovery when every forward arc is blocked (rear corridor is
     # checked with the LiDAR before and during every reverse).
     reverse_enabled: true
-    reverse_speed_mps: 0.12
-    reverse_time_sec: 2.5
+    reverse_speed_mps: 0.30
+    reverse_time_sec: 1.2
     rear_clearance_m: 0.30
     max_recoveries: 4

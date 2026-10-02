@@ -14,7 +14,8 @@ from laksa_learned_driver.perception import (Detection, PerceptionConfig, box_fo
                                              person_speed_rule)
 from laksa_learned_driver.smoothing import SteeringSmoother
 from laksa_learned_driver.recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_free_distance
-from laksa_learned_driver.safety import AvoidConfig, GovernorConfig, choose_steering, govern, path_free_distance
+from laksa_learned_driver.safety import (AvoidConfig, GovernorConfig, blocked_distance, choose_steering, govern,
+                                         path_free_distance)
 from laksa_learned_driver.scan_adapter import LidarMount, scan_to_vehicle_beams
 from laksa_learned_driver.scan_features import ScanContract, bin_scan
 
@@ -118,6 +119,47 @@ class GovernorTest(unittest.TestCase):
         inside = np.array([[0.30, 0.10]])
         for steering in (-0.2, 0.0, 0.3):
             self.assertEqual(path_free_distance(inside, steering, self.cfg), 0.0)
+
+
+class MinimumSpeedTest(unittest.TestCase):
+    """Car settings: forward commands are >= 0.30 m/s or zero; stop at 1 ft."""
+
+    def setUp(self):
+        self.cfg = GovernorConfig(stop_margin_m=0.18, min_speed_mps=0.30)
+
+    def test_blocked_distance_is_one_foot(self):
+        self.assertAlmostEqual(blocked_distance(self.cfg), 0.30, places=6)
+
+    def test_never_commands_a_crawl(self):
+        for free in np.linspace(0.0, 1.5, 151):
+            result = govern(np.array([[0.419 + free, 0.0]]), 0.0, 0.6, self.cfg)
+            self.assertTrue(result.speed_mps == 0.0 or result.speed_mps >= 0.30 - 1e-9, (free, result))
+
+    def test_keeps_moving_until_one_foot(self):
+        moving = govern(np.array([[0.419 + 0.32, 0.0]]), 0.0, 0.6, self.cfg)
+        self.assertFalse(moving.blocked)
+        self.assertGreaterEqual(moving.speed_mps, 0.30)
+        self.assertLess(moving.speed_mps, 0.6)            # still slowing for it
+        stopped = govern(np.array([[0.419 + 0.30, 0.0]]), 0.0, 0.6, self.cfg)
+        self.assertTrue(stopped.blocked)
+        self.assertEqual(stopped.speed_mps, 0.0)
+
+    def test_full_speed_well_before_the_obstacle(self):
+        result = govern(np.array([[0.419 + 0.60, 0.0]]), 0.0, 0.6, self.cfg)
+        self.assertAlmostEqual(result.speed_mps, 0.6)
+
+    def test_slow_request_is_raised_to_the_minimum(self):
+        # e.g. a person nearby halves a 0.4 m/s cap to 0.2 m/s, which would stall.
+        result = govern(np.empty((0, 2)), 0.0, 0.2, self.cfg)
+        self.assertAlmostEqual(result.speed_mps, 0.30)
+        self.assertEqual(govern(np.empty((0, 2)), 0.0, 0.0, self.cfg).speed_mps, 0.0)
+
+    def test_field_wall_case_is_blocked_so_recovery_runs(self):
+        # 2026-10-01: best arc 0.257 m free -> 0.025 m/s for three minutes, never reversing.
+        wall = np.array([[0.419 + 0.257, y] for y in np.linspace(-1.5, 1.5, 121)])
+        wall = np.vstack([wall, [[x, s * 0.45] for x in np.linspace(0.0, 0.6, 20) for s in (-1, 1)]])
+        self.assertTrue(choose_steering(wall, 0.0, self.cfg, AvoidConfig()).all_blocked)
+        self.assertTrue(govern(wall, 0.0, 0.6, self.cfg).blocked)
 
 
 class AvoidTest(unittest.TestCase):

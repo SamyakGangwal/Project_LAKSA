@@ -58,7 +58,11 @@ class LearnedDriver(Node):
         self.declare_parameter("scan_timeout_sec", 0.5)
         # Clearance governor (independent of the network): stop margin in front of
         # the bumper, conservative deceleration and end-to-end latency.
-        self.declare_parameter("stop_margin_m", 0.25)
+        self.declare_parameter("stop_margin_m", 0.18)
+        # Slowest forward speed the drive actually holds (it stalls below ~0.2 m/s).
+        # Forward commands are this or zero; with the defaults the car stops for an
+        # obstacle 0.30 m (1 ft) ahead of the bumper and keeps moving until then.
+        self.declare_parameter("min_drive_speed_mps", 0.30)
         # How far ahead the clearance check looks; at 3 m/s the stopping
         # distance is ~5 m, so race mode uses a longer horizon.
         self.declare_parameter("governor_horizon_m", 4.0)
@@ -71,8 +75,9 @@ class LearnedDriver(Node):
         self.declare_parameter("avoid_clearance_m", 0.60)
         # Reverse-away recovery when every forward arc is blocked.
         self.declare_parameter("reverse_enabled", True)
-        self.declare_parameter("reverse_speed_mps", 0.12)
-        self.declare_parameter("reverse_time_sec", 2.5)
+        # Reverse must also clear the drive's stall speed: 0.12 m/s never moved the car.
+        self.declare_parameter("reverse_speed_mps", 0.30)
+        self.declare_parameter("reverse_time_sec", 1.2)
         self.declare_parameter("rear_clearance_m", 0.30)
         self.declare_parameter("max_recoveries", 4)
         # Camera obstacle layer from zed_perception (added to LiDAR, never replacing it).
@@ -100,6 +105,7 @@ class LearnedDriver(Node):
             decel_mps2=float(self.get_parameter("brake_decel_mps2").value),
             latency_s=float(self.get_parameter("latency_sec").value),
             horizon_m=float(self.get_parameter("governor_horizon_m").value),
+            min_speed_mps=float(self.get_parameter("min_drive_speed_mps").value),
         )
 
         latched = QoSProfile(depth=1)

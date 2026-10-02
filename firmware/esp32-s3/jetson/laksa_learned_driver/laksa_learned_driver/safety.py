@@ -6,6 +6,13 @@ vehicle's swept corridor along the commanded constant-curvature arc and caps
 speed so the car can always stop (with latency and a margin) before the first
 LiDAR return inside that corridor.  It works on raw scan points, not on the
 network's features.
+
+The real drive stalls below roughly 0.2-0.3 m/s, so a forward command is either
+at least ``min_speed_mps`` or zero: a slower crawl looks like driving to the
+software but leaves the car parked in front of the obstacle (field run
+2026-10-01: three minutes at 0.025 m/s, 0.26 m from a wall, never reversing).
+The path counts as blocked once the car could no longer stop from that minimum
+speed before ``stop_margin_m``; see ``blocked_distance``.
 """
 
 from __future__ import annotations
@@ -26,6 +33,7 @@ class GovernorConfig:
     decel_mps2: float = 1.0              # conservative braking deceleration
     latency_s: float = 0.25              # scan age + processing + actuation
     horizon_m: float = 4.0
+    min_speed_mps: float = 0.0           # slowest forward speed the drive holds; 0 = no floor
 
 
 @dataclass(frozen=True)
@@ -73,16 +81,28 @@ def path_free_distance(points_xy: np.ndarray, steering_rad: float, cfg: Governor
     return float(max(0.0, np.min(along[in_path]) - cfg.front_overhang_m))
 
 
+def stopping_distance(speed_mps: float, cfg: GovernorConfig) -> float:
+    return speed_mps * cfg.latency_s + speed_mps * speed_mps / (2.0 * cfg.decel_mps2)
+
+
+def blocked_distance(cfg: GovernorConfig) -> float:
+    """Free distance ahead of the bumper at or below which the path is blocked."""
+    return cfg.stop_margin_m + stopping_distance(cfg.min_speed_mps, cfg)
+
+
 def govern(points_xy: np.ndarray, steering_rad: float, requested_speed_mps: float,
            cfg: GovernorConfig) -> GovernorResult:
     free = path_free_distance(points_xy, steering_rad, cfg)
     usable = free - cfg.stop_margin_m
-    if usable <= 0.0:
+    if usable <= 0.0 or free <= blocked_distance(cfg):
         return GovernorResult(0.0, free, True)
     # Largest v with v*latency + v^2/(2a) <= usable.
     a, t = cfg.decel_mps2, cfg.latency_s
     v_max = -a * t + math.sqrt((a * t) ** 2 + 2.0 * a * usable)
-    return GovernorResult(min(max(requested_speed_mps, 0.0), v_max), free, False)
+    speed = min(max(requested_speed_mps, 0.0), v_max)
+    if 0.0 < speed < cfg.min_speed_mps:
+        speed = cfg.min_speed_mps        # v_max >= min_speed here: free > blocked_distance
+    return GovernorResult(speed, free, False)
 
 
 @dataclass(frozen=True)
@@ -110,7 +130,7 @@ def choose_steering(points_xy: np.ndarray, preferred_rad: float, gov: GovernorCo
     among arcs with at least ``clearance_m`` free, take the one closest to the
     preferred steering.  If none has that much room, take the arc with the most
     free distance (closest to the preferred on ties).  ``all_blocked`` means no
-    arc leaves room beyond the stop margin, so only stopping or reversing helps.
+    arc has more than ``blocked_distance`` free, so only stopping or reversing helps.
     """
     preferred_free = path_free_distance(points_xy, preferred_rad, gov)
     if preferred_free >= cfg.clearance_m:
@@ -131,7 +151,7 @@ def choose_steering(points_xy: np.ndarray, preferred_rad: float, gov: GovernorCo
         near_best = np.flatnonzero(free >= best - 1e-6)
         index = int(near_best[np.argmin(deviation[near_best])])
     steering = float(arcs[index])
-    return AvoidResult(steering, float(free[index]), bool(free[index] <= gov.stop_margin_m),
+    return AvoidResult(steering, float(free[index]), bool(free[index] <= blocked_distance(gov)),
                        abs(steering - preferred_rad) > 1e-6)
 
 
