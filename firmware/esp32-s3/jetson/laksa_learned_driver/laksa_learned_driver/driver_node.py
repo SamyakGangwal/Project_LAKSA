@@ -16,6 +16,7 @@ import dataclasses
 import json
 import math
 import time
+from collections import deque
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +25,7 @@ from ament_index_python.packages import get_package_share_directory
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
+from rclpy.time import Time
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan, PointCloud2
 from sensor_msgs_py import point_cloud2
@@ -32,10 +34,10 @@ from std_msgs.msg import Bool, String
 from .policy import LearnedDriverPolicy
 from .profiles import make_profile
 from .recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_arc_free_distance, rear_free_distance
-from .perception import lidar_ground_mask
+from .perception import GroundGrid, ego_compensate, lidar_ground_mask, lidar_ground_mask_grid
 from .safety import AvoidConfig, GovernorConfig, choose_steering, govern, path_free_distance, scan_points_base
 from .smoothing import SteeringSmoother
-from .scan_adapter import LidarMount, scan_to_vehicle_beams
+from .scan_adapter import LidarMount, drop_isolated_returns, scan_to_vehicle_beams
 
 MODEL_CAP_MIN_MPS = 0.25
 
@@ -80,12 +82,22 @@ class LearnedDriver(Node):
         self.declare_parameter("reverse_time_sec", 1.2)
         self.declare_parameter("rear_clearance_m", 0.20)
         self.declare_parameter("max_recoveries", 8)
+        # Scans the path must stay blocked before backing up (one-scan phantom
+        # returns made the car reverse at the start line), and how long a give-up
+        # waits before trying again; it drives on as soon as the path is free.
+        self.declare_parameter("blocked_confirm_scans", 3)
+        self.declare_parameter("blocked_retry_sec", 3.0)
         # Clearance the slow (min-speed) turn legs keep: stopping from 0.30 m/s takes
         # ~0.12 m, so 0.20 m leaves a margin while letting a 1.2 m corridor U-turn.
         self.declare_parameter("turn_clearance_m", 0.20)
         # Camera obstacle layer from zed_perception (added to LiDAR, never replacing it).
         self.declare_parameter("use_camera", True)
+        # Age limit for camera obstacles, measured from image capture (header stamp).
         self.declare_parameter("camera_stale_sec", 0.6)
+        # Shift camera obstacles by the car's own motion since the image was taken.
+        self.declare_parameter("camera_ego_compensation", True)
+        # Ignore single-beam LiDAR returns (outdoor speckle); see drop_isolated_returns.
+        self.declare_parameter("lidar_despeckle", True)
         # Steering smoothing (low-pass + rate limit) and per-session decision log.
         self.declare_parameter("steering_alpha", 0.4)
         self.declare_parameter("steering_rate_limit_radps", 1.0)
@@ -146,9 +158,16 @@ class LearnedDriver(Node):
         self._camera_stale = float(self.get_parameter("camera_stale_sec").value)
         self._camera_xy = np.empty((0, 2))
         self._camera_time = 0.0
+        self._camera_stamp = 0.0             # capture time (ROS clock, s)
+        self._camera_age = math.inf
+        self._ego_comp = bool(self.get_parameter("camera_ego_compensation").value)
+        self._despeckle = bool(self.get_parameter("lidar_despeckle").value)
+        self._commands: deque[tuple[float, float, float]] = deque(maxlen=64)   # (t, speed, steering)
         self._person = {"factor": 1.0, "stop": False, "nearest_m": None}
         self._person_time = 0.0
         self._plane = None
+        self._grid = None
+        self._grid_time = 0.0
         self._plane_time = 0.0
         self._slope_aware = bool(self.get_parameter("slope_aware_lidar").value)
         self._smoother = SteeringSmoother(float(self.get_parameter("steering_alpha").value),
@@ -167,7 +186,7 @@ class LearnedDriver(Node):
             self._log_writer.writerow(["t", "status", "policy_steer", "steer_cmd", "speed_cmd", "free_m",
                                        "block_source", "lidar_free_m", "camera_free_m", "slope_deg",
                                        "person_factor", "lidar_pts", "camera_pts", "ground_filtered",
-                                       "target_steer"])
+                                       "target_steer", "camera_age_s"])
         self._reverse_speed = float(self.get_parameter("reverse_speed_mps").value)
         self._recovery = ReverseRecovery(RecoveryConfig(
             reverse_speed_mps=min(self._reverse_speed, self._cap),
@@ -177,6 +196,8 @@ class LearnedDriver(Node):
             turn_left_rad=self._policy.output.steering_left_max_rad,
             turn_right_rad=self._policy.output.steering_right_max_rad,
             turn_block_m=float(self.get_parameter("turn_clearance_m").value),
+            confirm_steps=max(1, int(self.get_parameter("blocked_confirm_scans").value)),
+            retry_s=float(self.get_parameter("blocked_retry_sec").value),
         ))
         self._publish_status("IDLE")
         self.get_logger().info(
@@ -193,7 +214,15 @@ class LearnedDriver(Node):
             self._last_status = value
             self.get_logger().info(f"Learned driver state -> {value}")
 
+    def _ros_now(self) -> float:
+        return self.get_clock().now().nanoseconds * 1e-9
+
+    def _set_command(self, steering: float, speed: float) -> None:
+        self._last_command = (steering, speed)
+        self._commands.append((self._ros_now(), float(speed), float(steering)))
+
     def _stop(self, status: str) -> None:
+        self._set_command(self._last_command[0], 0.0)
         self._command_pub.publish(Twist())
         self._publish_status(status)
 
@@ -235,6 +264,8 @@ class LearnedDriver(Node):
             points = np.column_stack([points["x"], points["y"]])
         self._camera_xy = np.asarray(points, dtype=np.float64).reshape(-1, 2)
         self._camera_time = time.monotonic()
+        stamp = Time.from_msg(message.header.stamp).nanoseconds * 1e-9
+        self._camera_stamp = stamp if stamp > 0.0 else self._ros_now()
 
     def _person_cb(self, message: String) -> None:
         try:
@@ -251,19 +282,34 @@ class LearnedDriver(Node):
         plane = data.get("plane")
         if plane and len(plane) == 3:
             self._plane, self._plane_time = tuple(float(v) for v in plane), time.monotonic()
+        if data.get("grid"):
+            try:
+                self._grid, self._grid_time = GroundGrid.from_dict(data["grid"]), time.monotonic()
+            except (KeyError, TypeError, ValueError):
+                pass
 
     def _fresh_plane(self):
         if not self._slope_aware or time.monotonic() - self._plane_time > self._camera_stale:
             return None
         return self._plane
 
+    def _fresh_grid(self):
+        if not self._slope_aware or time.monotonic() - self._grid_time > self._camera_stale:
+            return None
+        return self._grid
+
     def _camera_layer(self):
         """Fresh camera obstacle points and person rule, or LiDAR-only fallback."""
         now = time.monotonic()
         if not self._use_camera:
             return np.empty((0, 2)), 1.0, False
-        points = self._camera_xy if now - self._camera_time <= self._camera_stale else np.empty((0, 2))
-        if now - self._camera_time > self._camera_stale:
+        ros_now = self._ros_now()
+        self._camera_age = ros_now - self._camera_stamp
+        fresh = now - self._camera_time <= self._camera_stale and self._camera_age <= self._camera_stale
+        points = self._camera_xy if fresh else np.empty((0, 2))
+        if fresh and self._ego_comp:
+            points = ego_compensate(points, self._commands, self._camera_stamp, ros_now, self._wheelbase)
+        if not fresh:
             self.get_logger().warning("Camera obstacle layer stale; using LiDAR only", throttle_duration_sec=5.0)
         person = self._person if now - self._person_time <= self._camera_stale else {}
         return points, float(person.get("factor", 1.0)), bool(person.get("stop", False))
@@ -293,6 +339,8 @@ class LearnedDriver(Node):
             message.ranges, float(message.angle_min), float(message.angle_increment),
             float(message.range_min), float(message.range_max), self._mount,
         )
+        if self._despeckle:
+            ranges = drop_isolated_returns(ranges)
         policy_steering, speed = self._policy.act(ranges, angles, max(self._cap, MODEL_CAP_MIN_MPS))
         speed = min(speed, self._cap)
         if not (math.isfinite(policy_steering) and math.isfinite(speed)):
@@ -301,7 +349,13 @@ class LearnedDriver(Node):
         camera_points, person_factor, person_stop = self._camera_layer()
         lidar_points = scan_points_base(ranges, angles, self._mount.x_m)
         plane = self._fresh_plane()
-        ground = lidar_ground_mask(lidar_points, plane)
+        grid = self._fresh_grid()
+        # Ramp: LiDAR returns on measured ramp surface (local grid); the plane only
+        # where the grid has no data.
+        ground = lidar_ground_mask_grid(lidar_points, grid)
+        if plane is not None:
+            unknown = np.ones(lidar_points.shape[0], dtype=bool) if grid is None                 else ~np.isfinite(grid.lookup(lidar_points[:, 0], lidar_points[:, 1])[0])
+            ground |= lidar_ground_mask(lidar_points, plane) & unknown
         if np.any(ground):
             lidar_points = lidar_points[~ground]   # rising ground ahead, not a wall
         points = np.vstack([lidar_points, camera_points]) if camera_points.size else lidar_points
@@ -316,7 +370,7 @@ class LearnedDriver(Node):
         self._last_step_time = now
         if person_stop:
             # A person close ahead: stop and wait (no reversing near people).
-            self._last_command = (steering, 0.0)
+            self._set_command(steering, 0.0)
             self._command_pub.publish(Twist())
             self._publish_status("PERSON_STOP")
             self.get_logger().warning("Person close ahead; holding", throttle_duration_sec=2.0)
@@ -361,7 +415,8 @@ class LearnedDriver(Node):
                                        f"{speed:.3f}", f"{governed.free_distance_m:.3f}", source,
                                        f"{lidar_free:.3f}", f"{camera_free:.3f}", slope, f"{person_factor:.2f}",
                                        lidar_points.shape[0], camera_points.shape[0], int(np.sum(ground)),
-                                       f"{target:.4f}"])
+                                       f"{target:.4f}",
+                                       f"{self._camera_age:.3f}" if math.isfinite(self._camera_age) else ""])
             self._log_file.flush()
         if forward_blocked and status in ("RECOVERY_PAUSE", "BLOCKED"):
             self.get_logger().warning(
@@ -370,11 +425,14 @@ class LearnedDriver(Node):
                 f"{'n/a' if plane is None else f'{math.degrees(math.atan(math.hypot(plane[0], plane[1]))):.1f} deg'})",
                 throttle_duration_sec=1.0)
         if status == "BLOCKED":
-            # BLOCKED makes drive_supervisor abort autonomy and return to manual.
-            self._last_command = (steering, 0.0)
-            self._stop("BLOCKED")
+            # Hold stopped but stay in autonomy (status BLOCKED would make
+            # drive_supervisor abort to manual): the recovery drives on as soon as
+            # the path is free and retries after blocked_retry_sec.
+            self._set_command(steering, 0.0)
+            self._command_pub.publish(Twist())
+            self._publish_status("BLOCKED_WAIT")
             self.get_logger().warning(
-                f"Path blocked {governed.free_distance_m:.2f} m ahead of the bumper and no recovery left; stopping",
+                f"Path blocked {governed.free_distance_m:.2f} m ahead of the bumper; holding, will retry",
                 throttle_duration_sec=1.0,
             )
             return
@@ -382,7 +440,7 @@ class LearnedDriver(Node):
         output.linear.x = speed
         output.angular.z = speed * math.tan(steering) / self._wheelbase
         self._command_pub.publish(output)
-        self._last_command = (steering, speed)
+        self._set_command(steering, speed)
         self._publish_status(status)
 
     def _watchdog(self) -> None:
@@ -397,11 +455,12 @@ class LearnedDriver(Node):
             "steer_cmd": round(self._last_command[0], 3),
             "free_m": None if not math.isfinite(free) else round(free, 2), "blocked_by": self._last_source,
             "cap": round(self._cap, 2), "inference_ms": round(self._inference_ms, 2),
+            "camera_age_s": round(self._camera_age, 2) if math.isfinite(self._camera_age) else None,
         })))
 
     def _diagnostics(self) -> None:
         status = DiagnosticStatus(
-            level=DiagnosticStatus.OK if self._last_status not in ("CONTROL_ERROR", "SCAN_TIMEOUT", "INVALID_SCAN", "BLOCKED") else DiagnosticStatus.WARN,
+            level=DiagnosticStatus.OK if self._last_status not in ("CONTROL_ERROR", "SCAN_TIMEOUT", "INVALID_SCAN", "BLOCKED", "BLOCKED_WAIT") else DiagnosticStatus.WARN,
             name="laksa_learned_driver", hardware_id="jetson", message=self._last_status,
         )
         status.values = [

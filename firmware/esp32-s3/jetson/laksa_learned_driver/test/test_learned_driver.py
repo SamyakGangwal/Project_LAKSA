@@ -485,7 +485,7 @@ class ReverseRecoveryTest(unittest.TestCase):
 
 class PerceptionTest(unittest.TestCase):
     def setUp(self):
-        self.cfg = PerceptionConfig()
+        self.cfg = PerceptionConfig(min_cell_points=1)   # single-point cases; speckle: test_obstacle_sensing
 
     def test_cloud_keeps_only_obstacle_heights(self):
         cloud = np.array([
@@ -524,7 +524,7 @@ class PerceptionTest(unittest.TestCase):
 
 class SlopeAndSmoothingTest(unittest.TestCase):
     def setUp(self):
-        self.cfg = PerceptionConfig()
+        self.cfg = PerceptionConfig(min_cell_points=1)   # single-point cases; speckle: test_obstacle_sensing
         rng = np.random.default_rng(1)
         x = rng.uniform(0.6, 3.0, 3000)
         y = rng.uniform(-1.5, 1.5, 3000)

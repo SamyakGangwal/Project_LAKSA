@@ -21,7 +21,7 @@
       max_depth: 8.0
       publish_depth_map: true
       publish_point_cloud: true
-      point_cloud_freq: 5.0
+      point_cloud_freq: 10.0      # was 5: up to 0.2 s extra camera lag (1.5 m/s -> 0.3 m)
       point_cloud_res: REDUCED
       voxel_point_cloud: true
       voxel_size_mm: 50.0

@@ -42,6 +42,22 @@ class PerceptionConfig:
     max_height_m: float = 0.45
     max_range_m: float = 4.0
     cloud_voxel_m: float = 0.05
+    # A cell counts as an obstacle only with >= 2 cloud points in it (an object
+    # with some height) or an occupied neighbour cell; single-voxel depth speckle
+    # once read as an obstacle 0.01 m ahead.  Hay-bale walls fill many cells.
+    min_cell_points: int = 2
+    # Local ground grid (ramps): ground height per cell = a low percentile of the
+    # depth points in it, limited to what a ramp of at most ground_max_slope_rad
+    # could reach from the car and from neighbouring cells.  A single plane fitted
+    # the flat floor in front of a ramp, so the ramp itself read as an obstacle
+    # (camera) and the LiDAR hitting it as a wall: the car would not drive up.
+    grid_cell_m: float = 0.25
+    grid_max_x_m: float = 4.0
+    grid_half_y_m: float = 2.0
+    grid_max_z_m: float = 1.2
+    grid_min_points: int = 5
+    grid_percentile: float = 15.0
+    surface_max_spread_m: float = 0.12   # a cell this flat is a surface (ramp), not a wall face
     box_sample_m: float = 0.05
     person_margin_m: float = 0.25        # extra footprint inflation around people
     # 2026-10-02: 2.0 m / 1.0 m / +-60 deg stopped the car for judges standing beside
@@ -97,6 +113,136 @@ def ground_height(plane, x, y) -> np.ndarray:
     return a * x + b * np.asarray(y, dtype=np.float64) + c
 
 
+@dataclass(frozen=True)
+class GroundGrid:
+    x0: float
+    y0: float
+    cell: float
+    ground: np.ndarray        # (nx, ny) ground height, NaN = no data
+    surface: np.ndarray       # (nx, ny) True where the cell's points form a surface (ramp/floor)
+
+    def to_dict(self) -> dict:
+        return {"x0": self.x0, "y0": self.y0, "cell": self.cell,
+                "ground": [[None if not np.isfinite(v) else round(float(v), 3) for v in row] for row in self.ground],
+                "surface": self.surface.astype(int).tolist()}
+
+    @staticmethod
+    def from_dict(data: dict) -> "GroundGrid":
+        ground = np.array([[np.nan if v is None else float(v) for v in row] for row in data["ground"]], dtype=float)
+        return GroundGrid(float(data["x0"]), float(data["y0"]), float(data["cell"]), ground,
+                          np.asarray(data["surface"], dtype=bool).reshape(ground.shape))
+
+    def lookup(self, x, y) -> tuple[np.ndarray, np.ndarray]:
+        """(ground height, surface flag) at each point; NaN/False outside or unknown.
+
+        The height is interpolated bilinearly between cell centres (known cells
+        only), so it follows a ramp inside a cell; the point's own cell must be
+        known.
+        """
+        x = np.asarray(x, dtype=np.float64)
+        y = np.asarray(y, dtype=np.float64)
+        nx, ny = self.ground.shape
+        ix = np.floor((x - self.x0) / self.cell).astype(np.int64)
+        iy = np.floor((y - self.y0) / self.cell).astype(np.int64)
+        inside = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny)
+        g = np.full(x.shape, np.nan)
+        surf = np.zeros(x.shape, dtype=bool)
+        if not np.any(inside):
+            return g, surf
+        own = np.full(x.shape, np.nan)
+        own[inside] = self.ground[ix[inside], iy[inside]]
+        surf[inside] = self.surface[ix[inside], iy[inside]]
+        fx = (x - self.x0) / self.cell - 0.5
+        fy = (y - self.y0) / self.cell - 0.5
+        x0i, y0i = np.floor(fx).astype(np.int64), np.floor(fy).astype(np.int64)
+        tx, ty = fx - x0i, fy - y0i
+        num = np.zeros(x.shape)
+        den = np.zeros(x.shape)
+        for dx, wx in ((0, 1.0 - tx), (1, tx)):
+            for dy, wy in ((0, 1.0 - ty), (1, ty)):
+                cx = np.clip(x0i + dx, 0, nx - 1)
+                cy = np.clip(y0i + dy, 0, ny - 1)
+                v = self.ground[cx, cy]
+                w = wx * wy * np.isfinite(v)
+                num += w * np.nan_to_num(v)
+                den += w
+        known = inside & np.isfinite(own)
+        g[known] = np.where(den[known] > 1e-9, num[known] / np.maximum(den[known], 1e-9), own[known])
+        return g, surf
+
+
+def fit_ground_grid(points_xyz: np.ndarray, cfg: PerceptionConfig) -> GroundGrid | None:
+    if points_xyz.size == 0:
+        return None
+    p = points_xyz[np.all(np.isfinite(points_xyz), axis=1)]
+    c = cfg.grid_cell_m
+    nx, ny = int(round(cfg.grid_max_x_m / c)), int(round(2 * cfg.grid_half_y_m / c))
+    x0, y0 = 0.0, -cfg.grid_half_y_m
+    ix = np.floor((p[:, 0] - x0) / c).astype(np.int64)
+    iy = np.floor((p[:, 1] - y0) / c).astype(np.int64)
+    keep = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & (p[:, 2] <= cfg.grid_max_z_m) & (p[:, 2] >= -cfg.grid_max_z_m)
+    if not np.any(keep):
+        return None
+    flat = ix[keep] * ny + iy[keep]
+    z = p[keep, 2]
+    order = np.argsort(flat, kind="stable")
+    flat, z = flat[order], z[order]
+    cells, starts, counts = np.unique(flat, return_index=True, return_counts=True)
+    raw = np.full(nx * ny, np.nan)
+    spread = np.full(nx * ny, np.inf)
+    for cell_id, start, count in zip(cells, starts, counts):
+        if count < cfg.grid_min_points:
+            continue
+        lo, mid, hi = np.percentile(z[start:start + count], [cfg.grid_percentile, 50.0,
+                                                              100.0 - cfg.grid_percentile])
+        # A surface (ramp/floor) cell: its median is the height at the cell centre.
+        # Anything else (a wall face, clutter): the low percentile is the ground.
+        raw[cell_id] = mid if hi - lo <= cfg.surface_max_spread_m else lo
+        spread[cell_id] = hi - lo
+    raw, spread = raw.reshape(nx, ny), spread.reshape(nx, ny)
+    # Highest ground a ramp could reach: from the car (ground 0 at base_footprint)
+    # and from each measured neighbour, rising at most tan(max slope) per metre.
+    rise = math.tan(cfg.ground_max_slope_rad)
+    xc = x0 + (np.arange(nx) + 0.5) * c
+    yc = y0 + (np.arange(ny) + 0.5) * c
+    bound = np.hypot(*np.meshgrid(xc, yc, indexing="ij")) * rise
+    measured = np.isfinite(raw)
+    ground = np.where(measured, np.minimum(raw, bound), np.nan)   # unmeasured: fall back to the plane
+    for _ in range(nx + ny):
+        known = np.where(np.isfinite(ground), ground, np.inf)
+        best = bound.copy()
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx == 0 and dy == 0:
+                    continue
+                shifted = np.full_like(known, np.inf)
+                xs = slice(max(dx, 0), nx + min(dx, 0))
+                xd = slice(max(-dx, 0), nx + min(-dx, 0))
+                ys = slice(max(dy, 0), ny + min(dy, 0))
+                yd = slice(max(-dy, 0), ny + min(-dy, 0))
+                shifted[xd, yd] = known[xs, ys]
+                best = np.minimum(best, shifted + math.hypot(dx, dy) * c * rise)
+        updated = np.where(measured, np.minimum(raw, best), np.nan)
+        if np.allclose(np.nan_to_num(updated, nan=-9), np.nan_to_num(ground, nan=-9)):
+            break
+        ground = updated
+    surface = np.isfinite(raw) & (spread <= cfg.surface_max_spread_m)
+    return GroundGrid(x0, y0, c, ground, surface)
+
+
+def lidar_ground_mask_grid(points_xy: np.ndarray, grid: GroundGrid | None, lidar_height_m: float = 0.135,
+                           tolerance_m: float = 0.03) -> np.ndarray:
+    """True for LiDAR returns that land on measured ramp surface at the scan height.
+
+    Stricter than the plane version: the cell must be a surface (small height
+    spread), so the face of a hay bale (spread ~0.4 m) is never masked.
+    """
+    if grid is None or points_xy.size == 0:
+        return np.zeros(points_xy.shape[0], dtype=bool)
+    g, surface = grid.lookup(points_xy[:, 0], points_xy[:, 1])
+    return surface & np.isfinite(g) & (g >= lidar_height_m - tolerance_m)
+
+
 def lidar_ground_mask(points_xy: np.ndarray, plane, lidar_height_m: float = 0.135,
                       tolerance_m: float = 0.05) -> np.ndarray:
     """True for LiDAR returns explained by rising ground (a slope), not a wall."""
@@ -105,19 +251,33 @@ def lidar_ground_mask(points_xy: np.ndarray, plane, lidar_height_m: float = 0.13
     return ground_height(plane, points_xy[:, 0], points_xy[:, 1]) >= lidar_height_m - tolerance_m
 
 
-def filter_cloud(points_xyz: np.ndarray, cfg: PerceptionConfig, plane=None) -> np.ndarray:
-    """Obstacle-height cloud points as a voxel-thinned (N, 2) array of x, y."""
+def filter_cloud(points_xyz: np.ndarray, cfg: PerceptionConfig, plane=None,
+                 grid: GroundGrid | None = None) -> np.ndarray:
+    """Obstacle-height cloud points as a voxel-thinned (N, 2) array of x, y.
+
+    Heights are measured from the local ground grid where it has data, else
+    from the plane (else z = 0).
+    """
     if points_xyz.size == 0:
         return np.empty((0, 2))
     p = points_xyz[np.all(np.isfinite(points_xyz), axis=1)]
-    height = p[:, 2] - ground_height(plane, p[:, 0], p[:, 1])
+    base = ground_height(plane, p[:, 0], p[:, 1])
+    if grid is not None:
+        local, _ = grid.lookup(p[:, 0], p[:, 1])
+        base = np.where(np.isfinite(local), local, base)
+    height = p[:, 2] - base
     keep = (height >= cfg.min_height_m) & (height <= cfg.max_height_m) \
         & (p[:, 0] >= cfg.near_field_min_x_m) \
         & (np.hypot(p[:, 0], p[:, 1]) <= cfg.max_range_m)
     xy = p[keep, :2]
     if xy.shape[0] == 0:
         return np.empty((0, 2))
-    cells = np.unique(np.floor(xy / cfg.cloud_voxel_m).astype(np.int64), axis=0)
+    cells, counts = np.unique(np.floor(xy / cfg.cloud_voxel_m).astype(np.int64), axis=0, return_counts=True)
+    if cfg.min_cell_points > 1 and cells.shape[0]:
+        occupied = {(int(a), int(b)) for a, b in cells}
+        neighbour = np.array([any((a + da, b + db) in occupied for da in (-1, 0, 1) for db in (-1, 0, 1)
+                                  if da or db) for a, b in cells], dtype=bool)
+        cells = cells[(counts >= cfg.min_cell_points) | neighbour]
     return (cells + 0.5) * cfg.cloud_voxel_m
 
 
@@ -172,3 +332,34 @@ def person_speed_rule(detections: list[Detection], cfg: PerceptionConfig,
     if nearest <= cfg.person_slow_distance_m:
         return cfg.person_slow_factor, False, nearest
     return 1.0, False, nearest
+
+
+def ego_compensate(points_xy: np.ndarray, commands, t_from: float, t_to: float,
+                   wheelbase_m: float = 0.324) -> np.ndarray:
+    """Move points seen at ``t_from`` into the vehicle frame at ``t_to``.
+
+    ``commands`` is a time-ordered sequence of (t, speed_mps, steering_rad), each
+    held until the next.  Camera obstacles arrive 0.2-0.6 s after capture; at
+    1 m/s that put them up to 0.6 m farther ahead than they really were.
+    """
+    if points_xy.size == 0 or t_to <= t_from:
+        return points_xy
+    x = y = th = 0.0
+    cmds = list(commands)
+    for i, (t0, v, steer) in enumerate(cmds):
+        t1 = cmds[i + 1][0] if i + 1 < len(cmds) else t_to
+        a, b = max(t0, t_from), min(t1, t_to)
+        if b <= a or v == 0.0:
+            continue
+        dt = b - a
+        w = v * math.tan(steer) / wheelbase_m
+        if abs(w) < 1e-6:
+            x += v * dt * math.cos(th)
+            y += v * dt * math.sin(th)
+        else:
+            x += v / w * (math.sin(th + w * dt) - math.sin(th))
+            y += v / w * (math.cos(th) - math.cos(th + w * dt))
+            th += w * dt
+    c, s_ = math.cos(th), math.sin(th)
+    rel = points_xy - np.array([x, y])
+    return np.column_stack([c * rel[:, 0] + s_ * rel[:, 1], -s_ * rel[:, 0] + c * rel[:, 1]])

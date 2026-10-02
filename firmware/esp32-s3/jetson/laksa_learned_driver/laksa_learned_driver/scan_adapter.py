@@ -48,3 +48,23 @@ def scan_to_vehicle_beams(ranges, angle_min: float, angle_increment: float,
         & (y >= mount.self_min_y_m) & (y <= mount.self_max_y_m)
     r[own_body] = np.nan
     return r, angles
+
+
+def drop_isolated_returns(ranges: np.ndarray, window: int = 2, max_jump_m: float = 0.10) -> np.ndarray:
+    """Set returns with no neighbour within ``window`` beams and ``max_jump_m`` to NaN.
+
+    The A2M12 gives ~1600 beams per turn (0.225 deg), so any real object (a hay
+    bale, a cone, a 3 cm pole within ~1.7 m) covers several adjacent beams, while
+    the spurious short returns seen outdoors are single beams: on 2026-10-02 the
+    path read 4 m free, then 0.0-0.2 m for one scan, then 4 m again, and the car
+    backed up at the start line.  NaN means "ignored", the same as a self return.
+    """
+    r = np.asarray(ranges, dtype=np.float64)
+    out = r.copy()
+    finite = np.isfinite(r)
+    has_neighbour = np.zeros(r.size, dtype=bool)
+    for k in range(1, window + 1):
+        for shifted, valid in ((np.roll(r, k), np.roll(finite, k)), (np.roll(r, -k), np.roll(finite, -k))):
+            has_neighbour |= valid & (np.abs(shifted - np.where(finite, r, 0.0)) <= max_jump_m)
+    out[finite & ~has_neighbour] = np.nan
+    return out

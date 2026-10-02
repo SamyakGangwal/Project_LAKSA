@@ -10,7 +10,9 @@ State machine used by the learned driver:
                                                      so the nose keeps swinging)
   TURN      --(time up)-->                FORWARD
   TURN      --(its own arc blocked)-->    PAUSE_IN  (next point of the turn)
+  PAUSE_IN  --(path free again)-->        FORWARD   (no reverse for a passing/phantom return)
   any       --(too many recoveries, or front and rear both blocked)--> GIVE_UP
+  GIVE_UP   --(path free again)-->        FORWARD;  --(retry_s)--> a fresh recovery
 
 Back up + forward turn changes the heading by roughly 60 degrees, so a dead end
 becomes a three-point turn (about three cycles for a U-turn).  Before TURN
@@ -18,8 +20,8 @@ existed (until 2026-10-01) the car only backed up and handed straight back to
 the learned policy, which drove into the same wall until it gave up.
 
 The rear corridor is checked with the LiDAR's rear-facing returns before and
-during every reverse.  GIVE_UP makes the driver report BLOCKED, which the
-supervisor treats as "abort autonomy and return to manual".
+during every reverse.  GIVE_UP reports BLOCKED; the driver holds the car stopped
+(status BLOCKED_WAIT, autonomy stays on) and drives on as soon as the path is free.
 """
 
 from __future__ import annotations
@@ -51,6 +53,14 @@ class RecoveryConfig:
     turn_right_rad: float = 0.288
     turn_block_m: float = 0.20           # the turn's own arc counts as blocked at this
     commit_s: float = 15.0               # keep turning the same way until driving this long
+    # A single LiDAR/camera frame can show a phantom return at the bumper (seen on the
+    # car 2026-10-02: 4 m free, 0.0 m for one scan, 4 m again), which started a full
+    # back-up at the start line.  The path must stay blocked this many steps in a
+    # row before a recovery starts; until then the car only holds (speed 0).
+    confirm_steps: int = 1
+    # GIVE_UP is not final: it ends as soon as the path ahead is free again, and
+    # after this long a fresh recovery is tried (0 = wait for a free path only).
+    retry_s: float = 3.0
 
 
 def rear_free_distance(points_xy: np.ndarray, gov: GovernorConfig, cfg: RecoveryConfig,
@@ -101,10 +111,19 @@ class ReverseRecovery:
         self._side = 0.0                     # obstacle side the current turn is built on
         self._last_active = -1e9             # last time any recovery state ran
         self._history: deque[float] = deque()
+        self._blocked_steps = 0
+        self._continuing = False             # next PAUSE_IN continues a multi-point turn
+        self._cancellable = False            # PAUSE_IN may be dropped if the path clears
 
     def reset(self) -> None:
         self.state = "FORWARD"
         self._history.clear()
+        self._blocked_steps = 0
+        self._continuing = False
+
+    def _give_up(self, now: float) -> tuple[float, float, str]:
+        self.state, self._since = "GIVE_UP", now
+        return 0.0, 0.0, "BLOCKED"
 
     def step(self, now: float, forward_blocked: bool, rear_free_m: float, side: float,
              forward_cmd: tuple[float, float],
@@ -124,15 +143,26 @@ class ReverseRecovery:
             self._history.popleft()
 
         if self.state == "GIVE_UP":
-            return 0.0, 0.0, "BLOCKED"
+            if not forward_blocked:
+                self.reset()                    # the way ahead opened up: drive on
+                return forward_cmd[0], forward_cmd[1], "LEARNED_DRIVING"
+            if cfg.retry_s <= 0.0 or now - self._since < cfg.retry_s:
+                return 0.0, 0.0, "BLOCKED"
+            self.reset()                        # try a fresh recovery
+            self._blocked_steps = cfg.confirm_steps - 1
 
         if self.state == "FORWARD":
             if not forward_blocked:
+                self._blocked_steps = 0
                 return forward_cmd[0], forward_cmd[1], "LEARNED_DRIVING"
+            self._blocked_steps += 1
+            if self._blocked_steps < cfg.confirm_steps:
+                return 0.0, forward_cmd[1], "HOLD"
+            self._blocked_steps = 0
+            self._cancellable, self._continuing = not self._continuing, False
             self._history.append(now)
             if len(self._history) > cfg.max_recoveries:
-                self.state = "GIVE_UP"
-                return 0.0, 0.0, "BLOCKED"
+                return self._give_up(now)
             # Within one manoeuvre keep the first direction: re-deciding each cycle
             # can turn back the other way and undo the heading already gained.
             if self._side != 0.0 and now - self._last_active < cfg.commit_s:
@@ -158,11 +188,17 @@ class ReverseRecovery:
         if rear_free_on is not None:
             rear_free_m = rear_free_on(self._reverse_steer)
         if self.state == "PAUSE_IN":
+            if not forward_blocked and self._cancellable:
+                # Cleared before backing up (a passing object or a phantom return):
+                # no reverse, and it does not count against the recovery budget.
+                if self._history:
+                    self._history.pop()
+                self.state = "FORWARD"
+                return forward_cmd[0], forward_cmd[1], "LEARNED_DRIVING"
             if now - self._since < cfg.pause_s:
                 return 0.0, self._reverse_steer, "RECOVERY_PAUSE"
             if rear_free_m < cfg.rear_clearance_m:
-                self.state = "GIVE_UP"          # boxed in front and rear
-                return 0.0, 0.0, "BLOCKED"
+                return self._give_up(now)       # boxed in front and rear (for now)
             self.state, self._since = "REVERSE", now
             return -cfg.reverse_speed_mps, self._reverse_steer, "RECOVERY_REVERSE"
 
@@ -180,16 +216,22 @@ class ReverseRecovery:
             else:
                 self.state = "FORWARD"
                 if forward_blocked:
+                    self._blocked_steps = cfg.confirm_steps - 1   # already confirmed: next point now
+                    self._continuing = True
                     return self.step(now, forward_blocked, rear_free_m, side, forward_cmd, free_on, rear_free_on)
                 return forward_cmd[0], forward_cmd[1], "LEARNED_DRIVING"
 
         # TURN: forward at full lock until time is up or its own arc is blocked.
         if free_on(self._turn_steer) <= cfg.turn_block_m:
             self.state = "FORWARD"
+            self._blocked_steps = cfg.confirm_steps - 1   # already confirmed: next point now
+            self._continuing = True
             return self.step(now, True, rear_free_m, side, forward_cmd, free_on, rear_free_on)
         if now - self._since >= cfg.turn_time_s:
             self.state = "FORWARD"
             if forward_blocked:
+                self._blocked_steps = cfg.confirm_steps - 1   # already confirmed: next point now
+                self._continuing = True
                 return self.step(now, forward_blocked, rear_free_m, side, forward_cmd, free_on, rear_free_on)
             return forward_cmd[0], forward_cmd[1], "LEARNED_DRIVING"
         return cfg.turn_speed_mps, self._turn_steer, "RECOVERY_TURN"

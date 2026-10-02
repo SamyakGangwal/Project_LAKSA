@@ -7,7 +7,9 @@ Publishes (all in base_footprint):
   /laksa/perception/ground      std_msgs/String JSON {plane: [a, b, c] | null}
                                 ground z = a*x + b*y + c (slope-aware heights)
 Stale inputs are simply left out; the learned driver treats the camera layer
-as an addition to the LiDAR, never as a replacement.
+as an addition to the LiDAR, never as a replacement.  The obstacle cloud keeps
+the depth cloud's capture stamp, so the driver can measure its age and shift it
+by the car's motion since capture; the diagnostics report that lag.
 """
 
 from __future__ import annotations
@@ -29,8 +31,8 @@ from std_msgs.msg import Header, String
 from tf2_ros import Buffer, TransformException
 from zed_msgs.msg import ObjectsStamped
 
-from .perception import (Detection, PerceptionConfig, detection_obstacles, filter_cloud, fit_ground_plane,
-                         person_speed_rule)
+from .perception import (Detection, PerceptionConfig, detection_obstacles, filter_cloud, fit_ground_grid,
+                         fit_ground_plane, person_speed_rule)
 
 
 def _matrix(transform) -> tuple[np.ndarray, np.ndarray]:
@@ -103,6 +105,7 @@ class ZedPerception(Node):
         self._ground_pub = self.create_publisher(String, "/laksa/perception/ground", 10)
         self._rng = np.random.default_rng(0)
         self._plane = None
+        self._grid = None
         self._plane_time = 0.0
         self._diag_pub = self.create_publisher(DiagnosticArray, "/diagnostics", 10)
         self.create_subscription(ObjectsStamped, str(self.get_parameter("objects_topic").value),
@@ -115,6 +118,10 @@ class ZedPerception(Node):
         self._detections_time = 0.0
         self._cloud_xy = np.empty((0, 2))
         self._cloud_time = 0.0
+        self._cloud_stamp = None             # capture stamp of the depth cloud
+        self._latency: list[float] = []      # capture -> received, seconds (since last report)
+        self._last_latency = math.nan
+        self.create_timer(10.0, self._report_latency)
         self._last_error = ""
         self._counts = {"objects_msgs": 0, "cloud_msgs": 0}
 
@@ -151,6 +158,10 @@ class ZedPerception(Node):
 
     def _cloud_cb(self, message: PointCloud2) -> None:
         self._counts["cloud_msgs"] += 1
+        stamp_ns = Time.from_msg(message.header.stamp).nanoseconds
+        if stamp_ns > 0:
+            self._last_latency = (self.get_clock().now().nanoseconds - stamp_ns) * 1e-9
+            self._latency.append(self._last_latency)
         tf = self._to_base(message.header.frame_id)
         if tf is None:
             return
@@ -164,14 +175,18 @@ class ZedPerception(Node):
         if plane is not None:
             self._plane, self._plane_time = plane, now
         use_plane = self._plane if now - self._plane_time <= self._stale else None
-        self._cloud_xy, self._cloud_time = filter_cloud(xyz, self._cfg, use_plane), now
+        self._grid = fit_ground_grid(sample, self._cfg)   # ~20 points per cell is plenty
+        self._cloud_xy, self._cloud_time = filter_cloud(xyz, self._cfg, use_plane, self._grid), now
+        self._cloud_stamp = message.header.stamp if stamp_ns > 0 else None
 
     def _publish(self) -> None:
         now = time.monotonic()
         detections = self._detections if now - self._detections_time <= self._stale else []
         cloud = self._cloud_xy if now - self._cloud_time <= self._stale else np.empty((0, 2))
         obstacles = np.vstack([cloud, detection_obstacles(detections, self._cfg)])
-        header = Header(stamp=self.get_clock().now().to_msg(), frame_id=self._base)
+        fresh_cloud = now - self._cloud_time <= self._stale and self._cloud_stamp is not None
+        header = Header(stamp=self._cloud_stamp if fresh_cloud else self.get_clock().now().to_msg(),
+                        frame_id=self._base)
         xyz = np.column_stack([obstacles, np.zeros(obstacles.shape[0])]) if obstacles.size else np.empty((0, 3))
         self._obstacle_pub.publish(point_cloud2.create_cloud_xyz32(header, xyz.astype(np.float32).tolist()))
         factor, stop, nearest = person_speed_rule(detections, self._cfg)
@@ -185,12 +200,22 @@ class ZedPerception(Node):
             "plane": [round(v, 5) for v in self._plane] if plane_fresh and self._plane else None,
             "slope_deg": round(math.degrees(math.atan(math.hypot(self._plane[0], self._plane[1]))), 2)
             if plane_fresh and self._plane else None,
+            "grid": self._grid.to_dict() if self._grid is not None and now - self._cloud_time <= self._stale else None,
         })))
         self._detections_pub.publish(String(data=json.dumps([
             {"label": d.label, "confidence": round(d.confidence, 1),
              "x": round(float(d.position_xyz[0]), 3), "y": round(float(d.position_xyz[1]), 3)}
             for d in detections
         ])))
+
+    def _report_latency(self) -> None:
+        if not self._latency:
+            return
+        lat = np.asarray(self._latency)
+        self._latency = []
+        self.get_logger().info(
+            f"Depth cloud lag (capture -> here): median {np.median(lat):.3f} s, max {lat.max():.3f} s, "
+            f"{lat.size / 10.0:.1f} clouds/s")
 
     def _diagnostics(self) -> None:
         now = time.monotonic()
@@ -205,6 +230,7 @@ class ZedPerception(Node):
             KeyValue(key="detections_age_sec", value=f"{det_age:.2f}"),
             KeyValue(key="cloud_obstacle_points", value=str(self._cloud_xy.shape[0])),
             KeyValue(key="cloud_age_sec", value=f"{cloud_age:.2f}"),
+            KeyValue(key="cloud_capture_latency_sec", value=f"{self._last_latency:.3f}"),
             KeyValue(key="objects_msgs", value=str(self._counts["objects_msgs"])),
             KeyValue(key="cloud_msgs", value=str(self._counts["cloud_msgs"])),
         ]
