@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
 import rclpy
 from geometry_msgs.msg import TransformStamped
 from laksa_interfaces.msg import DriveCommand, VehicleState
@@ -48,12 +49,14 @@ class Adapter(Node):
         p = self.declare_parameter
         p("vehicle", "roboracer_1")
         p("sim_max_steering_rad", 0.5236)    # road-wheel angle for steering_command = 1
-        p("sim_steering_sign", 1.0)          # flip if the sim steers the wrong way
-        p("kp", 0.6)                         # speed PI -> throttle [-1, 1]
-        p("ki", 0.8)
-        p("kff", 0.12)                       # throttle per m/s feed-forward
-        p("max_throttle", 0.6)
-        p("brake_gain", 1.0)                 # throttle against motion while braking
+        p("sim_steering_sign", 1.0)          # measured: +steering turns left, like LAKSA
+        # The sim's throttle is already a speed setpoint (measured open-loop: speed =
+        # 24.9 m/s x throttle, linear, no dead band), so mostly feed-forward.
+        p("kp", 0.01)
+        p("ki", 0.0)
+        p("kff", 1.0 / 24.9)                 # throttle per m/s
+        p("max_throttle", 0.2)               # ~5 m/s
+        p("brake_gain", 0.0)                 # throttle 0 = the sim holds zero speed
         p("command_timeout_sec", 0.5)        # ESP32 watchdog
         p("reject_above_mps", 0.0)           # >0: copy the car firmware's speed limit
         p("scan_rate_hz", 12.0)              # the real RPLIDAR rate; the sim sends 40 Hz
@@ -118,10 +121,9 @@ class Adapter(Node):
         x = math.cos(-oyaw) * dx - math.sin(-oyaw) * dy
         y = math.sin(-oyaw) * dx + math.cos(-oyaw) * dy
         th = yaw - oyaw
-        # Forward speed: project the sim's velocity on the heading (frame-agnostic).
-        vx, vy = msg.twist.twist.linear.x, msg.twist.twist.linear.y
-        forward = vx * math.cos(yaw) + vy * math.sin(yaw)
-        self._speed = forward if abs(forward) <= math.hypot(vx, vy) + 1e-6 else vx
+        # The sim's twist is in the vehicle frame (measured: projecting it on the
+        # world heading went negative mid-turn), so x is the forward speed.
+        self._speed = float(msg.twist.twist.linear.x)
         stamp = self.get_clock().now().to_msg()
         out = Odometry()
         out.header.stamp, out.header.frame_id, out.child_frame_id = stamp, "odom", "base_footprint"
@@ -146,13 +148,17 @@ class Adapter(Node):
         self._static_tf.sendTransform(t)
 
     def _publish_zed(self) -> None:
+        # The supervisor ignores clouds under 1 kB (an empty cloud means a broken
+        # camera), so send 200 points 1 m below the floor: fresh, never an obstacle.
+        n = 200
         cloud = PointCloud2()
         cloud.header.stamp = self.get_clock().now().to_msg()
         cloud.header.frame_id = "base_footprint"
-        cloud.height, cloud.width = 1, 0
-        cloud.fields = [PointField(name=n, offset=4 * i, datatype=PointField.FLOAT32, count=1)
-                        for i, n in enumerate("xyz")]
-        cloud.point_step, cloud.row_step, cloud.is_dense = 12, 0, True
+        cloud.height, cloud.width = 1, n
+        cloud.fields = [PointField(name=c, offset=4 * i, datatype=PointField.FLOAT32, count=1)
+                        for i, c in enumerate("xyz")]
+        cloud.point_step, cloud.row_step, cloud.is_dense = 12, 12 * n, True
+        cloud.data = np.tile(np.array([2.0, 0.0, -1.0], np.float32), n).tobytes()
         self._zed_pub.publish(cloud)
 
     # ---------------------------------------------------------- fake ESP32

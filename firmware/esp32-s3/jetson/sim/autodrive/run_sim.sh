@@ -3,6 +3,8 @@
 #
 #   run_sim.sh setup     once: pip deps for the AutoDRIVE devkit, build the sim workspace
 #   run_sim.sh start     devkit bridge + adapter (fake ESP32) + supervisor + learned driver + console
+#   run_sim.sh course    the same stack on the 2026 competition course replica (2-D, no AutoDRIVE app);
+#                        LAKSA_SIM_COURSE=obstacle|obstacle_plain, LAKSA_SIM_SEED=<n> for other buckets
 #   run_sim.sh stop | status
 #
 # Then start the AutoDRIVE simulator on Windows, connect it to 127.0.0.1:4567, and open
@@ -37,6 +39,8 @@ start_one() {
     echo "started ${name}"
 }
 
+GYM_V1="${F1TENTH_GYM_V1:-/mnt/d/projects/Project_LAKSA/scratch/f1tenth_gym_v1}"
+
 case "${1:-status}" in
 setup)
     python3 -m pip install --user -q -r "${DEVKIT}/requirements_python_3.10.txt"
@@ -50,7 +54,8 @@ setup)
     cd "${WS}" && colcon build --symlink-install \
         --packages-select laksa_interfaces laksa_bringup laksa_learned_driver autodrive_roboracer
     ;;
-start)
+start|course)
+    BACKEND="$1"
     mkdir -p "${RUN}"
     SESSION="${HOME}/laksa_sim_logs/$(date +%Y%m%dT%H%M%S)"
     mkdir -p "${SESSION}"; ln -sfn "${SESSION}" "${RUN}/latest"
@@ -60,9 +65,17 @@ start)
     echo trial > "${HOME}/laksa_run/car_mode_active"; echo trial > "${HOME}/.config/laksa/car_mode"
     TOKEN_FILE="${HOME}/.config/laksa/sim_console_token"
     [[ -s "${TOKEN_FILE}" ]] || { mkdir -p "$(dirname "${TOKEN_FILE}")"; python3 -c "import secrets; print(secrets.token_urlsafe(9))" > "${TOKEN_FILE}"; }
-    start_one bridge ros2 launch autodrive_roboracer bringup_headless.launch.py
+    if [[ "${BACKEND}" == "course" ]]; then
+        # 2-D course replica (training simulator); the LAKSA LiDAR position, facing forward.
+        LIDAR_X=0.31542
+        start_one course_sim env PYTHONPATH="${GYM_V1}:${PYTHONPATH:-}" python3 "${JETSON}/sim/course/laksa_course_sim.py" \
+            --ros-args -p course:="${LAKSA_SIM_COURSE:-obstacle}" -p seed:="${LAKSA_SIM_SEED:-1}"
+    else
+        LIDAR_X=0.2733                    # the AutoDRIVE RoboRacer LiDAR
+        start_one bridge ros2 launch autodrive_roboracer bringup_headless.launch.py
+    fi
     start_one adapter python3 "${HERE}/laksa_autodrive_adapter.py" --ros-args \
-        -p reject_above_mps:="${FIRMWARE_LIMIT}"
+        -p reject_above_mps:="${FIRMWARE_LIMIT}" -p lidar_x_m:="${LIDAR_X}"
     start_one supervisor ros2 run laksa_bringup drive_supervisor_node.py --ros-args \
         --params-file "${JETSON}/laksa_bringup/config/drive_supervisor.yaml" \
         -p actuation_enabled:=true -p autonomy_enabled:=true -p exploration_max_erpm:="${CRUISE_ERPM}"
@@ -70,13 +83,13 @@ start)
     # no ZED in the sim, so the camera obstacle layer is off.
     start_one learned_driver ros2 run laksa_learned_driver learned_driver_node --ros-args \
         --params-file "${JETSON}/laksa_learned_driver/config/learned_driver.yaml" \
-        -p lidar_x_m:=0.2733 -p lidar_yaw_rad:=0.0 -p speed_cap_mps:="${SPEED_CAP}" -p use_camera:=false \
+        -p lidar_x_m:="${LIDAR_X}" -p lidar_yaw_rad:=0.0 -p speed_cap_mps:="${SPEED_CAP}" -p use_camera:=false \
         -p decision_log:="${SESSION}/decisions.csv"
     start_one console ros2 run laksa_learned_driver laksa_console --ros-args \
         -p host:=127.0.0.1 -p port:=8096 -p token_file:="${TOKEN_FILE}"
     echo "speed cap ${SPEED_CAP} m/s (${CRUISE_ERPM} eRPM); firmware limit ${FIRMWARE_LIMIT}; logs ${SESSION}"
     echo "console: http://localhost:8096/?token=$(cat "${TOKEN_FILE}")"
-    echo "now start the AutoDRIVE simulator on Windows and connect it to 127.0.0.1:4567"
+    [[ "${BACKEND}" == "start" ]] && echo "now start the AutoDRIVE simulator on Windows and connect it to localhost:4567"
     ;;
 stop)
     for pid_file in "${RUN}"/*.pid; do
@@ -93,5 +106,5 @@ status)
         echo "$(basename "${pid_file}" .pid): ${s}"
     done
     ;;
-*) echo "usage: $0 setup|start|stop|status" >&2; exit 64 ;;
+*) echo "usage: $0 setup|start|course|stop|status" >&2; exit 64 ;;
 esac
