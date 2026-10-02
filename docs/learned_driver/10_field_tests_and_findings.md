@@ -113,3 +113,39 @@ Evening, outdoors, getting dark, operated from a phone over the car's hotspot.
 | "Why did it stop?" | per-scan `decisions.csv` | working |
 | Lost logs and maps | a session folder per start; bag recording | working |
 | Network-switch bug | the network watcher restarts the whole stack on a change | **untested** in the field |
+
+## Explore run (1 Oct)
+
+Trial & explore at 0.6 m/s, about 10 minutes of driving (567 s of `decisions.csv`), early on 1 Oct. The run ended by pulling the battery.
+
+**What was reported:**
+- the car slowed and stopped far from obstacles instead of driving up to them;
+- after HOLD / EXPLORE it took a long time to start moving;
+- near a wall it stopped and didn't back up;
+- PLAN ROUTE said the Nav2 planner was down.
+
+**What the logs showed:**
+
+| Finding | Evidence | Cause |
+|---|---|---|
+| Commands the motor can't run | 985 of 2,107 commands were between 0 and 0.25 m/s, all while `AVOIDING` | the governor slowed smoothly toward its stop point, but the drive stalls below about 0.2 m/s, so the car stopped well before it |
+| Parked at a wall for 3 minutes | 329–505 s: best arc 0.257 m free, command 0.025 m/s | 0.257 m was just above the 0.25 m stop margin, so the path never counted as blocked and the recovery never started |
+| Reverse didn't move the car | `RECOVERY_REVERSE` at −0.12 m/s | about 500 eRPM, far below the stall speed |
+| Camera sees the wall closer than the LiDAR | camera 0.26 m vs LiDAR 0.62 m free at the wall | low or angled parts of the wall below the LiDAR plane, or camera depth error; not resolved |
+| Slow start | the console held A for 3.5 s, the supervisor needed 3 s | deliberate engage delay, longer than needed |
+| "Planner down" | no Nav2 crash in any log (every `IS DOWN` was at shutdown); planning works on the car | the console failed at once when the planner wasn't answering yet, for example in the ~15 s after a (re)start |
+| Logs from the run overwritten | the next boot used the same session folder | no RTC battery: every boot starts at the same clock time |
+
+The run's rosbag was cut by the power loss and couldn't be recovered; the findings come from `decisions.csv`, which survived.
+
+**Fixes (1 Oct, not yet driven):** see [Runtime safety](05_runtime_safety.md#clearance-governor) and [Console](07_console_and_operation.md#controls).
+
+| Issue | Fix |
+|---|---|
+| Crawling and early stops | forward speed is ≥ 0.30 m/s or zero; the car stops only when the path has 0.30 m (1 ft) or less |
+| No recovery at the wall | blocked at 0.30 m, for the governor and for avoidance alike, so the recovery starts |
+| Reverse | 0.30 m/s for 1.2 s |
+| Detect far, keep moving | explore steers around obstacles from 1.0 m (was 0.6 m) |
+| Slow start | console 1.5 s, supervisor 1 s |
+| Planner not ready | PLAN ROUTE waits up to 30 s for Nav2 |
+| Lost logs | session folders carry the boot id, under `~/laksa_logs` |

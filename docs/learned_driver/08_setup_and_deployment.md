@@ -15,8 +15,9 @@ Scripts are in `firmware/esp32-s3/jetson/setup/`.
 | Step | Script | What it does |
 |---|---|---|
 | 1 | `sudo bash 01_system_setup.sh` | Adds the ROS 2 Humble apt source and installs the stack's packages (Nav2, RTAB-Map, robot_localization, SLAM Toolbox, laser_filters, joy, CycloneDDS…). Runs `rosdep init` and writes `/etc/laksa/`. **Doesn't** upgrade packages, install udev rules or services, change groups or open serial devices. |
-| 2 | `bash 02_build_workspaces.sh` | Builds as the normal user, with no sudo. `~/third_party/third_party_ws` gets `sllidar_ros2` and `rf2o_laser_odometry` pinned to the car's commit plus `patches/rf2o-laser-odometry-laksa.patch`. `~/laksa_ws` gets `laksa_interfaces` and all Jetson packages, **symlinked** to the repo checkout at `~/src/Project_LAKSA`. |
+| 2 | `bash 02_build_workspaces.sh` | Builds as the normal user, with no sudo. `~/third_party/third_party_ws` gets `sllidar_ros2` and `rf2o_laser_odometry` pinned to the car's commit plus `patches/rf2o-laser-odometry-laksa.patch`. `~/laksa_ws` gets `laksa_interfaces` and all Jetson packages, **symlinked** to the repo checkout at `~/src/Project_LAKSA`. Packages only need the third-party workspace from this step. |
 | 3 | ZED wrapper | `zed-ros2-wrapper` built in `~/zed_ws` against the ZED SDK 5.5 already on the machine. The user must be in the `zed` group. |
+| 4 | `laksa_release.py push --now` (from the PC) | Installs the deployer and the first car package; see [Deploying code changes](#deploying-code-changes). Needs passwordless sudo for `samyak` to install the systemd units. |
 
 Differences from the original car:
 - The apt RTAB-Map is **0.23.7**; the car ran 0.22.1.
@@ -44,12 +45,15 @@ The launcher also starts Nav2: `controller_server`, `planner_server`, `behavior_
 
 ## Boot services
 
-Unit files are in `firmware/esp32-s3/jetson/systemd/`, installed to `/etc/systemd/system/`:
+Unit files are in `firmware/esp32-s3/jetson/systemd/`, installed to `/etc/systemd/system/` by the deployer (see [Deploying code changes](#deploying-code-changes)):
 
 | Service | What it does |
 |---|---|
-| `laksa-car.service` | Runs as `samyak` after the network is up. Waits 25 s for USB devices and the micro-ROS agent to settle, then runs `dryrun_bringup.sh trial`. `stop` runs `dryrun_bringup.sh stop`. |
-| `laksa-network-watch.service` | Runs as root. Starts and stops the hotspot and restarts `laksa-car` when the console's network changes (see [Console and operation](07_console_and_operation.md#networking-at-the-field)). |
+| `laksa-deploy.service` | Runs once at every boot as `samyak`, **before** `laksa-car`. Moves old logs into `~/laksa_logs`, prunes the oldest sessions, and installs the newest package waiting in `~/laksa/incoming` (build and tests first). Runs `~/laksa/bin/laksa_deploy.sh boot`. |
+| `laksa-car.service` | Runs as `samyak` after the network is up and after `laksa-deploy`. Waits 25 s for USB devices and the micro-ROS agent to settle, then runs `~/laksa/current/src/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh auto`. `stop` runs `dryrun_bringup.sh stop`. |
+| `laksa-network-watch.service` | Runs as root, from `~/laksa/current`. Starts and stops the hotspot and restarts `laksa-car` when the console's network changes (see [Console and operation](07_console_and_operation.md#networking-at-the-field)). |
+
+Until the first package is installed, `laksa-car` and `laksa-network-watch` still run from `~/src/Project_LAKSA`; the deployer switches them over once the first package has built.
 
 Restart the stack:
 
@@ -59,7 +63,14 @@ sudo systemctl restart laksa-car
 
 ## Sessions and recording
 
-Every `start` or `trial` creates `~/laksa_sessions/<YYYYMMDDTHHMMSS>/`. Nothing in it is ever overwritten:
+Everything a run writes goes to **`~/laksa_logs`** on the Jetson:
+
+| Folder | Content |
+|---|---|
+| `~/laksa_logs/sessions/<YYYYMMDDTHHMMSS>_boot<id>/` | one folder per `start`, `trial` or `race` run |
+| `~/laksa_logs/deploy/` | the deployer's log for every boot: which package was installed, build output, failures |
+
+Each session folder holds:
 
 | File | Content |
 |---|---|
@@ -71,35 +82,83 @@ Every `start` or `trial` creates `~/laksa_sessions/<YYYYMMDDTHHMMSS>/`. Nothing 
 
 `~/laksa_run/latest` points at the newest session. The ZED obstacle point cloud isn't recorded; `decisions.csv` already has the distances.
 
+- **Boot id in the name.** The Jetson has no RTC battery, so every boot starts at the same saved clock time (03:15 on 1 Oct) until NTP syncs, and at the field it never syncs. With the time alone, a new boot reused the last run's folder and overwrote its logs. Times inside the logs can be wrong for the same reason.
+- **Pruning.** At boot the deployer deletes the oldest sessions while `sessions/` is over **100 GB** or the disk has under **50 GB** free (`LAKSA_SESSIONS_MAX_GB`, `LAKSA_DISK_MIN_FREE_GB`). The newest session is never deleted. The last 50 deploy logs are kept.
+- **Old location.** Sessions before 1 Oct were in `~/laksa_sessions`. The first boot with the deployer moves them into `~/laksa_logs/sessions` and leaves `~/laksa_sessions` as a symlink, so old paths still work.
+- **Power loss.** A run cut by pulling the battery leaves `decisions.csv` readable (it is flushed every row), but the rosbag has no index and is usually unreadable.
+
 ## Deploying code changes
 
-The Jetson's `~/laksa_ws` symlinks into `~/src/Project_LAKSA`, a git checkout. To deploy from a Windows PC, copy the changed files over SSH, reset any file modes the copy changed, rebuild, test and restart:
+The car runs a **package**: one `.tar.gz` made from a commit, unpacked into its own folder at boot and built there. Deploys no longer copy files into `~/src/Project_LAKSA`, which is KarSha's working checkout.
 
-```bash
-tar -cf - <changed files> | ssh samyak@<jetson> 'cd ~/src/Project_LAKSA/firmware/esp32-s3/jetson && tar -xf -'
+```mermaid
+flowchart LR
+    A[PC: laksa_release.py build] --> B[laksa-car-version.tar.gz + .sha256]
+    B --> C[laksa_release.py push: ~/laksa/incoming]
+    C --> D[boot: laksa-deploy.service]
+    D --> E{checksum, unpack,<br/>colcon build, unit tests}
+    E -- ok --> F[~/laksa/current = new release]
+    E -- fails --> G[incoming/failed, current release kept]
+    F --> H[laksa-car.service runs ~/laksa/current]
+    G --> H
 ```
 
-```bash
-ssh samyak@<jetson> 'cd ~/src/Project_LAKSA && git diff --summary | awk "/mode change/{print substr(\$3,4), \$NF}" | while read m p; do chmod $m "$p"; done'
-```
+On the Jetson:
+
+| Path | Content |
+|---|---|
+| `~/laksa/incoming/` | packages waiting to install; `installed/` and `failed/` keep the handled ones |
+| `~/laksa/releases/laksa-car-<utc>-<sha>/` | `src/` (the package's source), `ws/` (its own colcon workspace), `install.sh`, `MANIFEST.json` (commit, branch, build time) |
+| `~/laksa/current`, `~/laksa/previous` | symlinks to the running release and the one before it |
+| `~/laksa/bin/laksa_deploy.sh` | the deployer, updated from each release it installs |
+
+A package contains `firmware/esp32-s3/jetson` and `laksa_interfaces` from the **committed** HEAD; uncommitted changes are refused. Each release builds its own workspace against the shared, prebuilt `~/third_party/third_party_ws` and `~/zed_ws`. The launcher uses the release's `ws/` when there is one, else `~/laksa_ws`. The four newest releases plus `current` and `previous` are kept.
+
+From the PC, in the repo, build a package:
 
 ```bash
-ssh samyak@<jetson> 'cd ~/laksa_ws && source /opt/ros/humble/setup.bash && source ~/zed_ws/install/setup.bash && colcon build --symlink-install --packages-select <packages>'
+python firmware/esp32-s3/jetson/release/laksa_release.py build
 ```
+
+Copy the newest package to the car. The first time on a Jetson this also installs the deployer and `laksa-deploy.service`. The package installs at the **next boot**:
 
 ```bash
-ssh samyak@<jetson> 'sudo systemctl restart laksa-car'
+python firmware/esp32-s3/jetson/release/laksa_release.py push
 ```
 
-**Warning:** don't "undo mode changes" with `git checkout -- <file>`. That restores the file's **contents** too, and silently throws away the change you just deployed. This happened once with `zed_base_pose_adapter.py`; see [Performance](09_performance_optimization.md#deploy-regression-found-on-the-way). Use `chmod` as above.
-
-After deploying, run each changed package's tests on the Jetson:
+Or install it now (build and tests take a few minutes, then the car stack restarts):
 
 ```bash
-cd ~/src/Project_LAKSA/firmware/esp32-s3/jetson/<package> && python3 -m pytest -q test
+python firmware/esp32-s3/jetson/release/laksa_release.py push --now
 ```
 
-Last run: learned driver 38, LiDAR 14, bringup 35, mapping 38, all passing.
+On the Jetson, see what's installed:
+
+```bash
+~/laksa/bin/laksa_deploy.sh status
+```
+
+Go back to the previous release and restart the car stack:
+
+```bash
+~/laksa/bin/laksa_deploy.sh rollback
+```
+
+A package whose build or tests fail is never switched on: it moves to `~/laksa/incoming/failed`, the car keeps its current release, and the reason is in `~/laksa_logs/deploy/`.
+
+**Trial install without touching the car:** set `LAKSA_ROOT` and `LAKSA_LOG_ROOT` to scratch folders and `LAKSA_NO_SYSTEM=1`. The deployer then unpacks and builds there and leaves systemd, `~/laksa/bin` and `~/laksa_sessions` alone.
+
+**The old way (before 1 Oct)** copied changed files into `~/src/Project_LAKSA` with `tar` over SSH and rebuilt `~/laksa_ws`. That overwrote KarSha's working files once (29 Sep), and every copy needed file modes reset with `chmod`. Never "undo mode changes" with `git checkout -- <file>`: it also restores the old **contents** and silently drops the deploy. This happened with `zed_base_pose_adapter.py`; see [Performance](09_performance_optimization.md#deploy-regression-found-on-the-way).
+
+### Tests
+
+`release/install.sh` runs the learned driver's unit tests on the Jetson for every package. On the PC, the `test` folders clash with Python's own `test` package, so run the files directly:
+
+```bash
+cd firmware/esp32-s3/jetson/laksa_learned_driver && PYTHONPATH=. python test/test_learned_driver.py
+```
+
+Last run (1 Oct): learned driver 60, hold latch 8, training tracks 2, bringup contracts and control math 26, all passing.
 
 ## Bench tools
 

@@ -4,7 +4,7 @@ Publishes ``sensor_msgs/Joy`` exactly like the Xbox path, so drive_supervisor
 keeps every one of its gates.  Sticks are always neutral: this program cannot
 steer or throttle; it only says "an operator is present" and presses buttons.
 
-  laksa_operator run [--duration 60]   operator present; holds A for 3.5 s to
+  laksa_operator run [--duration 60]   operator present; holds A for 1.5 s to
                                        enter LiDAR Cruise (the learned driver).
                                        Ctrl-C, Enter, end of --duration, a closed
                                        terminal or a dropped SSH session stops
@@ -124,7 +124,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=("run", "stop", "rearm", "status"))
     parser.add_argument("--duration", type=float, default=60.0, help="run: seconds before automatic stop (max 300)")
-    parser.add_argument("--engage-sec", type=float, default=3.5, help="run: seconds to hold A at the start")
+    parser.add_argument("--engage-sec", type=float, default=1.5, help="run: seconds to hold A at the start (supervisor auto_hold_sec is 1.0)")
     args = parser.parse_args()
     if not 0.0 < args.duration <= 300.0:
         parser.error("--duration must be in (0, 300]")

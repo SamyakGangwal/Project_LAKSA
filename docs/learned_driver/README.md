@@ -23,7 +23,9 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 | train on a place the car explored | [Console: saving a map](07_console_and_operation.md#saving-a-map-for-training), then [Training: maps the car explored](04_training_pipeline.md#training-on-maps-the-car-explored) |
 | know what KarSha changed on the bench Jetson | [Known issues: work by KarSha](11_known_issues_and_next_steps.md#work-by-karsha-on-the-bench-jetson) |
 | set up a Jetson from scratch | [Setup: one-time setup](08_setup_and_deployment.md#one-time-setup) |
-| deploy a code change safely | [Setup: deploying code changes](08_setup_and_deployment.md#deploying-code-changes) |
+| deploy a code change safely (one package, installed at boot) | [Setup: deploying code changes](08_setup_and_deployment.md#deploying-code-changes) |
+| find a run's logs on the car | [Setup: sessions and recording](08_setup_and_deployment.md#sessions-and-recording) (`~/laksa_logs`) |
+| know why the car stopped far from a wall or didn't back up (1 Oct) | [Field tests: explore run](10_field_tests_and_findings.md#explore-run-1-oct) |
 | see what's broken or next | [Known issues and next steps](11_known_issues_and_next_steps.md) |
 | review every changed file | [Change log](12_change_log.md) |
 
@@ -122,6 +124,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [First autonomous run](10_field_tests_and_findings.md#first-autonomous-run)
 - [LiDAR rear visibility](10_field_tests_and_findings.md#lidar-rear-visibility)
 - [Outdoor field test](10_field_tests_and_findings.md#outdoor-field-test)
+- [Explore run (1 Oct)](10_field_tests_and_findings.md#explore-run-1-oct)
 
 ### 11. [Known issues and next steps](11_known_issues_and_next_steps.md)
 - [Unreliable start from standstill (and reverse on the floor)](11_known_issues_and_next_steps.md#unreliable-start-from-standstill-and-reverse-on-the-floor)
@@ -130,6 +133,7 @@ Start with the [Overview](01_overview.md). Otherwise, jump to what you need belo
 - [Work by KarSha on the bench Jetson](11_known_issues_and_next_steps.md#work-by-karsha-on-the-bench-jetson)
 - [Model limits](11_known_issues_and_next_steps.md#model-limits)
 - [Awaiting real-world confirmation](11_known_issues_and_next_steps.md#awaiting-real-world-confirmation)
+- [Clock and networking](11_known_issues_and_next_steps.md#clock-and-networking)
 - [Calibration and interfaces](11_known_issues_and_next_steps.md#calibration-and-interfaces)
 - [Security](11_known_issues_and_next_steps.md#security)
 - [Pre-existing repository issues](11_known_issues_and_next_steps.md#pre-existing-repository-issues)

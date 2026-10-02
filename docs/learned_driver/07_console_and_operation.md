@@ -48,20 +48,21 @@ After SWITCH, the car software restarts in the other mode. That takes about 1–
 | Control | Behaviour |
 |---|---|
 | APPLY SETTINGS | Trial & explore only: sends the tab's settings to the driver now |
-| HOLD TO RUN | The page acts as the deadman while held. The first 3.5 s hold A, which engages `LIDAR_CRUISE`. Releasing, sliding off, closing the page or losing the connection stops `/joy`, and the supervisor brakes within 0.5 s. |
+| HOLD TO RUN | The page acts as the deadman while held. The first 1.5 s hold A (`engage_hold_sec`), which engages `LIDAR_CRUISE` after the supervisor's 1 s A-hold (3.5 s and 3 s until 1 Oct). Releasing, sliding off, closing the page or losing the connection stops `/joy`, and the supervisor brakes within 0.5 s. |
 | EXPLORE | Same as holding, for up to 120 s. The page must stay open and on screen. Tapping again stops it. |
 | SAVE MAP FOR TRAINING | Saves the live map and the driven track to `~/laksa_maps/<timestamp>/` on the Jetson; see [Saving a map for training](#saving-a-map-for-training) |
 | STOP | Presses B: latches the emergency stop. Also disarms a race run |
 | REARM | Presses Y: clears the emergency stop |
 | Set START / Set END | Publishes `/laksa/console/start` and `/laksa/console/goal` |
-| PLAN ROUTE | Asks Nav2's planner for a route from the car to END and draws it on the map. **Planning only; nothing moves.** |
+| Clear start/end | Removes both markers and the planned route. A route being driven ends (the car brakes); a plan still in progress is discarded |
+| PLAN ROUTE | Asks Nav2's planner for a route from the car to END and draws it on the map. **Planning only; nothing moves.** If Nav2 is still starting (about 15 s after the stack starts), the page shows "Nav2 is still starting" and plans as soon as the planner answers, for up to 30 s. Until 1 Oct it failed at once with "Nav2 planner is not running". |
 | HOLD TO GO | A second deadman hold that **doesn't** press A. After 0.5 s of heartbeat it asks the supervisor for `NAVIGATING` mode and sends END to Nav2's navigator. Releasing it cancels the goal, and the supervisor brakes. You must release it before starting another route. |
 
 **Re-arm after a dropped connection** (KarSha's `HoldLatch`, `hold_latch.py`). If the heartbeat lapses while HOLD TO RUN or HOLD TO GO is held (Wi-Fi drop, tunnel stall, a throttled browser), the car brakes. The button then has to be **released and pressed again** before it counts. A hold that simply resumes after the gap is ignored, and the Driver line says so. A deliberate release, STOP and REARM work as before.
 
 The heavy view subscriptions (odometry, scan, camera) exist only while a browser is connected, so an idle console costs almost no CPU.
 
-Route status on the page: `PLANNING`, `PLANNED` (with length), `NAVIGATING`, `ARRIVED`, `STOPPED` (with reason) or `FAILED` (with reason). The END pose faces away from the car's current position. Planning needs the car's pose on the map, so RTAB-Map must be running.
+Route status on the page: `WAITING_NAV2`, `PLANNING`, `PLANNED` (with length), `NAVIGATING`, `ARRIVED`, `STOPPED` (with reason) or `FAILED` (with reason). The END pose faces away from the car's current position. Planning needs the car's pose on the map, so RTAB-Map must be running.
 
 ### Saving a map for training
 
@@ -83,7 +84,7 @@ For the training steps, see [Training on maps the car explored](04_training_pipe
   ```bash
   ssh -L 8095:127.0.0.1:8095 samyak@<jetson-address>
   ```
-  Then open `http://localhost:8095/?token=<token>`.
+  Then open `http://localhost:8095/?token=<token>`. The Tailscale or home Wi-Fi address (`http://100.78.235.3:8095/...`) is **refused on purpose**; only `localhost` through the tunnel works.
 - **At the field:** when the car's own hotspot is up, it binds to `10.42.0.1`, the hotspot address only. It is never exposed on home Wi-Fi or Tailscale.
 - **Fixed token:** generated once on the Jetson by the launcher into `~/.config/laksa/console_token` (mode 600). It is never committed and never shared outside the Jetson. The full link is written to `~/laksa_run/console_url.txt`.
 - **To revoke:** delete the token file. A new one is generated at the next start.
@@ -139,7 +140,7 @@ ros2 run laksa_learned_driver laksa_operator rearm
 ```
 
 - `status` shows mode, autonomy health and the emergency stop.
-- `run` means "operator present". It holds A for 3.5 s, then keeps the heartbeat going. Enter, Ctrl-C, the end of `--duration`, a closed terminal or a dropped SSH session (SIGHUP) all stop it and **latch the emergency stop**.
+- `run` means "operator present". It holds A for 1.5 s (3.5 s until 1 Oct), then keeps the heartbeat going. Enter, Ctrl-C, the end of `--duration`, a closed terminal or a dropped SSH session (SIGHUP) all stop it and **latch the emergency stop**.
 - `stop` latches the emergency stop from any terminal.
 - `rearm` clears it.
 
@@ -172,7 +173,7 @@ Other ways in: a USB-C cable to the Jetson (`192.168.55.1`), or Tailscale.
 3. Join Wi-Fi `LAKSA-CAR` on the phone. When it says "no internet", choose to **stay connected**.
 4. Open the link. Check: Mode `MANUAL`, Autonomy a reason such as `XBOX_STALE` (not `UNKNOWN`), E-stop clear, battery about 15–16 V.
 5. Select **Trial & explore**. The badge at the top should read `car: TRIAL`. Check the speed (0.6 m/s by default) and press **APPLY SETTINGS**.
-6. Tap **EXPLORE** or hold **HOLD TO RUN**. After about 3.5 s the mode shows `LIDAR_CRUISE`.
+6. Tap **EXPLORE** or hold **HOLD TO RUN**. After about 1.5 s the mode shows `LIDAR_CRUISE`. The car keeps moving until an obstacle is 0.30 m (1 ft) ahead, then stops and backs up.
 7. Stop with STOP, a second EXPLORE tap, or by releasing HOLD. Stay next to the car.
 8. To collect a training map, drive a loop back near the start and tap **SAVE MAP FOR TRAINING**.
 

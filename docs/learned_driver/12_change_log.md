@@ -63,9 +63,29 @@ Every file this branch adds or changes compared with `production/laksa-mainline`
 | `jetson/setup/dryrun_bringup.sh` | Launcher: start, trial, race, auto, console, stop, status; session folders; console token; KarSha's `LAKSA_*` overrides |
 | `jetson/setup/laksa_network_watch.sh` | Hotspot and home Wi-Fi switching; console rebinding |
 | `jetson/setup/steering_bench.py`, `traction_bench.py` | Wheels-up bench tests that talk to the ESP32 directly |
-| `jetson/systemd/laksa-car.service` | Start the stack at boot (trial mode, braked until an operator acts) |
-| `jetson/systemd/laksa-network-watch.service` | Run the network watcher at boot |
+| `jetson/systemd/laksa-car.service` | Start the stack at boot from `~/laksa/current` (trial mode, braked until an operator acts), after `laksa-deploy` |
+| `jetson/systemd/laksa-network-watch.service` | Run the network watcher at boot, from `~/laksa/current` |
+| `jetson/systemd/laksa-deploy.service` | At boot, before the car stack: install the newest car package, move and prune logs |
+| `jetson/release/laksa_release.py` | PC tool: build a car package from the committed HEAD, push it to the car, show its status |
+| `jetson/release/laksa_deploy.sh` | Jetson deployer: `boot`, `status`, `rollback`, `bootstrap`; logs under `~/laksa_logs` |
+| `jetson/release/install.sh` | Builds one release's own workspace and runs the unit tests before it is switched on |
+| `jetson/setup/tonight/*`, `jetson/config/navigate_plan_once.xml`, `nav2_tonight_overrides.yaml` | KarSha's bench, route and battery tools, merged from `tonight/route-0929-full` on 1 Oct |
 | `jetson/patches/rf2o-laser-odometry-laksa.patch` | RF2O fixes: correct twist sign for the π-yaw LiDAR mount, publish only valid estimates, realistic covariance instead of all-zero |
+
+## 1 Oct changes
+
+After the 1 Oct explore run ([Field tests](10_field_tests_and_findings.md#explore-run-1-oct)):
+
+| File | Change |
+|---|---|
+| `laksa_learned_driver/safety.py` | `min_speed_mps` floor: forward speed ≥ 0.30 m/s or zero; `blocked_distance` (0.30 m with the car's settings) shared by the governor and avoidance |
+| `laksa_learned_driver/driver_node.py`, `config/learned_driver.yaml` | `min_drive_speed_mps` 0.30, `stop_margin_m` 0.18, reverse 0.30 m/s for 1.2 s |
+| `laksa_learned_driver/profiles.py`, `console_page.html` | explore avoid distance 1.0 m; speed minimum 0.3 m/s |
+| `laksa_bringup/config/drive_supervisor.yaml`, `drive_supervisor_node.py` | A-hold 3 s → 1 s; the startup message shows the real value |
+| `laksa_learned_driver/console_node.py`, `console_page.html` | HOLD presses A for 1.5 s (was 3.5 s); PLAN ROUTE waits up to 30 s for Nav2; **Clear start/end** button |
+| `setup/dryrun_bringup.sh` | sessions in `~/laksa_logs/sessions/<time>_boot<id>`; uses a release's own workspace |
+| `setup/laksa_network_watch.sh` | restarts the stack from `~/laksa/current` when installed |
+| `laksa_learned_driver/test/test_learned_driver.py` | tests for the speed floor, the 1 ft stop and the 1 Oct wall case |
 
 ## Documentation
 

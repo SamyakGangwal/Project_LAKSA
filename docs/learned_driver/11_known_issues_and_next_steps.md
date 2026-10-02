@@ -20,6 +20,8 @@ One wheels-up test tells the causes apart. Reverse at 0.12 m/s, then 0.20 m/s, b
 
 Until this is fixed, the recovery ends in `BLOCKED`, which is safe but limited.
 
+**Update 1 Oct:** the 1 Oct explore run showed the recovery reversing at −0.12 m/s (about 500 eRPM), well below the drive's stall speed, so the first row of the table above is not the explanation. Reverse now runs at **0.30 m/s** for 1.2 s, the speed the stage-1 bench showed working at the motor. It still needs a floor test ([Explore run](10_field_tests_and_findings.md#explore-run-1-oct)).
+
 ## Motor breakaway current
 
 The drive needs 6–10 A to start from rest but only about 3 A to keep moving. At the low caps used so far, the first second of each start can stall or jerk. Check in VESC Tool:
@@ -30,6 +32,8 @@ The drive needs 6–10 A to start from rest but only about 3 A to keep moving. A
 ## Route planning from the console
 
 The console now has **PLAN ROUTE** and **HOLD TO GO**, and the launcher runs Nav2 (see [Console and operation](07_console_and_operation.md#laksa-console)). The console-to-planner path was verified end to end on the car. But the current bench spot is too cramped to produce a route: the car sits 3 cm from a wall, its start cell is "inscribed" in the costmap, only about 180 cells of the small map are low-cost, and 62% is still unknown. Next: test PLAN, then HOLD TO GO in dry-run, in a larger mapped area.
+
+**"Nav2 planner is not running" (1 Oct):** Nav2 never crashed in any session log; every `IS DOWN` from the lifecycle manager was during shutdown. The console now waits up to 30 s for the planner instead of failing, and a plan test on the car worked (0.95 m route). If it still fails after 30 s, read `nav_planner.log` and `nav_lifecycle.log` in the session folder.
 
 Remaining checks for route driving:
 - **CPU budget.** Nav2 adds load; see [Performance](09_performance_optimization.md).
@@ -52,7 +56,6 @@ Remaining checks for route driving:
 | Never learned to stop or reverse; that's the rule layers' job | fine, by design |
 | Sim-only data | use the session bags plus the expert labels offline to fine-tune on real scans |
 | Obstacle Course replica: the expert fails about 3 of 8 layouts at hoop 3 on the right loop | the right-steering limit (0.288 rad, 1.09 m radius, against 0.523 rad left) makes some legal hoop positions undrivable; more right steering travel on the car would fix it. In training, either keep hoop 3 near the natural line or give the expert a tracking controller that doesn't cut corners |
-| v5 is the default in the repo, but the car still runs v2 | remove the `model_path` override on the bench Jetson ([below](#work-by-karsha-on-the-bench-jetson)) |
 | v5 is weaker than v4 on obstacle tracks (58/72 vs 68/72), and completes the Obstacle Course replica on 27/48 | more replica and obstacle rounds; real field maps ([Training on maps the car explored](04_training_pipeline.md#training-on-maps-the-car-explored)) |
 
 ## Work by KarSha on the bench Jetson
@@ -64,17 +67,27 @@ KarSha, the other account on the bench Jetson, commits directly in its `~/src/Pr
 | `HoldLatch`: after a heartbeat loss mid-hold, HOLD/GO must be released and pressed again (commit `995ace9`) | good; a real safety fix | merged into this branch's console, with their tests (`test/test_hold_latch.py`) |
 | `LAKSA_*` launcher overrides with validation before start | good | merged into `dryrun_bringup.sh` |
 | Nav2 at 0.22 m/s (their measured reliable start) | good | used in `config/nav2_field_overrides.yaml` |
-| Listen-only bench and route tools in `setup/tonight/` (they don't publish commands) | good | only in their checkout |
+| Listen-only bench and route tools in `setup/tonight/` (they don't publish commands) | good | merged 1 Oct |
+| Battery monitor, `traction_bench --hold`, P3 trigger, plan-once BT, Nav2 tonight overrides | good | merged 1 Oct |
+
+**1 Oct:** their whole branch `tonight/route-0929-full` (it existed only on the Jetson) was merged into `feature/learned-driver` and pushed to the fork as `karsha/tonight-route-0929-full`. Their GitHub repo also has `codex/esp32-actuator-policy-20260929`, new ESP32 firmware that routes every command through one policy. It is marked **not ready to flash**: it deliberately fails to compile until the brake current, the forward and reverse limits and the steering endpoints are reviewed. It wasn't merged.
 
 Open items:
-- **Their console files were overwritten.** A tar deploy of this branch on 29 Sep overwrote KarSha's `console_node.py` and `console_page.html` in that working tree. Their commit `995ace9` is intact. KarSha or the owner should restore both files from it (`git checkout HEAD -- <the two files>` in their checkout). Before any future deploy, check `git status` and `git log` there read-only, and don't copy over files they have changed.
-- **The car still runs model v2.** KarSha's launcher passes `model_path` explicitly, which overrides the new v5 default.
+- **Their checkout is no longer a deploy target.** Deploys now go to `~/laksa/releases` as packages ([Deploying code changes](08_setup_and_deployment.md#deploying-code-changes)). The Jetson checkout still has uncommitted changes from the earlier tar deploys; KarSha can keep or reset them, and nothing of ours depends on them once the first package is installed.
+- **Model.** Packages run the repo's default (v5); the launcher no longer passes `model_path`.
 
 ## Awaiting real-world confirmation
 
 - **Slope handling.** Unit-tested only; it needs a drive on a real slope.
 - **Live home-to-hotspot switch** with the new whole-stack restart. At the field this bug showed `UNKNOWN` in the console; it needs a re-test.
 - **Low-light behaviour** with the stricter depth confidence and the near-field camera cutoff.
+- **The 1 Oct driving fixes** (≥ 0.30 m/s or stop, stop at 1 ft, reverse at 0.30 m/s, faster engage). Unit-tested, not yet driven.
+- **Camera vs LiDAR distance at walls.** At the 1 Oct wall the camera read 0.26 m free and the LiDAR 0.62 m. Check whether something low really sticks out there, or whether camera depth is off.
+
+## Clock and networking
+
+- **No RTC battery.** The Jetson boots at the same saved clock time every time and only corrects it when it reaches the internet, which never happens at the field. Session folders now carry the boot id, but log timestamps can still be hours off. Fit a coin cell for the RTC, or accept it.
+- **ROS messaging is CycloneDDS** (`rmw_cyclonedds_cpp`, the Jetson's default). Some sessions logged thousands of `ddsi_udp_conn_write ... failed` from every process when a network peer or interface went away. Local traffic kept working in the sessions checked, but a Wi-Fi drop while driving is the most likely way to lose ROS messages between processes. Next: a CycloneDDS config that always includes the loopback interface, tested on the car together with the micro-ROS agent (FastDDS).
 
 ## Calibration and interfaces
 

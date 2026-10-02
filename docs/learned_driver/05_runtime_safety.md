@@ -33,8 +33,11 @@ flowchart TB
 
 - It traces the car's **swept corridor** along the commanded constant-curvature arc: half-width 0.148 m plus 0.10 m margin, out to 4 m.
 - It finds the arc length from the front bumper to the **first obstacle point inside that corridor**. LiDAR and camera points both count.
-- It caps speed so the car can stop before it. The cap is the largest `v` with `v·latency + v²/(2·decel) ≤ free − margin`, using latency 0.25 s, deceleration 1.0 m/s² and margin 0.25 m.
-- If `free − margin ≤ 0`, the path is **blocked**.
+- It caps speed so the car can stop before it. The cap is the largest `v` with `v·latency + v²/(2·decel) ≤ free − margin`, using latency 0.25 s, deceleration 1.0 m/s² and margin 0.18 m (`stop_margin_m`).
+- **No crawling.** The drive stalls below about 0.2 m/s, so a forward command is either at least `min_drive_speed_mps` (**0.30 m/s**) or zero. A slower request, for example the person slowdown halving a low cap, is raised to 0.30 m/s while there's room to stop from that speed.
+- The path is **blocked** once the car could no longer stop from 0.30 m/s before the margin: 0.18 m + 0.075 m (latency) + 0.045 m (braking) = **0.30 m (1 ft) ahead of the bumper**. Until then the car keeps moving, slowing only as close as its braking needs (at 0.6 m/s it starts slowing about 0.53 m out).
+
+Why: in the 1 Oct explore run, 985 of 2,107 commands were between 0 and 0.25 m/s, and the car sat 0.26 m from a wall at 0.025 m/s for three minutes. 0.26 m was just above the old 0.25 m margin, so the path never counted as blocked and the reverse recovery never started. See [Field tests](10_field_tests_and_findings.md#explore-run-1-oct).
 
 Points that are already **beside** the body, behind the bumper but outside the footprint, count only when the car turns toward them. Going straight or turning away never brings the body closer, but a turn toward them can clip them with the front corner. Points inside the footprint always block. Before this rule, an object 8 cm off the car's side made every arc read "0.00 m free".
 
@@ -42,12 +45,12 @@ Points that are already **beside** the body, behind the bumper but outside the f
 
 `safety.choose_steering`, run on every scan before the governor:
 
-- If the network's arc has at least **0.60 m** free ahead of the bumper (`avoid_clearance_m`), it is kept unchanged.
-- Otherwise the driver tries **17 arcs** across the full steering range and takes the one **closest to the network's choice** that has 0.60 m free. The status becomes `AVOIDING`.
-- If no arc has 0.60 m free, it takes the arc with the most room.
+- If the network's arc has at least `avoid_clearance_m` free ahead of the bumper, it is kept unchanged. That's **1.0 m** in Trial & explore (0.6 m until 1 Oct), 0.9 m in Obstacle and 1.2 m in Speed, so the car steers around obstacles early instead of slowing for them.
+- Otherwise the driver tries **17 arcs** across the full steering range and takes the one **closest to the network's choice** that has that much room. The status becomes `AVOIDING`.
+- If no arc has that much room, it takes the arc with the most room.
 - An ongoing detour is kept while it still has room, so the car doesn't flip between a left and a right detour.
 - The detour target goes through the steering smoother, and the governor checks the steering **actually commanded**. While the wheels swing toward the detour, the car waits instead of driving into the obstacle.
-- The reverse recovery starts only when **no** arc is free (`all_blocked`).
+- The reverse recovery starts only when **no** arc is free (`all_blocked`): the best arc has 0.30 m or less, the same distance at which the governor blocks.
 - `avoid_enabled: false` turns this off.
 
 The `target_steer` column in `decisions.csv` records the detour target.
@@ -62,16 +65,16 @@ stateDiagram-v2
     FORWARD --> PAUSE_IN: every forward arc blocked
     PAUSE_IN --> REVERSE: 0.5 s pause, rear clear ≥ 0.30 m
     PAUSE_IN --> GIVE_UP: rear blocked too
-    REVERSE --> PAUSE_OUT: 2.5 s elapsed or rear blocked
+    REVERSE --> PAUSE_OUT: 1.2 s elapsed or rear blocked
     PAUSE_OUT --> FORWARD: 0.5 s pause
     FORWARD --> GIVE_UP: more than 4 recoveries in 30 s
     GIVE_UP --> [*]: status BLOCKED → supervisor aborts autonomy
 ```
 
-- Reverse speed is 0.12 m/s (never above the cap), for up to 2.5 s (about 0.3 m).
+- Reverse speed is **0.30 m/s** (never above the cap), for up to 1.2 s (about 0.36 m). Until 1 Oct it was 0.12 m/s for 2.5 s; that is about 500 eRPM, below the drive's stall speed, and the car never moved backwards.
 - The wheels turn **toward** the obstacle's side while reversing, which swings the nose away from it.
 - The rear corridor (behind the 0.149 m rear overhang, slightly widened) is checked with the LiDAR's rear returns **before and throughout** each reverse.
-- **Known issue:** the logic commands reverse correctly, but the car doesn't physically move backwards. See [Known issues](11_known_issues_and_next_steps.md).
+- **Not yet confirmed on the floor** at the new speed. See [Known issues](11_known_issues_and_next_steps.md#reverse-does-not-move-the-car-original-report).
 
 ## Steering smoothing
 
@@ -109,7 +112,7 @@ Published on `/laksa/exploration_status` and shown in the console:
 
 `laksa_bringup/scripts/drive_supervisor_node.py` forwards the driver's command only if **all** of these hold, and brakes otherwise:
 
-- An operator is present: fresh `/joy`, from an Xbox, the console or `laksa_operator`. `LIDAR_CRUISE` needs **A held for 3 s**.
+- An operator is present: fresh `/joy`, from an Xbox, the console or `laksa_operator`. `LIDAR_CRUISE` needs **A held for 1 s** (`auto_hold_sec`; 3 s until 1 Oct, which made every explore start slow).
 - The emergency stop isn't latched: B latches it, Y rearms.
 - The ESP32 state is fresh, VESC telemetry is fresh (sequence counter and age), and there is no VESC fault.
 - LiDAR, fused odometry and the ZED point cloud are fresh. Odometry jumps are rejected.
@@ -119,7 +122,7 @@ Published on `/laksa/exploration_status` and shown in the console:
   - dry-run: 1,000 eRPM (about 0.24 m/s);
   - race mode: 12,500 eRPM.
 
-  The driver applies its own cap too (`speed_cap_mps`: 0.6 in trial, 0.24 in dry-run). The console's drive profile changes it live, clamped to 0.2–1.0 m/s in Trial & explore and to 3.0 m/s in race modes.
+  The driver applies its own cap too (`speed_cap_mps`: 0.6 in trial, 0.24 in dry-run). The console's drive profile changes it live, clamped to 0.3–1.0 m/s in Trial & explore and to 3.0 m/s in race modes.
 - Nav2 route following runs at 0.22 m/s (navigation cap 1,000 eRPM), just above the drive's stall speed.
 - In dry-run mode (`actuation_enabled:=false`), every command is replaced by brake, but the would-be command is still published for inspection.
 
@@ -131,7 +134,7 @@ In race mode (`require_operator:=false`) the supervisor no longer requires a fre
 
 | Trigger | Result |
 |---|---|
-| Obstacle in the path | steer around it; if no arc is free: stop, recovery, or hand back to manual |
+| Obstacle in the path | steer around it from `avoid_clearance_m` out; if no arc has more than 0.30 m: stop, back up, or hand back to manual |
 | Person within 1 m | driver holds at zero |
 | Operator releases HOLD, closes the page, loses Wi-Fi, or presses Ctrl-C in `laksa_operator` | `/joy` stops → supervisor brakes within 0.5 s |
 | STOP (console) or `laksa_operator stop` | emergency stop **latched** until REARM |
