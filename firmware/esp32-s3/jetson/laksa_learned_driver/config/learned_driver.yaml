@@ -26,10 +26,11 @@ learned_driver:
     # space ahead of the bumper, take the closest steering arc that does.
     avoid_enabled: true
     avoid_clearance_m: 0.60
-    # Reverse-away recovery when every forward arc is blocked (rear corridor is
-    # checked with the LiDAR before and during every reverse).
+    # Multi-point turn when every forward arc is blocked: back up, then forward at
+    # full opposite lock, repeated (rear corridor checked with the LiDAR while reversing).
     reverse_enabled: true
     reverse_speed_mps: 0.30
     reverse_time_sec: 1.2
-    rear_clearance_m: 0.30
-    max_recoveries: 4
+    rear_clearance_m: 0.20
+    max_recoveries: 8
+    turn_clearance_m: 0.20

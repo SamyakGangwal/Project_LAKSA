@@ -13,7 +13,8 @@ from laksa_learned_driver.perception import (Detection, PerceptionConfig, box_fo
                                              filter_cloud, fit_ground_plane, lidar_ground_mask,
                                              person_speed_rule)
 from laksa_learned_driver.smoothing import SteeringSmoother
-from laksa_learned_driver.recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_free_distance
+from laksa_learned_driver.recovery import (RecoveryConfig, ReverseRecovery, obstacle_side, rear_arc_free_distance,
+                                           rear_free_distance)
 from laksa_learned_driver.safety import (AvoidConfig, GovernorConfig, blocked_distance, choose_steering, govern,
                                          path_free_distance)
 from laksa_learned_driver.scan_adapter import LidarMount, scan_to_vehicle_beams
@@ -341,6 +342,65 @@ class ReverseRecoveryTest(unittest.TestCase):
             self.rec.step(t, True, 4.0, -1.0, self.forward)
             t += self.cfg.pause_s + 0.01
         self.assertEqual(self.rec.step(t, True, 4.0, -1.0, self.forward)[2], "BLOCKED")
+
+    def _to_turn(self, side, free_on):
+        """Blocked -> pause -> reverse -> pause, returning the time TURN starts."""
+        t = 0.0
+        self.rec.step(t, True, 4.0, side, self.forward, free_on)
+        t += self.cfg.pause_s + 0.01
+        self.rec.step(t, True, 4.0, side, self.forward, free_on)
+        t += self.cfg.reverse_time_s + 0.01
+        self.rec.step(t, True, 4.0, side, self.forward, free_on)
+        return t + self.cfg.pause_s + 0.01
+
+    def test_three_point_turn_drives_forward_at_opposite_lock(self):
+        # Obstacle on the right: reverse with wheels right, then forward at full left.
+        t = self._to_turn(-1.0, lambda arc: 2.0)
+        speed, steer, status = self.rec.step(t, True, 4.0, -1.0, self.forward, lambda arc: 2.0)
+        self.assertEqual(status, "RECOVERY_TURN")
+        self.assertAlmostEqual(speed, self.cfg.turn_speed_mps)
+        self.assertAlmostEqual(steer, self.cfg.turn_left_rad)
+        # Still blocked for the learned policy: the turn continues until its time is up.
+        self.assertEqual(self.rec.step(t + 0.5, True, 4.0, -1.0, self.forward, lambda arc: 2.0)[2], "RECOVERY_TURN")
+        done = self.rec.step(t + self.cfg.turn_time_s + 0.01, False, 4.0, 0.0, self.forward, lambda arc: 2.0)
+        self.assertEqual(done, (0.15, 0.1, "LEARNED_DRIVING"))
+
+    def test_obstacle_on_left_turns_forward_right(self):
+        t = self._to_turn(1.0, lambda arc: 2.0)
+        _, steer, status = self.rec.step(t, True, 4.0, 1.0, self.forward, lambda arc: 2.0)
+        self.assertEqual(status, "RECOVERY_TURN")
+        self.assertAlmostEqual(steer, -self.cfg.turn_right_rad)
+
+    def test_turn_blocked_starts_the_next_point(self):
+        t = self._to_turn(-1.0, lambda arc: 2.0)
+        self.rec.step(t, True, 4.0, -1.0, self.forward, lambda arc: 2.0)
+        speed, _, status = self.rec.step(t + 0.3, True, 4.0, -1.0, self.forward, lambda arc: 0.2)
+        self.assertEqual((speed, status), (0.0, "RECOVERY_PAUSE"))
+
+    def test_u_turn_fits_in_the_recovery_budget(self):
+        # Each back-up + forward leg turns ~60 degrees; a U-turn needs ~3 of them.
+        reverse = self.cfg.reverse_speed_mps * self.cfg.reverse_time_s * math.tan(self.cfg.reverse_steer_left_rad) / 0.324
+        forward = self.cfg.turn_speed_mps * self.cfg.turn_time_s * math.tan(self.cfg.turn_right_rad) / 0.324
+        cycles = math.ceil(math.pi / (reverse + forward))
+        self.assertLessEqual(cycles, self.cfg.max_recoveries)
+
+    def test_rear_arc_ignores_side_walls_it_does_not_reach(self):
+        gov = GovernorConfig()
+        # A wall 0.30 m off the left side, alongside and behind the car.
+        wall = np.array([[x, 0.30] for x in np.linspace(-1.5, 0.4, 40)])
+        self.assertLess(rear_free_distance(wall, gov, self.cfg), 0.2)     # straight box: "blocked"
+        self.assertEqual(rear_arc_free_distance(wall, 0.0, gov), gov.horizon_m)   # straight back: clear
+        self.assertLess(rear_arc_free_distance(wall, 0.3, gov), gov.horizon_m)    # arcing toward it: not
+
+    def test_turn_direction_is_kept_within_one_manoeuvre(self):
+        t = self._to_turn(-1.0, lambda arc: 2.0)                  # turning left (obstacle right)
+        self.assertEqual(self.rec.step(t, True, 4.0, -1.0, self.forward, lambda arc: 2.0)[2], "RECOVERY_TURN")
+        t += self.cfg.turn_time_s + 0.01
+        self.rec.step(t, True, 4.0, -1.0, self.forward, lambda arc: 2.0)   # turn ends, blocked again
+        self.rec.step(t + 0.01, True, 4.0, 1.0, self.forward, lambda arc: 2.0)
+        _, steer, status = self.rec.step(t + self.cfg.pause_s + 0.02, True, 4.0, 1.0, self.forward, lambda arc: 2.0)
+        self.assertEqual(status, "RECOVERY_REVERSE")
+        self.assertLess(steer, 0.0)                               # still the first direction
 
     def test_rear_free_distance_and_side(self):
         gov = GovernorConfig()

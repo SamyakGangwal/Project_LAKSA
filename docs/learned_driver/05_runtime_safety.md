@@ -57,24 +57,29 @@ The `target_steer` column in `decisions.csv` records the detour target.
 
 ## Reverse recovery
 
-`recovery.py` is a small state machine:
+`recovery.py`: when **no** forward arc is free, the car makes a **multi-point turn** (until 1 Oct it only backed up and handed straight back to the network, which drove into the same wall until it gave up):
 
 ```mermaid
 stateDiagram-v2
     [*] --> FORWARD
     FORWARD --> PAUSE_IN: every forward arc blocked
-    PAUSE_IN --> REVERSE: 0.5 s pause, rear clear ≥ 0.30 m
-    PAUSE_IN --> GIVE_UP: rear blocked too
-    REVERSE --> PAUSE_OUT: 1.2 s elapsed or rear blocked
-    PAUSE_OUT --> FORWARD: 0.5 s pause
-    FORWARD --> GIVE_UP: more than 4 recoveries in 30 s
+    PAUSE_IN --> REVERSE: 0.5 s pause, reversing arc clear ≥ 0.20 m
+    PAUSE_IN --> GIVE_UP: reversing arc blocked too
+    REVERSE --> PAUSE_OUT: 1.2 s elapsed or reversing arc blocked
+    PAUSE_OUT --> TURN: 0.5 s pause
+    TURN --> FORWARD: 1.5 s elapsed
+    TURN --> PAUSE_IN: the turn's own arc ≤ 0.20 m (next point)
+    FORWARD --> GIVE_UP: more than 8 recoveries in 60 s
     GIVE_UP --> [*]: status BLOCKED → supervisor aborts autonomy
 ```
 
-- Reverse speed is **0.30 m/s** (never above the cap), for up to 1.2 s (about 0.36 m). Until 1 Oct it was 0.12 m/s for 2.5 s; that is about 500 eRPM, below the drive's stall speed, and the car never moved backwards.
-- The wheels turn **toward** the obstacle's side while reversing, which swings the nose away from it.
-- The rear corridor (behind the 0.149 m rear overhang, slightly widened) is checked with the LiDAR's rear returns **before and throughout** each reverse.
-- **Not yet confirmed on the floor** at the new speed. See [Known issues](11_known_issues_and_next_steps.md#reverse-does-not-move-the-car-original-report).
+- **Back up** at 0.30 m/s for up to 1.2 s (about 0.36 m), wheels toward the obstacle, so the nose swings away from it.
+- **Forward turn** (`RECOVERY_TURN`) at 0.30 m/s and **full lock the other way** for up to 1.5 s (about 0.45 m), so the nose keeps swinging the same way. Back-up plus forward turn is roughly 60° of heading.
+- **Direction:** away from the obstacle's side; if it's dead ahead, toward the full-lock arc with more room. The direction is **kept for the whole manoeuvre** (until 15 s of normal driving), so cycles don't undo each other.
+- **The rear is checked along the reversing arc** (`rear_arc_free_distance`), rear bumper leading, before and throughout every back-up. A straight box behind the car counted side walls as blocking once the car was angled in a corridor.
+- The turning legs keep **0.20 m** (`turn_clearance_m`, `rear_clearance_m`): they only move at 0.30 m/s, which stops within about 0.12 m.
+- **Simulated** (`test/test_uturn_sim.py`, a kinematic model with a network that always steers at the wall): turns around in dead-end corridors **1.2 m wide and up** (2–7 turn legs, 9–21 s) without touching a wall. At 1.0 m, tighter than the car's turning circle (right lock radius about 1.1 m), it gives up safely with `BLOCKED`.
+- Reversing was confirmed on the floor on 1 Oct (−1,150 eRPM); the full multi-point turn hasn't been driven yet.
 
 ## Steering smoothing
 
@@ -102,7 +107,7 @@ Published on `/laksa/exploration_status` and shown in the console:
 | `WAITING_FOR_SCAN` | just enabled |
 | `LEARNED_DRIVING` | the network is driving |
 | `AVOIDING` | steering around an obstacle on the network's arc |
-| `RECOVERY_PAUSE`, `RECOVERY_REVERSE` | the recovery is running |
+| `RECOVERY_PAUSE`, `RECOVERY_REVERSE`, `RECOVERY_TURN` | the multi-point turn is running |
 | `PERSON_STOP` | holding for a person |
 | `BLOCKED` | gave up; the supervisor aborts autonomy (`EXPLORATION_BLOCKED`) |
 | `SCAN_TIMEOUT`, `INVALID_SCAN` | LiDAR input problem; publishes zero |

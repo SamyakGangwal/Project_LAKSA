@@ -31,7 +31,7 @@ from std_msgs.msg import Bool, String
 
 from .policy import LearnedDriverPolicy
 from .profiles import make_profile
-from .recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_free_distance
+from .recovery import RecoveryConfig, ReverseRecovery, obstacle_side, rear_arc_free_distance, rear_free_distance
 from .perception import lidar_ground_mask
 from .safety import AvoidConfig, GovernorConfig, choose_steering, govern, path_free_distance, scan_points_base
 from .smoothing import SteeringSmoother
@@ -78,8 +78,11 @@ class LearnedDriver(Node):
         # Reverse must also clear the drive's stall speed: 0.12 m/s never moved the car.
         self.declare_parameter("reverse_speed_mps", 0.30)
         self.declare_parameter("reverse_time_sec", 1.2)
-        self.declare_parameter("rear_clearance_m", 0.30)
-        self.declare_parameter("max_recoveries", 4)
+        self.declare_parameter("rear_clearance_m", 0.20)
+        self.declare_parameter("max_recoveries", 8)
+        # Clearance the slow (min-speed) turn legs keep: stopping from 0.30 m/s takes
+        # ~0.12 m, so 0.20 m leaves a margin while letting a 1.2 m corridor U-turn.
+        self.declare_parameter("turn_clearance_m", 0.20)
         # Camera obstacle layer from zed_perception (added to LiDAR, never replacing it).
         self.declare_parameter("use_camera", True)
         self.declare_parameter("camera_stale_sec", 0.6)
@@ -171,6 +174,9 @@ class LearnedDriver(Node):
             reverse_time_s=float(self.get_parameter("reverse_time_sec").value),
             rear_clearance_m=float(self.get_parameter("rear_clearance_m").value),
             max_recoveries=int(self.get_parameter("max_recoveries").value),
+            turn_left_rad=self._policy.output.steering_left_max_rad,
+            turn_right_rad=self._policy.output.steering_right_max_rad,
+            turn_block_m=float(self.get_parameter("turn_clearance_m").value),
         ))
         self._publish_status("IDLE")
         self.get_logger().info(
@@ -328,11 +334,19 @@ class LearnedDriver(Node):
         source = "none" if not governed.blocked else ("camera" if camera_free < lidar_free else "lidar")
         self._last_source = source
         if self._reverse_enabled:
+            free_on = lambda arc: path_free_distance(points, arc, self._governor)
+            side = obstacle_side(points, self._governor)
+            if side == 0.0 and forward_blocked:
+                # Wall dead ahead: turn toward the full-lock arc with more room
+                # (side is where the obstacle is, so the turn goes the other way).
+                left = free_on(self._recovery.cfg.turn_left_rad)
+                right = free_on(-self._recovery.cfg.turn_right_rad)
+                side = -1.0 if left >= right else 1.0
             speed, steering, status = self._recovery.step(
                 time.monotonic(), forward_blocked,
                 rear_free_distance(points, self._governor, self._recovery.cfg),
-                obstacle_side(points, self._governor),
-                (governed.speed_mps, steering),
+                side, (governed.speed_mps, steering), free_on,
+                lambda arc: rear_arc_free_distance(points, arc, self._governor),
             )
         elif forward_blocked:
             speed, status = 0.0, "BLOCKED"

@@ -56,7 +56,7 @@ compgen -G "${JETSON}/laksa_learned_driver/models/*.npz" >/dev/null \
     || { echo "no driver model in the package" >&2; exit 1; }
 bash -n "${JETSON}/setup/dryrun_bringup.sh"
 cd "${JETSON}/laksa_learned_driver"
-for test in test/test_learned_driver.py test/test_hold_latch.py; do
+for test in test/test_learned_driver.py test/test_hold_latch.py test/test_uturn_sim.py; do
     PYTHONPATH=. python3 "${test}" 2>&1 | tail -3
 done
 echo "release $(basename "${RELEASE}") built"
