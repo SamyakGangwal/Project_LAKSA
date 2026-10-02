@@ -16,7 +16,7 @@ There is no Xbox controller on the bench car. Two operator tools replace it. Bot
 | Settings | Per-mode speed, steer around obstacles, camera layer, back away when boxed in, look-ahead |
 | Race run | ARM, DISARM, START NOW and the race status line (Obstacle and Speed tabs) |
 | Explore | HOLD TO RUN, EXPLORE (2 min), SAVE MAP FOR TRAINING, PLAN ROUTE, HOLD TO GO (Trial & explore tab) |
-| Live | supervisor mode, autonomy health, emergency stop, driver status, active profile, measured speed, the driver's command (speed and steering), free distance ahead and what blocks it, battery, nearest person |
+| Live | supervisor mode, autonomy health, emergency stop, driver status, active profile, measured speed, whether the **ESP32 accepts drive commands**, the driver's command (speed and steering), free distance ahead and what blocks it, battery, nearest person |
 | Camera | ZED image with detected objects |
 
 Endpoints: `/` (page), `/camera.jpg`, `/ws` (a WebSocket for state and commands). **Every request needs the token.** A wrong token gets 403.

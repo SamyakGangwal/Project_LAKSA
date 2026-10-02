@@ -30,11 +30,11 @@ Differences from the original car:
 | Command | Effect |
 |---|---|
 | `dryrun_bringup.sh start` | everything, supervisor actuation **disabled** (brake only); cap 1000 eRPM / 0.24 m/s |
-| `dryrun_bringup.sh trial` | everything, actuation **enabled**; supervisor cap **4,200 eRPM (about 1.0 m/s)**, driver 0.6 m/s by default (console slider up to 1.0), Nav2 at 0.22 m/s. Was 620 eRPM / 0.15 m/s until 29 Sep |
+| `dryrun_bringup.sh trial` | everything, actuation **enabled**; supervisor cap **2,485 eRPM (0.6 m/s)**, the ESP32 firmware's limit; driver 0.6 m/s (console slider 0.3–0.6), Nav2 at 0.22 m/s |
 | `dryrun_bringup.sh race` | actuation enabled, **no operator needed**; ARM in the console, the car starts on a green signal and stops on red; up to 3.0 m/s |
 | `dryrun_bringup.sh auto` | trial or race, whichever was chosen on the console (default trial); used by `laksa-car.service` |
 | `dryrun_bringup.sh console` | restart only the console, bound to the current network |
-| `dryrun_bringup.sh stop` | stop every process it started |
+| `dryrun_bringup.sh stop` | stop every process it started (the mapping watchdog first) |
 | `dryrun_bringup.sh status` | show what's running |
 
 In start and trial modes the car stays braked until an operator starts driving. In race mode it stays braked until a race is armed and started.

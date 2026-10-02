@@ -134,7 +134,10 @@ if [[ "${MODE}" == "trial" ]]; then
     # Trial & explore: an operator holds the run.  The drive stalls below ~0.2 m/s
     # (bench 2026-09-28), so explore runs at 0.6 m/s by default (console slider) with a
     # 1.0 m/s ceiling, and Nav2 routes at 0.22 m/s (KarSha's measured reliable start).
-    ACTUATION=true; CRUISE_ERPM=4200.0; DRIVER_CAP=0.6; NAV_ERPM=1000.0
+    # Capped at 0.6 m/s (2,485 eRPM): the ESP32 firmware on the car rejects drive
+    # commands above ~0.6-0.8 m/s and holds the brake (field run 2026-10-01: 0.6
+    # accepted 100%, 0.8 accepted 6%). Clamping here keeps the car driving.
+    ACTUATION=true; CRUISE_ERPM=2485.0; DRIVER_CAP=0.6; NAV_ERPM=1000.0
 fi
 if [[ "${MODE}" == "race" ]]; then
     # No speed cap below the model's trained 3 m/s (12,430 eRPM at 4,142 eRPM per m/s);
@@ -172,6 +175,12 @@ check_overrides() {
         echo "refusing to start: LAKSA_NAV_CMD_TOPIC='${value}' is not an absolute topic name" >&2; exit 64
     fi
 }
+
+# rgbd_sync pairs the ZED colour and depth images for RTAB-Map.
+RGBD_SYNC_CMD=(ros2 run rtabmap_sync rgbd_sync --ros-args -r __ns:=/laksa/fused_mapping
+    -r __node:=rgbd_sync -p approx_sync:=true -p approx_sync_max_interval:=0.05 -p queue_size:=10 -p qos:=2
+    -r rgb/image:=/zed/zed_node/rgb/color/rect/image -r rgb/camera_info:=/zed/zed_node/rgb/color/rect/camera_info
+    -r depth/image:=/zed/zed_node/depth/depth_registered)
 
 case "${MODE}" in
 start|trial|race)
@@ -222,10 +231,10 @@ start|trial|race)
     fi
     if [[ -f "${HOME}/zed_ws/install/setup.bash" ]]; then
         start_one zed_perception ros2 run laksa_learned_driver zed_perception
-        start_one rgbd_sync ros2 run rtabmap_sync rgbd_sync --ros-args -r __ns:=/laksa/fused_mapping \
-            -r __node:=rgbd_sync -p approx_sync:=true -p approx_sync_max_interval:=0.05 -p queue_size:=10 -p qos:=2 \
-            -r rgb/image:=/zed/zed_node/rgb/color/rect/image -r rgb/camera_info:=/zed/zed_node/rgb/color/rect/camera_info \
-            -r depth/image:=/zed/zed_node/depth/depth_registered
+        start_one rgbd_sync "${RGBD_SYNC_CMD[@]}"
+        # rgbd_sync sometimes stops receiving a few seconds after start while the ZED
+        # keeps publishing (2026-10-01): the map freezes and routes fail. Restart it.
+        start_one mapping_watchdog bash "${BASH_SOURCE[0]}" watchdog
         start_one rtabmap ros2 run rtabmap_slam rtabmap -d --ros-args -r __ns:=/laksa/fused_mapping -r __node:=rtabmap \
             --params-file "${RTAB_CONFIG}" --params-file "${RTAB_OVERRIDES}" -p database_path:="${SESSION}/rtabmap.db" \
             -r rgbd_image:=/laksa/fused_mapping/rgbd_image -r scan:=/laksa/lidar/scan_validated \
@@ -268,7 +277,31 @@ console)
     source_ros
     start_console
     ;;
+watchdog)
+    # Internal (started by start|trial|race): restart rgbd_sync when its log shows
+    # it starved for ~15 s while the ZED process is alive.  Reads logs only.
+    source_ros
+    session="$(readlink -f "${RUN_DIR}/latest")"
+    last_restart=0
+    while sleep 10; do
+        log="${session}/rgbd_sync.log"
+        zed_pid="$(cat "${RUN_DIR}/zed.pid" 2>/dev/null || true)"
+        [[ -n "${zed_pid}" && -f "${log}" ]] && kill -0 "${zed_pid}" 2>/dev/null || continue
+        starved="$(grep -a -v ddsi "${log}" | tail -n 3 | grep -c "rgbd_sync: Did not receive data")"
+        now="$(date +%s)"
+        if (( starved == 3 && now - $(stat -c %Y "${log}") < 10 && now - last_restart > 30 )); then
+            echo "$(date -Is) rgbd_sync starved while the ZED runs; restarting it"
+            [[ -f "${RUN_DIR}/rgbd_sync.pid" ]] && stop_one "${RUN_DIR}/rgbd_sync.pid"
+            echo "--- restarted by the mapping watchdog $(date -Is)" >> "${log}"
+            nohup setsid "${RGBD_SYNC_CMD[@]}" >> "${log}" 2>&1 < /dev/null &
+            echo $! > "${RUN_DIR}/rgbd_sync.pid"
+            last_restart="${now}"
+        fi
+    done
+    ;;
 stop)
+    # The watchdog first, so it cannot restart rgbd_sync while the rest stops.
+    [[ -f "${RUN_DIR}/mapping_watchdog.pid" ]] && stop_one "${RUN_DIR}/mapping_watchdog.pid"
     for pid_file in "${RUN_DIR}"/*.pid; do
         [[ -f "${pid_file}" ]] || continue
         stop_one "${pid_file}"
@@ -283,7 +316,7 @@ status)
     done
     ;;
 *)
-    echo "usage: $0 start|trial|race|console|stop|status" >&2
+    echo "usage: $0 start|trial|race|auto|console|stop|status" >&2
     exit 64
     ;;
 esac

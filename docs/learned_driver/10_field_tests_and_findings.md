@@ -149,3 +149,11 @@ The run's rosbag was cut by the power loss and couldn't be recovered; the findin
 | Slow start | console 1.5 s, supervisor 1 s |
 | Planner not ready | PLAN ROUTE waits up to 30 s for Nav2 |
 | Lost logs | session folders carry the boot id, under `~/laksa_logs` |
+
+### Second session (1 Oct, evening)
+
+With the fixes above installed, on the bench floor at 0.6 m/s:
+
+- **First hold drove well:** no command below 0.3 m/s, stops at about 0.3 m, and the car **reversed** for the first time (−1,150 eRPM measured). It gave up (`BLOCKED`) after four recoveries in one corner, where the camera read a constant 0.154 m.
+- **Later holds at 0.8 m/s didn't move.** The supervisor sent 0.8 m/s, but the ESP32 rejected 94% of those commands and held the brake: its firmware has a speed limit between 0.6 and 0.8 m/s ([Known issues](11_known_issues_and_next_steps.md#esp32-firmware-speed-limit)). Explore is now capped at 0.6 m/s and the console shows whether the ESP32 accepts commands.
+- **The map froze** a few seconds after start because `rgbd_sync` stopped receiving camera frames; routes then failed ("no drivable route"). Restarting it fixed the map; a watchdog now does that automatically ([Known issues](11_known_issues_and_next_steps.md#mapping-input-stalls)).

@@ -283,7 +283,10 @@ class Console(Node):
     def _state_cb(self, message: VehicleState):
         vesc = message.vesc
         self._status.update(speed_mps=round(float(vesc.vehicle_linear_velocity_mps), 3),
-                            battery_v=round(float(vesc.input_voltage_v), 2), vesc_fault=int(vesc.fault_code))
+                            battery_v=round(float(vesc.input_voltage_v), 2), vesc_fault=int(vesc.fault_code),
+                            # The supervisor sends a command every 50 ms, so "not fresh" means the
+                            # ESP32 rejected it (e.g. above its speed limit) or the link dropped.
+                            esp32_cmd_ok=bool(vesc.command_fresh))
 
     def _map_cb(self, message: OccupancyGrid):
         info = message.info

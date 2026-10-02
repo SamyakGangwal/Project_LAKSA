@@ -22,6 +22,8 @@ Until this is fixed, the recovery ends in `BLOCKED`, which is safe but limited.
 
 **Update 1 Oct:** the 1 Oct explore run showed the recovery reversing at −0.12 m/s (about 500 eRPM), well below the drive's stall speed, so the first row of the table above is not the explanation. Reverse now runs at **0.30 m/s** for 1.2 s, the speed the stage-1 bench showed working at the motor. It still needs a floor test ([Explore run](10_field_tests_and_findings.md#explore-run-1-oct)).
 
+**Confirmed 1 Oct (second session):** at −0.30 m/s the ESP32 requested −1,243 eRPM and the motor ran at −1,150 eRPM; the car backed up.
+
 ## Motor breakaway current
 
 The drive needs 6–10 A to start from rest but only about 3 A to keep moving. At the low caps used so far, the first second of each start can stall or jerk. Check in VESC Tool:
@@ -83,6 +85,22 @@ Open items:
 - **Low-light behaviour** with the stricter depth confidence and the near-field camera cutoff.
 - **The 1 Oct driving fixes** (≥ 0.30 m/s or stop, stop at 1 ft, reverse at 0.30 m/s, faster engage). Unit-tested, not yet driven.
 - **Camera vs LiDAR distance at walls.** At the 1 Oct wall the camera read 0.26 m free and the LiDAR 0.62 m. Check whether something low really sticks out there, or whether camera depth is off.
+
+## ESP32 firmware speed limit
+
+**Found 1 Oct (second session).** The firmware running on the ESP32 (`cba74e7-dirty`, source not in the repo) **rejects drive commands above a limit between 0.6 and 0.8 m/s** (2,485–3,314 eRPM): the commands stop counting as fresh and it holds the brake. Measured over the session: 0.3–0.6 m/s accepted 100%, 0.8 m/s accepted 6%. The console then showed "Command 0.80 m/s" while the car sat braked.
+
+- Trial & explore is now capped at **0.6 m/s** (supervisor 2,485 eRPM, slider and profile 0.6), so faster requests are clamped instead of rejected.
+- The console's Live panel shows **ESP32: accepting commands / NOT accepting commands**.
+- **Race modes (up to 3 m/s) cannot work on this firmware.** Find the exact limit (step 0.65, 0.7, 0.75 m/s wheels-up) and where it comes from in the firmware; KarSha's P2 probe ran with the motor battery unplugged and didn't see it. Raising it means a firmware change and flash.
+
+## Mapping input stalls
+
+On 1 Oct `rgbd_sync` (colour + depth pairing for RTAB-Map) received 3 frames and then nothing, while the ZED kept publishing at 15 Hz. The map froze at what the car saw in the first seconds, the car drove off its edge, and PLAN ROUTE answered "no drivable route". A fresh `rgbd_sync` received the same topics at once. The cause isn't known. The launcher now runs a **mapping watchdog** that restarts `rgbd_sync` when its log shows it starved for about 15 s while the ZED runs.
+
+## Camera reads 0.154 m near the bumper
+
+In the 1 Oct second session the camera's free distance sat at exactly 0.154 m for seconds at a time while the LiDAR read 0.26–0.56 m, which kept the reverse recovery running until it gave up. A constant value suggests something fixed in view (the car's own body or the near-field cutoff edge), not an obstacle. Check the camera obstacle points at that moment.
 
 ## Clock and networking
 

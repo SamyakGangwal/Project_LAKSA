@@ -151,6 +151,7 @@
         <dt>Driver</dt><dd id="driver">–</dd>
         <dt>Profile</dt><dd id="profile">–</dd>
         <dt>Speed</dt><dd id="speedLive">–</dd>
+        <dt>ESP32</dt><dd id="esp32cmd">–</dd>
         <dt>Command</dt><dd id="command">–</dd>
         <dt>Free ahead</dt><dd id="free">–</dd>
         <dt>Battery</dt><dd id="battery">–</dd>
@@ -190,7 +191,7 @@ const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 const DEFAULTS = {
   obstacle: {speed_mps: 2.0, avoid: true, camera: true, reverse: true, horizon_m: 8.0, max: 3.0},
   speed:    {speed_mps: 3.0, avoid: true, camera: false, reverse: false, horizon_m: 10.0, max: 3.0},
-  explore:  {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 4.0, max: 1.0},
+  explore:  {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 4.0, max: 0.6},
 };
 const FAMILY = {obstacle: 'race', speed: 'race', explore: 'trial'};
 let selected = localStorage.getItem('laksa.mode') || 'explore';
@@ -419,6 +420,9 @@ function updateStatus() {
   const p = s.profile;
   $('profile').textContent = p ? `${p.mode} · ${p.speed_mps} m/s · avoid ${p.avoid ? 'on' : 'off'} · camera ${p.camera ? 'on' : 'off'}` : 'driver default';
   $('speedLive').textContent = fmt(s.speed_mps, 2, ' m/s');
+  $('esp32cmd').textContent = s.esp32_cmd_ok == null ? '–' : (s.esp32_cmd_ok ? 'accepting commands'
+    : 'NOT accepting commands (speed above its limit, or link lost): braking');
+  cls($('esp32cmd'), s.esp32_cmd_ok === false ? 'bad' : '');
   const t = s.telemetry || {};
   $('command').textContent = t.speed_cmd == null ? '–' : `${(+t.speed_cmd).toFixed(2)} m/s · steer ${(t.steer_cmd * 57.3).toFixed(0)}°`;
   $('free').textContent = t.free_m == null ? '–' : `${(+t.free_m).toFixed(2)} m` + (t.blocked_by && t.blocked_by !== 'none' ? ` (blocked by ${t.blocked_by})` : '');

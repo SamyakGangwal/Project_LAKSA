@@ -15,7 +15,7 @@ from dataclasses import asdict, dataclass, replace
 
 MAX_SPEED_MPS = 3.0            # the learned model's trained maximum
 MIN_SPEED_MPS = 0.3            # the drive stalls below ~0.2 m/s; matches min_drive_speed_mps
-EXPLORE_MAX_SPEED_MPS = 1.0    # trial & explore ceiling (an operator holds the run)
+EXPLORE_MAX_SPEED_MPS = 0.6    # trial & explore ceiling: the car's ESP32 firmware rejects faster commands
 
 
 @dataclass(frozen=True)
