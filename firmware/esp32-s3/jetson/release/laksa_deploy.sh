@@ -102,8 +102,9 @@ sync_system_files() {
 }
 
 activate() {
-    local target="$1" was
-    was="$(readlink -f "${CURRENT}" 2>/dev/null || true)"
+    local target="$1" was=""
+    # readlink -f of a missing link still prints a path, so check the link first.
+    [[ -L "${CURRENT}" ]] && was="$(readlink -f "${CURRENT}")"
     ln -sfn "${target}" "${ROOT}/.current.new" && mv -Tf "${ROOT}/.current.new" "${CURRENT}"
     if [[ -n "${was}" && "${was}" != "$(readlink -f "${target}")" ]]; then
         ln -sfn "${was}" "${ROOT}/.previous.new" && mv -Tf "${ROOT}/.previous.new" "${PREVIOUS}"
@@ -187,6 +188,7 @@ cmd_rollback() {
     layout
     [[ -L "${PREVIOUS}" && -d "$(readlink -f "${PREVIOUS}")" ]] || { echo "no previous release" >&2; return 1; }
     activate "$(readlink -f "${PREVIOUS}")"
+    [[ "${LAKSA_NO_SYSTEM:-0}" == "1" ]] && return 0
     sudo -n systemctl restart laksa-car.service && log "laksa-car restarted on $(release_of "${CURRENT}")"
 }
 
