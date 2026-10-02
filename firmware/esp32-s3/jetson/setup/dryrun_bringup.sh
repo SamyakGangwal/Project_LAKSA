@@ -131,10 +131,11 @@ DRIVER_CAP=0.24
 # every command and holds the brake (2026-10-02: 0.3-0.6 m/s accepted 100%,
 # 1.0 m/s 6%). The supervisor cap is the last step before the ESP32, so clamping
 # there means no profile, slider or planner can ever send a rejected speed.
-# 2026-10-02: raised to 1.5 m/s for the firmware built from esp32/speed-limit-1p5
-# (owner: flashed). If the console shows "NOT accepting commands" above ~0.6 m/s,
-# that firmware is not on the board: start with LAKSA_ESP32_MAX_MPS=0.6.
-ESP32_MAX_MPS="${LAKSA_ESP32_MAX_MPS:-1.5}"
+# 2026-10-02 13:50 run with 1.5: the ESP32 passed only 0.5-0.7 m/s (<= 2,936 eRPM) and
+# braked on everything faster (requested eRPM 0 in 98% of samples), so the car never
+# moved: the 1.5 m/s firmware (esp32/speed-limit-1p5) is NOT on the board.  Raise to
+# 1.5 (LAKSA_ESP32_MAX_MPS=1.5) only after that firmware is verifiably flashed.
+ESP32_MAX_MPS="${LAKSA_ESP32_MAX_MPS:-0.6}"
 ESP32_MAX_ERPM="$(awk -v v="${ESP32_MAX_MPS}" 'BEGIN { printf "%.1f", v * 4142.0 }')"
 NAV_ERPM=""
 SUPERVISOR_EXTRA=()
@@ -144,6 +145,10 @@ if [[ "${MODE}" == "trial" ]]; then
     # (bench 2026-09-28), so explore runs at 0.6 m/s by default (console slider 0.3-1.5),
     # and Nav2 routes at 0.22 m/s (KarSha's measured reliable start).  Capped at
     # ESP32_MAX_MPS (see above), the last step before the ESP32.
+    # Odometry sanity check sized for the speed actually driven: with the default
+    # 1.5 m/s, ZED VIO noise at 1.5 m/s aborted a trial run (0.39 m in 0.154 s vs a
+    # 0.38 m limit, 2026-10-02).  The learned driver steers on LiDAR, not odometry.
+    SUPERVISOR_EXTRA=(-p max_odom_linear_speed_mps:=4.0)
     ACTUATION=true; CRUISE_ERPM="${ESP32_MAX_ERPM}"; DRIVER_CAP="${ESP32_MAX_MPS}"; NAV_ERPM=1000.0
 fi
 if [[ "${MODE}" == "race" ]]; then
