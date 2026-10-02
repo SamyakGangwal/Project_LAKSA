@@ -111,7 +111,9 @@ static void vesc_control_task(void *arg)
                               (!brake_active && output_rpm != last_sent_rpm);
         if (output_changed || now - last_command_send >= command_keepalive) {
             if (brake_active) {
-                driver->setBrakeCurrent(VESC_BRAKE_CURRENT_A);
+                // VESC_BRAKE_CURRENT_A was never defined in any commit (deployed value
+                // unknown); hold zero speed like the pre-handoff firmware did.
+                driver->setRPM(0.0f);
             } else {
                 driver->setRPM((float)output_rpm);
             }

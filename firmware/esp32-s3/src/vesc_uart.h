@@ -14,6 +14,9 @@ typedef struct {
     bool command_fresh;
     bool direction_change_pending;
     bool telemetry_fresh;
+    bool brake_active;
+    uint32_t telemetry_sequence;
+    uint32_t telemetry_age_ms;
     float measured_rpm;
     float motor_current;
     float input_current;
@@ -45,6 +48,8 @@ typedef struct {
     bool has_received_command;
     bool direction_change_pending;
     bool has_received_telemetry;
+    bool brake_requested;
+    uint32_t telemetry_sequence;
     float measured_rpm;
     float motor_current;
     float input_current;
@@ -68,6 +73,7 @@ extern "C" {
 #endif
 
 esp_err_t vesc_uart_init(vesc_uart_t *vesc);
+esp_err_t vesc_uart_set_drive(vesc_uart_t *vesc, int32_t rpm, bool brake);
 esp_err_t vesc_uart_set_target_rpm(vesc_uart_t *vesc, int32_t rpm);
 esp_err_t vesc_uart_get_snapshot(vesc_uart_t *vesc, vesc_uart_snapshot_t *snapshot);
 
