@@ -84,6 +84,7 @@
       <button id="modeView" class="active">View</button>
       <button id="modeStart">Set start</button>
       <button id="modeGoal">Set end</button>
+      <button id="clearMarkers">Clear start/end</button>
       <button id="follow">Follow car: on</button>
       <button id="clearTrail">Clear track</button>
       <button id="zoomIn" aria-label="Zoom in">+</button>
@@ -278,6 +279,7 @@ function setMode(m) { mode = m; ['View','Start','Goal'].forEach(k => $('mode'+k)
 $('modeView').onclick = () => setMode('view'); $('modeStart').onclick = () => setMode('start'); $('modeGoal').onclick = () => setMode('goal');
 $('follow').onclick = () => { follow = !follow; $('follow').textContent = 'Follow car: ' + (follow ? 'on' : 'off'); };
 $('clearTrail').onclick = () => send({cmd:'clear_trail'});
+$('clearMarkers').onclick = () => { setMode('view'); send({cmd:'clear_markers'}); };
 
 // ---------- map view
 function resize() { const r = canvas.getBoundingClientRect(); canvas.width = r.width * devicePixelRatio; canvas.height = r.height * devicePixelRatio; render(); }

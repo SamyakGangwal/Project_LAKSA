@@ -127,6 +127,7 @@ class Console(Node):
         self._route = {"state": "IDLE", "detail": "", "path": None, "length_m": None}
         self._plan_requested = False
         self._plan_wait_until = 0.0       # monotonic deadline while waiting for the planner
+        self._clear_markers_requested = False
         self._go_requested = False
         self._nav_hold = False
         self._nav_goal_handle = None
@@ -391,11 +392,15 @@ class Console(Node):
         now = time.monotonic()
         with self._lock:
             plan, go = self._plan_requested, self._go_requested
+            clear, self._clear_markers_requested = self._clear_markers_requested, False
             self._plan_requested = False
             alive = now - self._last_heartbeat <= self._timeout
             held = now - self._hold_started if alive and self._nav_hold else 0.0
             mission = self._status.get("mission")
             health = self._status.get("health")
+        if clear:
+            self._clear_markers()
+            return
         if plan:
             self._plan_wait_until = 0.0
             self._start_plan()
@@ -441,6 +446,10 @@ class Console(Node):
 
     def _plan_done(self, future):
         response = future.result()
+        with self._lock:
+            cleared = self._goal is None
+        if cleared:                       # START/END cleared while the planner was working
+            return
         poses = response.result.path.poses
         if response.status != GoalStatus.STATUS_SUCCEEDED or not poses:
             self._set_route("FAILED", "no drivable route to END (try another END or map more of the area)")
@@ -485,6 +494,15 @@ class Console(Node):
             self._end_navigation("", arrived=True)
         else:
             self._end_navigation(f"navigation ended with status {status}")
+
+    def _clear_markers(self):
+        """Forget START, END and the planned route; a route being driven stops."""
+        self._end_navigation("START/END cleared")
+        self._plan_wait_until = 0.0
+        with self._lock:
+            self._start = self._goal = None
+            self._go_requested = False
+        self._set_route("IDLE", "", path=None, length_m=None)
 
     def _end_navigation(self, reason: str, arrived: bool = False):
         if self._nav_goal_handle is None and self._nav_enabled_at == 0.0:
@@ -618,6 +636,9 @@ class Console(Node):
                     elif kind == "clear_trail":
                         with self._lock:
                             self._trail = []
+                    elif kind == "clear_markers":
+                        with self._lock:
+                            self._clear_markers_requested = True
             finally:
                 task.cancel()
                 with self._lock:
