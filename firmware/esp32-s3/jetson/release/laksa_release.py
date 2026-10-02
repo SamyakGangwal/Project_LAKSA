@@ -66,7 +66,9 @@ def build(repo: Path, out_dir: Path, allow_dirty: bool) -> Path:
                 if member.name.startswith(f"{name}/"):       # skips git's pax header
                     tar.addfile(member, source.extractfile(member) if member.isfile() else None)
     digest = hashlib.sha256(package.read_bytes()).hexdigest()
-    package.with_name(package.name + ".sha256").write_text(f"{digest}  {package.name}\n", encoding="utf-8")
+    # Bytes, not text: on Windows write_text would end the line with \r\n, which
+    # sha256sum -c on the Jetson reads as part of the file name.
+    package.with_name(package.name + ".sha256").write_bytes(f"{digest}  {package.name}\n".encode())
     print(f"{package}  ({package.stat().st_size / 1e6:.1f} MB, commit {commit[:7]})")
     return package
 
