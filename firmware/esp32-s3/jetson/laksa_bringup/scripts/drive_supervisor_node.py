@@ -613,6 +613,13 @@ class DriveSupervisor(Node):
             or now_ns - self._last_joy_ns > self._joy_timeout_ns
         ):
             self._manual_neutral_required = True
+            # Forget button states so the next press registers as a fresh
+            # rising edge.  Without this, a console REARM/STOP that sends
+            # a burst of presses and then goes silent leaves the last-seen
+            # state stuck at "pressed", and the next press is ignored.
+            self._previous_b = False
+            self._previous_y = False
+            self._previous_x = False
         self._last_joy_ns = now_ns
         self._joy_axes = list(message.axes)
         self._buttons = list(message.buttons)

@@ -26,11 +26,12 @@ drive_supervisor:
     # Hold A (or the console's HOLD TO RUN) this long before exploration starts.
     # 3 s made every explore start feel slow; 1 s still rules out a brushed button.
     auto_hold_sec: 1.0
-    # TEMPORARY (owner's request, 2026-10-01): ignore the external e-stop bridge
-    # (/laksa/estop_hw from Orin pin 15, KarSha's laksa-estop-bridge). It reported
-    # "stop" continuously and latched the emergency stop at every start. The console
-    # STOP, Xbox B and releasing HOLD still stop the car. Set true to re-enable.
-    hardware_estop_enabled: false
+    # Physical e-stop (/laksa/estop_hw from Orin pin 15, laksa-estop-bridge).
+    # Re-enabled 2026-10-02 with the owner's agreement. It was disabled on
+    # 2026-10-01 because it "latched at every start"; the likely cause was a
+    # failing Tx battery (Tx boot-looped every ~3.9 s, Rx fell back to STOP).
+    # Keep the Tx on USB power or a charged battery. false ignores the Tx.
+    hardware_estop_enabled: true
     manual_speed_presets_erpm: [900, 1300, 1500, 2000, 3000]
     default_manual_speed_erpm: 900
     exploration_max_erpm: 1000.0
