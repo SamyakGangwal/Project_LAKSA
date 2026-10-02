@@ -33,6 +33,9 @@ class RaceModeContractTest(unittest.TestCase):
         self.assertIn('"hardware_estop_topic": "/laksa/estop_hw"', self.supervisor)
         self.assertIn('self._latch_estop("hardware emergency stop")', self.supervisor)
 
+    def test_only_the_hardware_estop_latches(self):
+        self.assertEqual(self.supervisor.count("self._latch_estop("), 1)
+
     def test_other_autonomy_gates_remain(self):
         for reason in ("ESP32_STATE_STALE", "OBSTACLE_SOURCE_STALE: LiDAR scan", "ODOM_STALE",
                        "OBSTACLE_SOURCE_STALE: ZED obstacle cloud", "explorer reported BLOCKED"):

@@ -115,7 +115,7 @@
     <div class="panel">
       <h2 id="settingsTitle">Settings</h2>
       <div class="setting"><label for="speed">Speed</label>
-        <input id="speed" type="range" min="0.3" max="3.0" step="0.1"><output id="speedOut"></output></div>
+        <input id="speed" type="range" min="0.3" max="1.5" step="0.1"><output id="speedOut"></output></div>
       <div class="setting"><label for="avoid">Steer around obstacles</label><input id="avoid" type="checkbox"></div>
       <div class="setting"><label for="cameraLayer">Camera obstacles &amp; people</label><input id="cameraLayer" type="checkbox"></div>
       <div class="setting"><label for="reverse">Back away when boxed in</label><input id="reverse" type="checkbox"></div>
@@ -188,12 +188,12 @@ connect();
 const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 
 // ---------- modes and settings (defaults mirror laksa_learned_driver/profiles.py)
-// Slider max 0.6 m/s: the ESP32 firmware on the car rejects faster commands (holds the
-// brake); raise to 1.5 once the new firmware is flashed.
+// Slider 0.3-1.5 m/s. The Jetson still caps what reaches the ESP32 at LAKSA_ESP32_MAX_MPS
+// (0.6 until the 1.5 m/s firmware is flashed).
 const DEFAULTS = {
-  obstacle: {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 8.0, max: 0.6},
-  speed:    {speed_mps: 0.6, avoid: true, camera: false, reverse: false, horizon_m: 10.0, max: 0.6},
-  explore:  {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 4.0, max: 0.6},
+  obstacle: {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 8.0, max: 1.5},
+  speed:    {speed_mps: 0.6, avoid: true, camera: false, reverse: false, horizon_m: 10.0, max: 1.5},
+  explore:  {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 4.0, max: 1.5},
 };
 const FAMILY = {obstacle: 'race', speed: 'race', explore: 'trial'};
 let selected = localStorage.getItem('laksa.mode') || 'explore';
@@ -214,7 +214,7 @@ function showSettings() {
   const race = FAMILY[selected] === 'race';
   $('applyRow').classList.toggle('hidden', race);
   $('settingsHint').textContent = race ? 'These settings are sent when you press ARM.'
-    : 'Press APPLY to use them now (speed is capped at 0.6 m/s until the ESP32 firmware is updated).';
+    : 'Press APPLY to use them now.';
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('sel', b.dataset.mode === selected));
   $('racePanel').classList.toggle('hidden', !race);
   $('explorePanel').classList.toggle('hidden', race);

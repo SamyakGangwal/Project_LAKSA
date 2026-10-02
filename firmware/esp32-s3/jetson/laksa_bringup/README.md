@@ -25,8 +25,8 @@ Xbox -> game_controller_node -> /joy -> drive_supervisor
 The left stick Y axis selects forward or reverse after crossing its deadzone;
 its magnitude does not scale speed. The dashboard selects a fixed manual VESC
 setpoint from 900, 1300, 1500, 2000, or 3000 eRPM. The right stick X axis
-commands steering. B latches active VESC current braking
-and cancels autonomy; only Y rearms the vehicle, always into manual mode. X
+commands steering. B (and the console STOP) cancels autonomy and brakes; only
+the hardware e-stop latches an emergency stop, and only Y rearms it, always into manual mode. X
 returns to manual, and holding A for three seconds enables forward-priority
 LiDAR Cruise. Loss of Xbox or ESP32 telemetry also requests active braking.
 

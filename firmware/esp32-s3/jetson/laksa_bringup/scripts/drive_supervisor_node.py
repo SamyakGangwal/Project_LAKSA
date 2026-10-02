@@ -646,7 +646,9 @@ class DriveSupervisor(Node):
         b_pressed = self._button(self._b_button)
         y_pressed = self._button(self._y_button)
         if b_pressed and not self._previous_b:
-            self._latch_estop("Xbox B pressed")
+            # Only the hardware e-stop latches an emergency stop. B (and the
+            # console STOP, which pulses B) just ends autonomy and brakes.
+            self._abort_autonomy("Xbox B / console STOP pressed")
         elif (
             y_pressed
             and not self._previous_y
@@ -860,12 +862,8 @@ class DriveSupervisor(Node):
             <= self._vesc_telemetry_timeout_ms
         )
         self._vesc_fault_code = int(message.vesc.fault_code)
-        if self._vesc_fault_code != 0:
-            self._latch_estop(
-                "VESC fault "
-                f"{vesc_fault_name(self._vesc_fault_code)} "
-                f"({self._vesc_fault_code})"
-            )
+        # A VESC fault blocks/aborts autonomy via _autonomy_ready; it does not
+        # latch an emergency stop (only the hardware e-stop does).
 
     def _axis(self, index: int) -> float:
         if 0 <= index < len(self._joy_axes):

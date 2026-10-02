@@ -89,7 +89,7 @@ abort autonomy.
 
 The node publishes only a candidate `Twist` on `/laksa/lidar_cruise_cmd_vel`. `drive_supervisor`
 forwards it only after the operator holds **Xbox A for 3 s**, and keeps every existing gate:
-fresh Xbox, ESP32/VESC telemetry, LiDAR, odometry and ZED cloud, the e-stop latch (B), immediate
+fresh Xbox, ESP32/VESC telemetry, LiDAR, odometry and ZED cloud, the hardware e-stop latch, immediate
 manual override from either stick, X to return to manual, and the `exploration_max_erpm` cap.
 The node itself never publishes `/laksa/command`, `/cmd_vel` or `/laksa/brake`.
 

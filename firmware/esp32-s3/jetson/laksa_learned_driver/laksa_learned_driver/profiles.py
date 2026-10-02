@@ -13,9 +13,9 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
 
-MAX_SPEED_MPS = 1.0            # owner's limit 2026-10-02 (model trained to 3.0); the ESP32 firmware may reject above ~0.6-0.8
+MAX_SPEED_MPS = 1.5            # owner's range 0.3-1.5 (2026-10-02); dryrun_bringup's LAKSA_ESP32_MAX_MPS still caps the car until the 1.5 m/s ESP32 firmware is flashed
 MIN_SPEED_MPS = 0.3            # the drive stalls below ~0.2 m/s; matches min_drive_speed_mps
-EXPLORE_MAX_SPEED_MPS = 1.0    # trial & explore ceiling; watch the console's ESP32 line above ~0.6 m/s
+EXPLORE_MAX_SPEED_MPS = 1.5    # trial & explore ceiling (same cap applies)
 
 
 @dataclass(frozen=True)
