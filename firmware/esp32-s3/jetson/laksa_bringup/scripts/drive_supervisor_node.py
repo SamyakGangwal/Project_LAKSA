@@ -890,6 +890,10 @@ class DriveSupervisor(Node):
         ]
         if self._require_operator:
             checks.insert(0, (self._last_joy_ns, self._joy_timeout_ns, "XBOX_STALE"))
+        # A hardware e-stop that never reported RUN (Tx off, out of range or still
+        # linking) could not stop the car, so no autonomy until it has armed.
+        if self._hardware_estop_enabled and not self._hardware_estop_armed:
+            return False, "HARDWARE_ESTOP_NOT_ARMED: e-stop transmitter off or not linked"
         # Rollout cruise uses LiDAR odometry for visit memory and movement-gated
         # recovery, but remains independent of the global map and map TF.
         if not exploring:
