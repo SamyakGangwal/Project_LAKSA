@@ -1,0 +1,17 @@
+# Tonight's (2026-09-29) route-following overrides for controller_server only,
+# loaded after nav2_field_overrides.yaml through LAKSA_NAV_EXTRA in
+# setup/dryrun_bringup.sh.
+#
+# Speeds come from P3 (start-reliability bench, setup/tonight/start_reliability.sh):
+# never set any of them below the measured reliable-start speed, because
+# sensorless starts below it stall (0.10 m/s stalls, bench 2026-09-28).
+# The supervisor's navigation_max_erpm (LAKSA_NAV_ERPM) must allow 0.22 m/s,
+# about 911 eRPM, or it will cap these speeds.
+controller_server:
+  ros__parameters:
+    FollowPath:
+      desired_linear_vel: 0.22
+      regulated_linear_scaling_min_speed: 0.21
+      min_approach_linear_velocity: 0.21
+      use_collision_detection: true
+      allow_reversing: true
