@@ -509,12 +509,16 @@ class PerceptionTest(unittest.TestCase):
 
     def test_person_rules(self):
         box = np.zeros((8, 3))
-        near = Detection("Person", 80.0, np.array([0.419 + 0.6, 0.1, 0.8]), box)
-        mid = Detection("Person", 80.0, np.array([0.419 + 1.5, 0.0, 0.8]), box)
+        near = Detection("Person", 80.0, np.array([0.419 + 0.4, 0.05, 0.8]), box)
+        mid = Detection("Person", 80.0, np.array([0.419 + 0.8, 0.0, 0.8]), box)
+        far = Detection("Person", 80.0, np.array([0.419 + 1.5, 0.0, 0.8]), box)
+        sideline = Detection("Person", 80.0, np.array([1.2, 1.0, 0.8]), box)   # beside the track, ~40 deg off
         behind = Detection("Person", 80.0, np.array([-1.0, 0.0, 0.8]), box)
         chair = Detection("Bag", 80.0, np.array([0.8, 0.0, 0.2]), box)
         self.assertEqual(person_speed_rule([near], self.cfg)[:2], (0.0, True))
         self.assertEqual(person_speed_rule([mid], self.cfg)[:2], (0.5, False))
+        self.assertEqual(person_speed_rule([far], self.cfg)[:2], (1.0, False))       # 1.5 m: no longer slows
+        self.assertEqual(person_speed_rule([sideline], self.cfg)[:2], (1.0, False))  # judges beside the track
         self.assertEqual(person_speed_rule([behind, chair], self.cfg)[:2], (1.0, False))
 
 

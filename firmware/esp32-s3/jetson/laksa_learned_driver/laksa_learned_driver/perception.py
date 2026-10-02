@@ -44,10 +44,12 @@ class PerceptionConfig:
     cloud_voxel_m: float = 0.05
     box_sample_m: float = 0.05
     person_margin_m: float = 0.25        # extra footprint inflation around people
-    person_slow_distance_m: float = 2.0
+    # 2026-10-02: 2.0 m / 1.0 m / +-60 deg stopped the car for judges standing beside
+    # the track 1-3 m away. People in the path still stop it via the obstacle layer.
+    person_slow_distance_m: float = 1.0
     person_slow_factor: float = 0.5
-    person_stop_distance_m: float = 1.0
-    person_cone_rad: float = math.radians(60.0)
+    person_stop_distance_m: float = 0.5
+    person_cone_rad: float = math.radians(20.0)  # roughly the path ahead, not the sidelines
 
 
 def fit_ground_plane(points_xyz: np.ndarray, cfg: PerceptionConfig, rng: np.random.Generator | None = None):
