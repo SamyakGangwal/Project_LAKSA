@@ -8,7 +8,7 @@
 # console or laksa_operator: without an operator the supervisor holds brake.
 #
 #   dryrun_bringup.sh start    everything, supervisor actuation DISABLED
-#   dryrun_bringup.sh trial    everything, actuation ENABLED, explore 0.6 m/s (console, up to 1.0)
+#   dryrun_bringup.sh trial    everything, actuation ENABLED, explore 0.6 m/s (console, 0.3-1.5)
 #   dryrun_bringup.sh race     actuation ENABLED, no operator needed: ARM a mode in the
 #                              console, the car starts on a green signal and stops on red
 #                              (speed per mode, up to the model's 3 m/s)
@@ -131,27 +131,27 @@ DRIVER_CAP=0.24
 # every command and holds the brake (2026-10-02: 0.3-0.6 m/s accepted 100%,
 # 1.0 m/s 6%). The supervisor cap is the last step before the ESP32, so clamping
 # there means no profile, slider or planner can ever send a rejected speed.
-# Raise to 1.5 after the ESP32 firmware with the higher limit is flashed.
-ESP32_MAX_MPS="${LAKSA_ESP32_MAX_MPS:-0.6}"
+# 2026-10-02: raised to 1.5 m/s for the firmware built from esp32/speed-limit-1p5
+# (owner: flashed). If the console shows "NOT accepting commands" above ~0.6 m/s,
+# that firmware is not on the board: start with LAKSA_ESP32_MAX_MPS=0.6.
+ESP32_MAX_MPS="${LAKSA_ESP32_MAX_MPS:-1.5}"
 ESP32_MAX_ERPM="$(awk -v v="${ESP32_MAX_MPS}" 'BEGIN { printf "%.1f", v * 4142.0 }')"
 NAV_ERPM=""
 SUPERVISOR_EXTRA=()
 DRIVER_EXTRA=()
 if [[ "${MODE}" == "trial" ]]; then
     # Trial & explore: an operator holds the run.  The drive stalls below ~0.2 m/s
-    # (bench 2026-09-28), so explore runs at 0.6 m/s by default (console slider) with a
-    # 1.0 m/s ceiling, and Nav2 routes at 0.22 m/s (KarSha's measured reliable start).
-    # Capped at 0.6 m/s (2,485 eRPM): the ESP32 firmware on the car rejects drive
-    # commands above ~0.6-0.8 m/s and holds the brake (field run 2026-10-01: 0.6
-    # accepted 100%, 0.8 accepted 6%). Clamping here keeps the car driving.
+    # (bench 2026-09-28), so explore runs at 0.6 m/s by default (console slider 0.3-1.5),
+    # and Nav2 routes at 0.22 m/s (KarSha's measured reliable start).  Capped at
+    # ESP32_MAX_MPS (see above), the last step before the ESP32.
     ACTUATION=true; CRUISE_ERPM="${ESP32_MAX_ERPM}"; DRIVER_CAP="${ESP32_MAX_MPS}"; NAV_ERPM=1000.0
 fi
 if [[ "${MODE}" == "race" ]]; then
     # No speed cap below the model's trained 3 m/s (12,430 eRPM at 4,142 eRPM per m/s);
     # the race manager sets the speed per mode.  Operator-free, odometry sanity
     # check allows 4 m/s, and the clearance check looks 8 m ahead.
-    # 1.0 m/s (owner's limit 2026-10-02); the ESP32 firmware rejected 0.8 m/s on 2026-10-01,
-    # so profiles default to 0.6 and the console shows when commands are rejected.
+    # Profiles default to 0.6 m/s (slider 0.3-1.5), capped at ESP32_MAX_MPS; the console
+    # shows when the ESP32 rejects commands.
     ACTUATION=true; CRUISE_ERPM="${ESP32_MAX_ERPM}"; DRIVER_CAP="${ESP32_MAX_MPS}"
     SUPERVISOR_EXTRA=(-p require_operator:=false -p max_odom_linear_speed_mps:=4.0)
     DRIVER_EXTRA=(-p governor_horizon_m:=8.0)
