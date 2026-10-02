@@ -48,7 +48,7 @@ After SWITCH, the car software restarts in the other mode. That takes about 1–
 | Control | Behaviour |
 |---|---|
 | APPLY SETTINGS | Trial & explore only: sends the tab's settings to the driver now |
-| HOLD TO RUN | The page acts as the deadman while held. The first 1.5 s hold A (`engage_hold_sec`), which engages `LIDAR_CRUISE` after the supervisor's 1 s A-hold (3.5 s and 3 s until 1 Oct). Releasing, sliding off, closing the page or losing the connection stops `/joy`, and the supervisor brakes within 0.5 s. |
+| HOLD TO RUN | The page acts as the deadman while held. The first 1.5 s hold A (`engage_hold_sec`), which engages `LIDAR_CRUISE` after the supervisor's 1 s A-hold (3.5 s and 3 s until 1 Oct). Releasing, sliding off or closing the page stops `/joy` at once, and the supervisor brakes within 0.5 s. A lost connection is noticed after 0.8 s without a heartbeat (`heartbeat_timeout_sec`; 0.3 s until 1 Oct, which cut runs short over the SSH tunnel). |
 | EXPLORE | Same as holding, for up to 120 s. The page must stay open and on screen. Tapping again stops it. |
 | SAVE MAP FOR TRAINING | Saves the live map and the driven track to `~/laksa_maps/<timestamp>/` on the Jetson; see [Saving a map for training](#saving-a-map-for-training) |
 | STOP | Presses B: latches the emergency stop. Also disarms a race run |

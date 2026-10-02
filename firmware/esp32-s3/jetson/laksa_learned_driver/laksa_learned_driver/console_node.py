@@ -66,7 +66,11 @@ class Console(Node):
         super().__init__("laksa_console")
         self.declare_parameter("host", "127.0.0.1")
         self.declare_parameter("port", 8095)
-        self.declare_parameter("heartbeat_timeout_sec", 0.3)
+        # The page sends a heartbeat every 50 ms while HOLD/GO/EXPLORE is on; releasing
+        # sends "release" and stops at once.  0.3 s lapsed on the SSH/Tailscale link
+        # (2026-10-01: latency spikes of 0.3-0.7 s) and cut runs short; 0.8 s still
+        # brakes within ~1.3 s (with the supervisor's 0.5 s joy timeout) on a lost link.
+        self.declare_parameter("heartbeat_timeout_sec", 0.8)
         # Presses A this long: must exceed the supervisor's auto_hold_sec (1.0 s).
         self.declare_parameter("engage_hold_sec", 1.5)
         self.declare_parameter("token_file", "")
