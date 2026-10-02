@@ -210,7 +210,15 @@ class Console(Node):
         read = lambda p: p.read_text(encoding="utf-8").strip() if p.is_file() else ""
         return {"active": read(run / "car_mode_active") or "unknown",
                 "chosen": read(Path.home() / ".config" / "laksa" / "car_mode") or "trial",
-                "restarting": (run / "restart_request").is_file()}
+                "restarting": (run / "restart_request").is_file(),
+                "shutting_down": (run / "shutdown_request").is_file()}
+
+    def _request_shutdown(self) -> None:
+        # laksa-network-watch (root) stops laksa-car cleanly and powers off.
+        run = Path.home() / "laksa_run"
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "shutdown_request").write_text("console\n", encoding="utf-8")
+        self.get_logger().warn("SHUT DOWN requested: stopping the car software and powering off the Jetson")
 
     def _save_map(self) -> None:
         """Save the live map and the driven path for training (field maps)."""
@@ -610,10 +618,17 @@ class Console(Node):
                             self._pulse = (B_BUTTON, now + 0.6)
                         elif kind == "rearm":
                             self._pulse = (Y_BUTTON, now + 0.6)
+                        elif kind == "shutdown":
+                            # Brake first (latch the e-stop), then power off.
+                            self._last_heartbeat = 0.0
+                            self._hold_latch.stop()
+                            self._pulse = (B_BUTTON, now + 0.6)
                         elif kind == "plan":
                             self._plan_requested = True
                     if ignored:
                         self.get_logger().warn(f"Ignoring '{kind}' after heartbeat loss: release and press again")
+                    if kind == "shutdown":
+                        self._request_shutdown()
                     if kind == "profile" and self._car_mode().get("active") == "trial":
                         # Trial & explore settings apply live; race settings travel with ARM.
                         profile = data.get("profile") if isinstance(data.get("profile"), dict) else {}

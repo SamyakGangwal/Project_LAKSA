@@ -94,6 +94,10 @@
   </section>
   <aside>
     <div id="stopbar"><button id="stop" class="big">STOP</button><button id="rearm" class="big">REARM</button></div>
+    <div id="shutdownbox" class="hint">
+      <button id="shutdown" title="Stops the car software cleanly and powers off the Jetson; pull the battery after about 1 minute">SHUT DOWN CAR</button>
+      <span id="shutdowninfo"></span>
+    </div>
 
     <div class="panel">
       <h2>Mode</h2>
@@ -228,6 +232,14 @@ document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
   showSettings(); updateStatus();
 });
 $('apply').onclick = () => send({cmd: 'profile', profile: profile()});
+// SHUT DOWN: two taps within 4 s, like SWITCH.
+let shutdownArmed = false;
+$('shutdown').onclick = () => {
+  if (!shutdownArmed) { shutdownArmed = true; $('shutdown').textContent = 'TAP AGAIN TO POWER OFF';
+    setTimeout(() => { shutdownArmed = false; $('shutdown').textContent = 'SHUT DOWN CAR'; }, 4000); return; }
+  shutdownArmed = false; endHold(); send({cmd: 'shutdown'});
+  $('shutdowninfo').textContent = 'Shutting down: wait about 1 minute (until the page disconnects and the Jetson lights go off), then pull the battery.';
+};
 let switchArmed = null;
 $('switch').onclick = () => {
   const family = FAMILY[selected];

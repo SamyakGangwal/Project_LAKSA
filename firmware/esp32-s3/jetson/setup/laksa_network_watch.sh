@@ -14,7 +14,7 @@ CAR_HOME="$(getent passwd "${CAR_USER}" | cut -d: -f6)"
 LAUNCHER="${CAR_HOME}/laksa/current/src/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh"
 [[ -f "${LAUNCHER}" ]] || LAUNCHER="${CAR_HOME}/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh"
 RUN_DIR="${CAR_HOME}/laksa_run"
-PERIOD_S=15
+PERIOD_S=5
 NO_WIFI_BEFORE_HOTSPOT_S=45
 SCAN_EVERY_S=60
 
@@ -77,6 +77,16 @@ while true; do
     fi
     # The console asks for a restart after the car mode is changed (trial/race);
     # this service already restarts laksa-car, so the web page needs no sudo.
+    # SHUT DOWN on the console: stop the car stack cleanly (recording closed,
+    # logs flushed), then power the Jetson off so the battery can be pulled.
+    if [[ -f "${RUN_DIR}/shutdown_request" ]]; then
+        rm -f "${RUN_DIR}/shutdown_request"
+        log "shutdown requested from the console; stopping laksa-car and powering off"
+        systemctl stop laksa-car.service
+        sync
+        systemctl poweroff
+        exit 0
+    fi
     if [[ -f "${RUN_DIR}/restart_request" ]]; then
         rm -f "${RUN_DIR}/restart_request"
         log "car mode change requested from the console; restarting laksa-car"

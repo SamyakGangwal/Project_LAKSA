@@ -95,6 +95,9 @@ class DriveSupervisor(Node):
             "require_operator": True,
             # Physical emergency stop (Bool true = stop, latches like Xbox B).
             "hardware_estop_topic": "/laksa/estop_hw",
+            # false: ignore /laksa/estop_hw (the console STOP, Xbox B and the
+            # operator deadman still stop the car).
+            "hardware_estop_enabled": True,
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
@@ -326,6 +329,14 @@ class DriveSupervisor(Node):
             "/laksa/autonomy/set_armed",
             self._set_armed_callback,
         )
+        self._hardware_estop_enabled = bool(self.get_parameter("hardware_estop_enabled").value)
+        if not self._hardware_estop_enabled:
+            self.get_logger().warn(
+                "Hardware e-stop input "
+                f"{self.get_parameter('hardware_estop_topic').value} is IGNORED "
+                "(hardware_estop_enabled=false); only the console STOP, Xbox B and "
+                "the operator deadman stop the car"
+            )
         self.create_subscription(
             Bool,
             str(self.get_parameter("hardware_estop_topic").value),
@@ -579,6 +590,8 @@ class DriveSupervisor(Node):
         return 0 <= index < len(self._buttons) and bool(self._buttons[index])
 
     def _hardware_estop_callback(self, message: Bool) -> None:
+        if not self._hardware_estop_enabled:
+            return
         if message.data:
             self._latch_estop("hardware emergency stop")
 

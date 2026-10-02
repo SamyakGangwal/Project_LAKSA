@@ -246,7 +246,10 @@ start|trial|race)
                 -r __node:=lifecycle_manager_navigation --params-file "${NAV_CONFIG}"
         fi
     fi
-    start_one recorder ros2 bag record -o "${SESSION}/bag" "${BAG_TOPICS[@]}"
+    # The car is often switched off by pulling the battery: write 60 s chunks with
+    # the crash-safe SQLite preset so a power cut loses at most the open chunk
+    # (closed chunks stay readable; "ros2 bag reindex" rebuilds metadata.yaml).
+    start_one recorder ros2 bag record -o "${SESSION}/bag" --storage-preset-profile resilient         --max-bag-duration 60 "${BAG_TOPICS[@]}"
     start_console
     {
         echo "mode=${MODE} actuation=${ACTUATION} cruise_erpm=${CRUISE_ERPM} driver_cap=${DRIVER_CAP} started=$(date -Is)"
