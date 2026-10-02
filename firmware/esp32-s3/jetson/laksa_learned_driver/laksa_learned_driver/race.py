@@ -24,6 +24,7 @@ class RaceStatus:
     detail: str = ""
     started_at: float | None = None
     finished_at: float | None = None
+    armed_at: float | None = None
 
 
 @dataclass
@@ -34,22 +35,27 @@ class Actions:
 
 
 class RaceManager:
-    def __init__(self, min_run_s: float = 3.0, start_timeout_s: float = 2.0) -> None:
+    def __init__(self, min_run_s: float = 3.0, start_timeout_s: float = 2.0,
+                 auto_start_s: float = 30.0) -> None:
         self.status = RaceStatus()
         self.min_run_s = min_run_s
         self.start_timeout_s = start_timeout_s
+        # Fallback if the camera never sees the green arm: start this long after
+        # ARM anyway (0 = off; then only green or START NOW start the run).
+        self.auto_start_s = auto_start_s
 
     def _set(self, state: str, detail: str = "") -> None:
         self.status.state, self.status.detail = state, detail
 
-    def arm(self, mode: str, overrides: dict | None = None) -> Actions:
+    def arm(self, mode: str, overrides: dict | None = None, now: float | None = None) -> Actions:
         if mode not in RACE_MODES:
             raise ValueError(f"unknown race mode {mode!r}")
         if self.status.state == "RUNNING":
             return Actions(events=["already running"])
         profile = make_profile({**(overrides or {}), "mode": mode})
+        wait = f" (auto start in {self.auto_start_s:.0f} s)" if self.auto_start_s > 0 else ""
         self.status = RaceStatus(state="ARMED", mode=mode, speed_mps=profile.speed_mps,
-                                 detail="waiting for the green signal")
+                                 detail="waiting for the green signal" + wait, armed_at=now)
         return Actions(profile=profile.to_dict(), events=[f"armed {mode} at {profile.speed_mps:.2f} m/s"])
 
     def disarm(self, reason: str = "disarmed") -> Actions:
@@ -71,6 +77,13 @@ class RaceManager:
             self.status.finished_at = now
             self._set("FINISHED", "stop signal")
             return Actions(autonomy=False, events=["stop signal: finished"])
+        return Actions()
+
+    def tick(self, now: float) -> Actions:
+        """Start anyway once armed for auto_start_s without seeing green."""
+        armed_at = self.status.armed_at
+        if self.status.state == "ARMED" and self.auto_start_s > 0 and armed_at is not None                 and now - armed_at >= self.auto_start_s:
+            return self.start(now, f"no green seen in {self.auto_start_s:.0f} s: auto start")
         return Actions()
 
     def on_mission(self, now: float, mission: str, health: str) -> Actions:

@@ -8,7 +8,7 @@ import numpy as np
 from laksa_learned_driver.policy import LearnedDriverPolicy, OutputContract
 from laksa_learned_driver.profiles import DEFAULTS, EXPLORE_MAX_SPEED_MPS, make_profile
 from laksa_learned_driver.race import MAX_SPEED_MPS, RaceManager
-from laksa_learned_driver.signals import Debounce, SignalConfig, read_signals
+from laksa_learned_driver.signals import Debounce, GreenStart, SignalConfig, read_signals
 from laksa_learned_driver.perception import (Detection, PerceptionConfig, box_footprint_points,
                                              filter_cloud, fit_ground_plane, lidar_ground_mask,
                                              person_speed_rule)
@@ -210,30 +210,103 @@ def _frame(color_bgr=None, box=(100, 60, 140, 100), size=(240, 320)):
     return image
 
 
-class SignalTest(unittest.TestCase):
-    def test_green_light_is_seen(self):
-        reading = read_signals(_frame((40, 230, 40)))
-        self.assertTrue(reading.green)
-        self.assertFalse(reading.red)
+OASIS_BLUE, POPPY_RED, LEAFY_GREEN = (180, 120, 76), (40, 36, 199), (61, 120, 77)   # BGR, satin paint
 
-    def test_red_light_is_seen(self):
-        reading = read_signals(_frame((30, 30, 230)))
+
+def _signal_scene(red=True, green=False, turf=False, panel=True):
+    """The competition signal: tall blue board, arm disc poking out of its right edge."""
+    import cv2
+    image = np.full((240, 320, 3), 90, np.uint8)
+    if turf:
+        cv2.rectangle(image, (0, 190), (319, 239), LEAFY_GREEN, -1)    # green floor, not the signal
+    if panel:
+        cv2.rectangle(image, (200, 40), (230, 180), OASIS_BLUE, -1)    # 30 x 140 px board
+    if red:
+        cv2.circle(image, (236, 85), 9, POPPY_RED, -1)
+    if green:
+        cv2.circle(image, (236, 85), 9, LEAFY_GREEN, -1)
+    return image
+
+
+class SignalTest(unittest.TestCase):
+    def test_red_arm_on_the_panel_is_seen(self):
+        reading = read_signals(_signal_scene(red=True))
+        self.assertIsNotNone(reading.panel)
         self.assertTrue(reading.red)
         self.assertFalse(reading.green)
 
+    def test_green_arm_on_the_panel_is_seen(self):
+        reading = read_signals(_signal_scene(red=False, green=True))
+        self.assertTrue(reading.green)
+        self.assertFalse(reading.red)
+
+    def test_green_turf_is_not_a_start(self):
+        reading = read_signals(_signal_scene(red=True, turf=True))
+        self.assertFalse(reading.green)
+
+    def test_no_panel_no_signal(self):
+        self.assertFalse(read_signals(_signal_scene(red=False, green=True, panel=False)).green)
+        self.assertFalse(read_signals(_frame((40, 230, 40))).green)
+
+    def test_without_panel_mode_still_reads_a_plain_light(self):
+        cfg = SignalConfig(require_panel=False)
+        self.assertTrue(read_signals(_frame((40, 230, 40)), cfg).green)
+        self.assertTrue(read_signals(_frame((30, 30, 230)), cfg).red)
+
     def test_orange_bucket_is_not_a_stop_signal(self):
-        self.assertFalse(read_signals(_frame((0, 140, 255))).red)       # BGR orange
+        cfg = SignalConfig(require_panel=False)
+        self.assertFalse(read_signals(_frame((0, 140, 255)), cfg).red)       # BGR orange
 
-    def test_floor_colours_are_ignored(self):
-        self.assertFalse(read_signals(_frame((40, 230, 40), box=(100, 200, 160, 239))).green)
+    def test_green_start_waits_for_green_to_grow(self):
+        start = GreenStart(frames=2, baseline_frames=3)
+        armed = read_signals(_signal_scene(red=True))
+        go = read_signals(_signal_scene(red=False, green=True))
+        self.assertEqual([start.update(armed) for _ in range(5)], [False] * 5)
+        self.assertEqual([start.update(go), start.update(go)], [False, True])
 
-    def test_tiny_specks_are_ignored(self):
-        self.assertFalse(read_signals(_frame((40, 230, 40), box=(100, 60, 103, 63))).green)
+    def test_green_visible_while_armed_is_not_a_start(self):
+        # Some green showing next to red at ARM time (CAD front view) must not start the run.
+        both = read_signals(_signal_scene(red=True, green=True))
+        start = GreenStart(frames=2, baseline_frames=3)
+        self.assertFalse(any(start.update(both) for _ in range(10)))
 
     def test_debounce_needs_consecutive_frames(self):
         d = Debounce(3)
         self.assertEqual([d.update(x) for x in (True, True, False, True, True, True)],
                          [False, False, False, False, False, True])
+
+
+class RaceAutoStartTest(unittest.TestCase):
+    def test_starts_after_30_s_without_green(self):
+        from laksa_learned_driver.race import RaceManager
+        race = RaceManager(auto_start_s=30.0)
+        race.arm("obstacle", {"speed_mps": 0.6}, now=100.0)
+        self.assertIn("auto start in 30 s", race.status.detail)
+        self.assertIsNone(race.tick(129.9).autonomy)
+        self.assertEqual(race.status.state, "ARMED")
+        self.assertTrue(race.tick(130.0).autonomy)
+        self.assertEqual(race.status.state, "RUNNING")
+        self.assertIn("auto start", race.status.detail)
+
+    def test_green_before_30_s_starts_normally(self):
+        from laksa_learned_driver.race import RaceManager
+        race = RaceManager(auto_start_s=30.0)
+        race.arm("speed", {}, now=0.0)
+        self.assertTrue(race.on_signals(5.0, True, False).autonomy)
+        self.assertIsNone(race.tick(40.0).autonomy)            # already running: no second start
+
+    def test_disarm_cancels_the_fallback(self):
+        from laksa_learned_driver.race import RaceManager
+        race = RaceManager(auto_start_s=30.0)
+        race.arm("speed", {}, now=0.0)
+        race.disarm("disarmed from the console")
+        self.assertIsNone(race.tick(60.0).autonomy)
+
+    def test_zero_turns_the_fallback_off(self):
+        from laksa_learned_driver.race import RaceManager
+        race = RaceManager(auto_start_s=0.0)
+        race.arm("speed", {}, now=0.0)
+        self.assertIsNone(race.tick(1000.0).autonomy)
 
 
 class RaceTest(unittest.TestCase):

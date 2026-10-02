@@ -25,20 +25,23 @@ from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool, String
 
 from .race import RaceManager
-from .signals import Debounce, SignalConfig, read_signals
+from .signals import Debounce, GreenStart, SignalConfig, read_signals
 
 
 class RaceNode(Node):
     def __init__(self) -> None:
         super().__init__("race_manager")
         self.declare_parameter("image_topic", "/zed/zed_node/rgb/color/rect/image/compressed")
-        self.declare_parameter("persist_frames", 4)
+        self.declare_parameter("persist_frames", 2)
         self.declare_parameter("min_run_sec", 3.0)
+        # Start anyway this long after ARM if green is never seen (0 = only green / START NOW).
+        self.declare_parameter("auto_start_after_sec", 30.0)
         self.declare_parameter("max_rate_hz", 10.0)
         self._cfg = SignalConfig(persist_frames=int(self.get_parameter("persist_frames").value))
-        self._manager = RaceManager(min_run_s=float(self.get_parameter("min_run_sec").value))
+        self._manager = RaceManager(min_run_s=float(self.get_parameter("min_run_sec").value),
+                                    auto_start_s=float(self.get_parameter("auto_start_after_sec").value))
         self._period = 1.0 / float(self.get_parameter("max_rate_hz").value)
-        self._green = Debounce(self._cfg.persist_frames)
+        self._green = GreenStart(self._cfg.persist_frames)   # green growing past the armed baseline
         self._red = Debounce(self._cfg.persist_frames)
         self._last_frame = 0.0
         self._seen = {"green": 0.0, "red": 0.0}
@@ -69,8 +72,11 @@ class RaceNode(Node):
             self._publish_state()
 
     def _tick(self) -> None:
-        # Catch a refused or aborted run even when no camera frames arrive.
-        self._apply(self._manager.on_mission(time.monotonic(), self._mission, self._health))
+        # Catch a refused or aborted run even when no camera frames arrive, and
+        # the auto-start fallback (runs without camera frames too).
+        now = time.monotonic()
+        self._apply(self._manager.tick(now))
+        self._apply(self._manager.on_mission(now, self._mission, self._health))
         self._publish_state()
 
     def _publish_state(self) -> None:
@@ -90,7 +96,7 @@ class RaceNode(Node):
                 self._green.reset()
                 self._red.reset()
                 profile = data.get("profile") if isinstance(data.get("profile"), dict) else {}
-                self._apply(self._manager.arm(str(data.get("mode", "speed")), profile))
+                self._apply(self._manager.arm(str(data.get("mode", "speed")), profile, now=time.monotonic()))
             elif cmd == "disarm":
                 self._apply(self._manager.disarm("disarmed from the console"))
             elif cmd == "start":
@@ -117,7 +123,7 @@ class RaceNode(Node):
             return
         reading = read_signals(image, self._cfg)
         self._seen = {"green": reading.green_fraction, "red": reading.red_fraction}
-        green = self._green.update(reading.green)
+        green = self._green.update(reading)
         red = self._red.update(reading.red)
         self._apply(self._manager.on_signals(now, green, red))
         # Keep checking the supervisor while running (e.g. a refused start).
