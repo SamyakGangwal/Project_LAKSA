@@ -127,6 +127,13 @@ fi
 ACTUATION=false
 CRUISE_ERPM=1000.0
 DRIVER_CAP=0.24
+# Fastest speed the ESP32 firmware on the car accepts. Above it the ESP32 rejects
+# every command and holds the brake (2026-10-02: 0.3-0.6 m/s accepted 100%,
+# 1.0 m/s 6%). The supervisor cap is the last step before the ESP32, so clamping
+# there means no profile, slider or planner can ever send a rejected speed.
+# Raise to 1.5 after the ESP32 firmware with the higher limit is flashed.
+ESP32_MAX_MPS="${LAKSA_ESP32_MAX_MPS:-0.6}"
+ESP32_MAX_ERPM="$(awk -v v="${ESP32_MAX_MPS}" 'BEGIN { printf "%.1f", v * 4142.0 }')"
 NAV_ERPM=""
 SUPERVISOR_EXTRA=()
 DRIVER_EXTRA=()
@@ -137,7 +144,7 @@ if [[ "${MODE}" == "trial" ]]; then
     # Capped at 0.6 m/s (2,485 eRPM): the ESP32 firmware on the car rejects drive
     # commands above ~0.6-0.8 m/s and holds the brake (field run 2026-10-01: 0.6
     # accepted 100%, 0.8 accepted 6%). Clamping here keeps the car driving.
-    ACTUATION=true; CRUISE_ERPM=4142.0; DRIVER_CAP=1.0; NAV_ERPM=1000.0
+    ACTUATION=true; CRUISE_ERPM="${ESP32_MAX_ERPM}"; DRIVER_CAP="${ESP32_MAX_MPS}"; NAV_ERPM=1000.0
 fi
 if [[ "${MODE}" == "race" ]]; then
     # No speed cap below the model's trained 3 m/s (12,430 eRPM at 4,142 eRPM per m/s);
@@ -145,7 +152,7 @@ if [[ "${MODE}" == "race" ]]; then
     # check allows 4 m/s, and the clearance check looks 8 m ahead.
     # 1.0 m/s (owner's limit 2026-10-02); the ESP32 firmware rejected 0.8 m/s on 2026-10-01,
     # so profiles default to 0.6 and the console shows when commands are rejected.
-    ACTUATION=true; CRUISE_ERPM=4142.0; DRIVER_CAP=1.0
+    ACTUATION=true; CRUISE_ERPM="${ESP32_MAX_ERPM}"; DRIVER_CAP="${ESP32_MAX_MPS}"
     SUPERVISOR_EXTRA=(-p require_operator:=false -p max_odom_linear_speed_mps:=4.0)
     DRIVER_EXTRA=(-p governor_horizon_m:=8.0)
     NAV_ERPM=1000.0
