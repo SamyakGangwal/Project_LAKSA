@@ -13,9 +13,9 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
 
-MAX_SPEED_MPS = 3.0            # the learned model's trained maximum
+MAX_SPEED_MPS = 1.0            # owner's limit 2026-10-02 (model trained to 3.0); the ESP32 firmware may reject above ~0.6-0.8
 MIN_SPEED_MPS = 0.3            # the drive stalls below ~0.2 m/s; matches min_drive_speed_mps
-EXPLORE_MAX_SPEED_MPS = 0.6    # trial & explore ceiling: the car's ESP32 firmware rejects faster commands
+EXPLORE_MAX_SPEED_MPS = 1.0    # trial & explore ceiling; watch the console's ESP32 line above ~0.6 m/s
 
 
 @dataclass(frozen=True)
@@ -37,12 +37,12 @@ DEFAULTS = {
     # down or stop for it; it stops only at 0.30 m (see the driver's governor).
     "explore": DriveProfile(mode="explore", speed_mps=0.6, avoid=True, avoid_clearance_m=1.0, camera=True,
                             horizon_m=4.0, reverse=True),
-    "obstacle": DriveProfile(mode="obstacle", speed_mps=2.0, avoid=True, avoid_clearance_m=0.9, camera=True,
+    "obstacle": DriveProfile(mode="obstacle", speed_mps=0.6, avoid=True, avoid_clearance_m=0.9, camera=True,
                              horizon_m=8.0, reverse=True),
     # The Speed Course is a clear track: the LiDAR clearance check still stops
     # for real obstacles, but the camera layer is off by default because
     # phantom camera obstacles at speed only cost time.
-    "speed": DriveProfile(mode="speed", speed_mps=3.0, avoid=True, avoid_clearance_m=1.2, camera=False,
+    "speed": DriveProfile(mode="speed", speed_mps=0.6, avoid=True, avoid_clearance_m=1.2, camera=False,
                           horizon_m=10.0, reverse=False),
 }
 RACE_MODES = ("obstacle", "speed")

@@ -137,13 +137,15 @@ if [[ "${MODE}" == "trial" ]]; then
     # Capped at 0.6 m/s (2,485 eRPM): the ESP32 firmware on the car rejects drive
     # commands above ~0.6-0.8 m/s and holds the brake (field run 2026-10-01: 0.6
     # accepted 100%, 0.8 accepted 6%). Clamping here keeps the car driving.
-    ACTUATION=true; CRUISE_ERPM=2485.0; DRIVER_CAP=0.6; NAV_ERPM=1000.0
+    ACTUATION=true; CRUISE_ERPM=4142.0; DRIVER_CAP=1.0; NAV_ERPM=1000.0
 fi
 if [[ "${MODE}" == "race" ]]; then
     # No speed cap below the model's trained 3 m/s (12,430 eRPM at 4,142 eRPM per m/s);
     # the race manager sets the speed per mode.  Operator-free, odometry sanity
     # check allows 4 m/s, and the clearance check looks 8 m ahead.
-    ACTUATION=true; CRUISE_ERPM=12500.0; DRIVER_CAP=2.5
+    # 1.0 m/s (owner's limit 2026-10-02); the ESP32 firmware rejected 0.8 m/s on 2026-10-01,
+    # so profiles default to 0.6 and the console shows when commands are rejected.
+    ACTUATION=true; CRUISE_ERPM=4142.0; DRIVER_CAP=1.0
     SUPERVISOR_EXTRA=(-p require_operator:=false -p max_odom_linear_speed_mps:=4.0)
     DRIVER_EXTRA=(-p governor_horizon_m:=8.0)
     NAV_ERPM=1000.0

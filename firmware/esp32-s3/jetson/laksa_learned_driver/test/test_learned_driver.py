@@ -323,7 +323,7 @@ class RaceTest(unittest.TestCase):
     def test_speed_is_clamped_to_the_trained_range(self):
         race = RaceManager()
         self.assertEqual(race.arm("obstacle", {"speed_mps": 9.0}).profile["speed_mps"], MAX_SPEED_MPS)
-        self.assertEqual(RaceManager().arm("obstacle", None).profile["speed_mps"], 2.0)
+        self.assertEqual(RaceManager().arm("obstacle", None).profile["speed_mps"], 0.6)   # ESP32 firmware limit
 
     def test_explore_is_not_a_race_mode(self):
         with self.assertRaises(ValueError):
@@ -334,7 +334,8 @@ class ProfileTest(unittest.TestCase):
     def test_mode_defaults(self):
         self.assertTrue(DEFAULTS["obstacle"].avoid and DEFAULTS["obstacle"].camera)
         self.assertFalse(DEFAULTS["speed"].reverse)
-        self.assertEqual(DEFAULTS["speed"].speed_mps, MAX_SPEED_MPS)
+        self.assertEqual(DEFAULTS["speed"].speed_mps, 0.6)          # proven ESP32-accepted default
+        self.assertLessEqual(DEFAULTS["speed"].speed_mps, MAX_SPEED_MPS)
 
     def test_overrides_are_clamped_and_typed(self):
         p = make_profile({"mode": "obstacle", "speed_mps": "fast", "horizon_m": 99, "camera": "yes"})
@@ -344,7 +345,7 @@ class ProfileTest(unittest.TestCase):
 
     def test_explore_speed_has_its_own_ceiling(self):
         self.assertEqual(make_profile({"mode": "explore", "speed_mps": 2.5}).speed_mps, EXPLORE_MAX_SPEED_MPS)
-        self.assertEqual(make_profile({"mode": "obstacle", "speed_mps": 2.5}).speed_mps, 2.5)
+        self.assertEqual(make_profile({"mode": "obstacle", "speed_mps": 2.5}).speed_mps, MAX_SPEED_MPS)
 
     def test_unknown_mode_falls_back_to_explore(self):
         self.assertEqual(make_profile({"mode": "warp"}).mode, "explore")

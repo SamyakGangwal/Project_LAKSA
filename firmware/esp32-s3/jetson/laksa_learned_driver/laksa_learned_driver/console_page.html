@@ -189,9 +189,9 @@ const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
 // ---------- modes and settings (defaults mirror laksa_learned_driver/profiles.py)
 const DEFAULTS = {
-  obstacle: {speed_mps: 2.0, avoid: true, camera: true, reverse: true, horizon_m: 8.0, max: 3.0},
-  speed:    {speed_mps: 3.0, avoid: true, camera: false, reverse: false, horizon_m: 10.0, max: 3.0},
-  explore:  {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 4.0, max: 0.6},
+  obstacle: {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 8.0, max: 1.0},
+  speed:    {speed_mps: 0.6, avoid: true, camera: false, reverse: false, horizon_m: 10.0, max: 1.0},
+  explore:  {speed_mps: 0.6, avoid: true, camera: true, reverse: true, horizon_m: 4.0, max: 1.0},
 };
 const FAMILY = {obstacle: 'race', speed: 'race', explore: 'trial'};
 let selected = localStorage.getItem('laksa.mode') || 'explore';
@@ -212,7 +212,7 @@ function showSettings() {
   const race = FAMILY[selected] === 'race';
   $('applyRow').classList.toggle('hidden', race);
   $('settingsHint').textContent = race ? 'These settings are sent when you press ARM.'
-    : 'Press APPLY to use them now (explore speed is capped at 0.6 m/s).';
+    : 'Press APPLY to use them now (explore speed is capped at 1.0 m/s).';
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('sel', b.dataset.mode === selected));
   $('racePanel').classList.toggle('hidden', !race);
   $('explorePanel').classList.toggle('hidden', race);
