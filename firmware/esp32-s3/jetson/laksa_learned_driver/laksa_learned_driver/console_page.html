@@ -214,7 +214,7 @@ function showSettings() {
   const race = FAMILY[selected] === 'race';
   $('applyRow').classList.toggle('hidden', race);
   $('settingsHint').textContent = race ? 'These settings are sent when you press ARM.'
-    : 'Press APPLY to use them now (explore speed is capped at 0.6 until the ESP32 firmware is updated m/s).';
+    : 'Press APPLY to use them now (speed is capped at 0.6 m/s until the ESP32 firmware is updated).';
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('sel', b.dataset.mode === selected));
   $('racePanel').classList.toggle('hidden', !race);
   $('explorePanel').classList.toggle('hidden', race);
