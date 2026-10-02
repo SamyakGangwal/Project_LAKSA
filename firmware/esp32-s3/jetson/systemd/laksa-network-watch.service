@@ -5,7 +5,7 @@ Wants=NetworkManager.service
 
 [Service]
 Type=simple
-ExecStart=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/laksa_network_watch.sh
+ExecStart=/bin/bash /home/samyak/laksa/current/src/firmware/esp32-s3/jetson/setup/laksa_network_watch.sh
 Restart=always
 RestartSec=5
 

@@ -35,7 +35,17 @@ SUPERVISOR_CONFIG="${JETSON}/laksa_bringup/config/drive_supervisor.yaml"
 ZED_PROFILE="${JETSON}/laksa_learned_driver/config/zed_perception.yaml"
 EKF_CONFIG="${JETSON}/laksa_learned_driver/config/ekf_field.yaml"
 RTAB_OVERRIDES="${JETSON}/laksa_learned_driver/config/rtabmap_field_overrides.yaml"
-SESSIONS_DIR="${HOME}/laksa_sessions"
+# Every run's logs, decisions and recordings live under one folder on the car
+# (laksa_deploy.sh moves old ~/laksa_sessions there and prunes the oldest).
+LOG_ROOT="${LAKSA_LOG_ROOT:-${HOME}/laksa_logs}"
+SESSIONS_DIR="${LOG_ROOT}/sessions"
+# A packaged release (~/laksa/releases/<version>/src) builds its own workspace next
+# to its source; a plain checkout uses ~/laksa_ws as before.
+if [[ -f "${REPO}/../ws/install/setup.bash" ]]; then
+    LAKSA_WS="$(cd "${REPO}/../ws" && pwd)"
+else
+    LAKSA_WS="${HOME}/laksa_ws"
+fi
 # Small, replayable record of each run (no full camera video).
 BAG_TOPICS=(/laksa/lidar/scan_validated /laksa/command /laksa/brake /laksa/lidar_cruise_cmd_vel
     /laksa/exploration_status /laksa/mission_state /laksa/autonomy_health /laksa/emergency_stop
@@ -63,7 +73,7 @@ source_ros() {
     source /opt/ros/humble/setup.bash
     [[ -f "${HOME}/zed_ws/install/setup.bash" ]] && source "${HOME}/zed_ws/install/setup.bash"
     source "${HOME}/third_party/third_party_ws/install/setup.bash"
-    source "${HOME}/laksa_ws/install/setup.bash"
+    source "${LAKSA_WS}/install/setup.bash"
     set -u
 }
 

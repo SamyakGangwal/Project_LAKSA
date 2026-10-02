@@ -1,0 +1,18 @@
+[Unit]
+Description=LAKSA package deployer (install a new car package from ~/laksa/incoming, prune logs)
+After=local-fs.target
+Before=laksa-car.service
+
+[Service]
+Type=oneshot
+User=samyak
+Group=samyak
+Environment=HOME=/home/samyak
+# Installs the newest ~/laksa/incoming/laksa-car-*.tar.gz (build + tests) and
+# switches ~/laksa/current to it; on any failure the current release stays.
+ExecStart=/bin/bash /home/samyak/laksa/bin/laksa_deploy.sh boot
+# A package build on the Orin Nano takes minutes; the car waits for it.
+TimeoutStartSec=50min
+
+[Install]
+WantedBy=multi-user.target

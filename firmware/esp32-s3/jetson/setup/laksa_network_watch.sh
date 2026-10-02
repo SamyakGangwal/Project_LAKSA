@@ -10,7 +10,9 @@ set -uo pipefail
 HOTSPOT_CONN="laksa-hotspot"
 CAR_USER="${LAKSA_CAR_USER:-samyak}"
 CAR_HOME="$(getent passwd "${CAR_USER}" | cut -d: -f6)"
-LAUNCHER="${CAR_HOME}/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh"
+# The installed package (laksa_deploy.sh) if there is one, else the old checkout.
+LAUNCHER="${CAR_HOME}/laksa/current/src/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh"
+[[ -f "${LAUNCHER}" ]] || LAUNCHER="${CAR_HOME}/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh"
 RUN_DIR="${CAR_HOME}/laksa_run"
 PERIOD_S=15
 NO_WIFI_BEFORE_HOTSPOT_S=45

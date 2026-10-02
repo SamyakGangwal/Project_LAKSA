@@ -1,7 +1,7 @@
 [Unit]
 Description=LAKSA car stack (sensors, ZED perception, mapping, supervisor, learned driver, console)
-After=network-online.target NetworkManager.service
-Wants=network-online.target
+After=network-online.target NetworkManager.service laksa-deploy.service
+Wants=network-online.target laksa-deploy.service
 
 [Service]
 Type=oneshot
@@ -14,8 +14,9 @@ ExecStartPre=/bin/sleep 25
 # auto = the mode chosen on the console: trial (default; an operator must hold a
 # button) or race (ARM in the console, starts on the green signal).  The car
 # stays braked until then either way.
-ExecStart=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh auto
-ExecStop=/bin/bash /home/samyak/src/Project_LAKSA/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh stop
+# ~/laksa/current is the installed package (laksa_deploy.sh), not a git checkout.
+ExecStart=/bin/bash /home/samyak/laksa/current/src/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh auto
+ExecStop=/bin/bash /home/samyak/laksa/current/src/firmware/esp32-s3/jetson/setup/dryrun_bringup.sh stop
 TimeoutStartSec=240
 TimeoutStopSec=60
 

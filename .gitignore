@@ -82,3 +82,6 @@ Desktop.ini
 # Local F1TENTH Gym clones used for training (clone from github.com/f1tenth/f1tenth_gym)
 scratch/f1tenth_gym/
 scratch/f1tenth_gym_v1/
+
+# Car packages (firmware/esp32-s3/jetson/release/laksa_release.py build)
+dist/
