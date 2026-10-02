@@ -278,18 +278,24 @@ console)
     start_console
     ;;
 watchdog)
-    # Internal (started by start|trial|race): restart rgbd_sync when its log shows
-    # it starved for ~15 s while the ZED process is alive.  Reads logs only.
+    # Internal (started by start|trial|race): restart rgbd_sync when it keeps
+    # logging "Did not receive data" (every 5 s; each warning spans several lines)
+    # for two checks in a row (~20 s) while the ZED process is alive.  Reads logs only.
     source_ros
     session="$(readlink -f "${RUN_DIR}/latest")"
     last_restart=0
+    previous=0
+    strikes=0
     while sleep 10; do
         log="${session}/rgbd_sync.log"
         zed_pid="$(cat "${RUN_DIR}/zed.pid" 2>/dev/null || true)"
         [[ -n "${zed_pid}" && -f "${log}" ]] && kill -0 "${zed_pid}" 2>/dev/null || continue
-        starved="$(grep -a -v ddsi "${log}" | tail -n 3 | grep -c "rgbd_sync: Did not receive data")"
+        warnings="$(grep -a -c "rgbd_sync: Did not receive data" "${log}")"
+        if (( warnings - previous >= 2 )); then strikes=$((strikes + 1)); else strikes=0; fi
+        previous="${warnings}"
         now="$(date +%s)"
-        if (( starved == 3 && now - $(stat -c %Y "${log}") < 10 && now - last_restart > 30 )); then
+        if (( strikes >= 2 && now - last_restart > 30 )); then
+            strikes=0
             echo "$(date -Is) rgbd_sync starved while the ZED runs; restarting it"
             [[ -f "${RUN_DIR}/rgbd_sync.pid" ]] && stop_one "${RUN_DIR}/rgbd_sync.pid"
             echo "--- restarted by the mapping watchdog $(date -Is)" >> "${log}"
